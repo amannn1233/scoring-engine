@@ -2,8 +2,14 @@
 # MUSIC GENERATION — Stable Audio 3 Small Music, motif, references,
 # phrase generation and quality gates.
 #
-# Prompts, noise levels, durations and gates are UNCHANGED from
-# Generalization V1/V2 (handover: do not redesign generation).
+# Two prompt paths:
+#   cue=None  -> the original V1/V2 prompts and first-valid-attempt logic,
+#                byte-for-byte (kept for the validated benchmark).
+#   cue=Cue   -> story-aware: prompts composed from the story's cue sheet
+#                (cue_sheet.py: palette, tempo, key, descriptors), several
+#                takes per motif/phrase, and the best take kept by a ranking
+#                that adds tempo match, key match, loop-seam smoothness and
+#                spectral fullness (music_analysis.py) to the quality gates.
 # torch / stable_audio_3 / librosa are imported lazily so the scoring engine
 # and the offline replay never need them.
 #
@@ -25,10 +31,14 @@ from scoring_engine import (
 )
 from audio_io import write_audio
 from run_seed import derive_seed
+from cue_sheet import motif_prompt_from_cue, layer_prompts_from_cue
+from music_analysis import analyse as analyse_music
 # </local-imports>
 
 
 MAX_ATTEMPTS = 2
+MOTIF_TAKES = 3      # story-aware path: motif candidates ranked, best kept
+PHRASE_TAKES = 3     # story-aware path: takes per phrase, all ranked
 MOTIF_SECONDS = 28.0
 STEPS = 8
 CFG_SCALE = 1.0
@@ -165,13 +175,55 @@ def motif_prompt(mood):
     )
 
 
-def generate_motif(story_index, mood, output_dir, run_seed):
-    prompt = motif_prompt(mood)
-    seed = derive_seed(run_seed, "motif", story_index)
-    motif = get_provider().generate_fresh(prompt, MOTIF_SECONDS, seed)
+def _motif_seed(run_seed, story_index, take):
+    # Take 0 keeps the original seed so the legacy path is unchanged.
+    if take == 0:
+        return derive_seed(run_seed, "motif", story_index)
+    return derive_seed(run_seed, "motif", story_index, "take", take)
+
+
+def rank_motif(motif, cue):
+    """Higher is better. Tempo/key match against the cue, how many stable
+    12 s reference windows the motif offers, and spectral fullness."""
+    info = analyse_music(motif, SR, cue.tempo_bpm, cue.key, cue.mode)
+    reference_samples = int(round(PHRASE_DURATION * SR))
+    step = int(round(1.0 * SR))
+    scores = sorted(window_stability(motif[s:s + reference_samples])["score"]
+                    for s in range(0, max(1, len(motif) - reference_samples + 1), step))
+    stability = max(0.0, 1.0 - float(np.mean(scores[:4])) / 40.0) if scores else 0.0
+    info["reference_stability"] = stability
+    info["rank"] = (35.0 * info["tempo_match"] + 25.0 * info["key_match"]
+                    + 25.0 * stability + 15.0 * info["fullness"])
+    return info
+
+
+def generate_motif(story_index, mood, output_dir, run_seed, cue=None, takes=None,
+                   return_report=False, log=print):
+    if cue is None:
+        prompt = motif_prompt(mood)
+        takes = 1
+    else:
+        prompt = motif_prompt_from_cue(cue)
+        takes = MOTIF_TAKES if takes is None else int(takes)
+    provider = get_provider()
+    best, rows = None, []
+    for take in range(takes):
+        seed = _motif_seed(run_seed, story_index, take)
+        motif = f32(provider.generate_fresh(prompt, MOTIF_SECONDS, seed))
+        row = {"take": take + 1, "seed": seed}
+        if cue is not None:
+            row.update(rank_motif(motif, cue))
+            log(f"  motif take {take + 1}/{takes}: rank={row['rank']:.1f} "
+                f"tempo={row['tempo_bpm']:.1f} key={row['key']} seam={row['seam']:.2f}")
+        rows.append(row)
+        if best is None or row.get("rank", 0.0) > best[2].get("rank", 0.0):
+            best = (motif, seed, row)
+    motif, seed, _ = best
     path = output_dir / "motif_seed_28s.wav"
     write_audio(path, motif, SR)
-    return f32(motif), str(path), prompt, seed
+    if return_report:
+        return motif, str(path), prompt, seed, rows
+    return motif, str(path), prompt, seed
 
 
 # ============================================================
@@ -385,8 +437,21 @@ def _fmt_similarity(value):
     return "n/a" if value is None else f"{value:.3f}"
 
 
-def generate_layer_phrases(story_index, mood, references, motif_profile, story_dir, run_seed, log=print):
-    prompts = layer_prompts(mood)
+def rank_phrase(audio, report, cue):
+    """Story-aware take score: the original quality score (gates, valleys,
+    motif chroma similarity) plus musical fit. Invalid takes keep their
+    score but always lose to a valid one."""
+    info = analyse_music(audio, SR, cue.tempo_bpm, cue.key, cue.mode)
+    rank = (report["quality"] + 15.0 * info["seam"] + 15.0 * info["tempo_match"]
+            + 10.0 * info["key_match"] + 5.0 * info["fullness"])
+    info["rank"] = float(rank if report["valid"] else rank - 1000.0)
+    return info
+
+
+def generate_layer_phrases(story_index, mood, references, motif_profile, story_dir, run_seed, log=print,
+                           cue=None, takes=None):
+    prompts = layer_prompts(mood) if cue is None else layer_prompts_from_cue(cue)
+    attempts = MAX_ATTEMPTS if cue is None else (PHRASE_TAKES if takes is None else int(takes))
     phrase_samples = int(round(PHRASE_DURATION * SR))
     layer_phrases = {name: [] for name in LAYER_NAMES}
     quality_rows = []
@@ -395,30 +460,41 @@ def generate_layer_phrases(story_index, mood, references, motif_profile, story_d
     for layer in LAYER_NAMES:
         log(f"\nGenerating {layer}...")
         for phrase_index in range(PHRASES_PER_LAYER):
-            best_audio, best_report, accepted = None, None, False
+            best_audio, best_score, best_row, accepted = None, None, None, False
             ref_index = (phrase_index + LAYER_REFERENCE_OFFSET[layer]) % len(references)
             reference = references[ref_index]
 
-            for attempt in range(MAX_ATTEMPTS):
+            for attempt in range(attempts):
                 seed = derive_seed(run_seed, "layer", layer, story_index, phrase_index, attempt)
                 log(f"  phrase {phrase_index + 1}/{PHRASES_PER_LAYER} "
-                    f"attempt {attempt + 1}/{MAX_ATTEMPTS} ref={ref_index + 1}")
+                    f"attempt {attempt + 1}/{attempts} ref={ref_index + 1}")
                 try:
                     generated = provider.generate_conditioned(prompts[layer], PHRASE_DURATION, reference,
                                                                LAYER_NOISE[layer], seed)
                     generated = normalize_peak(fit_length(generated, phrase_samples), 0.85)
                     report = phrase_quality(generated, motif_profile)
-                    quality_rows.append({"layer": layer, "phrase": phrase_index + 1,
-                                         "attempt": attempt + 1, "seed": seed,
-                                         "reference": ref_index + 1, **report})
+                    row = {"layer": layer, "phrase": phrase_index + 1,
+                           "attempt": attempt + 1, "seed": seed,
+                           "reference": ref_index + 1, **report}
+                    if cue is None:
+                        score = report["quality"]
+                    else:
+                        fit = rank_phrase(generated, report, cue)
+                        row["musical_fit"] = fit
+                        score = fit["rank"]
+                    quality_rows.append(row)
                     log(f"    quality={report['quality']:.1f} "
                         f"valley={report.get('local_valley_db', float('nan')):.1f}dB "
-                        f"motif={_fmt_similarity(report.get('motif_similarity'))}")
-                    if best_report is None or report["quality"] > best_report["quality"]:
-                        best_audio, best_report = generated, report
+                        f"motif={_fmt_similarity(report.get('motif_similarity'))}"
+                        + ("" if cue is None else
+                           f" tempo={row['musical_fit']['tempo_bpm']:.1f} seam={row['musical_fit']['seam']:.2f}"))
+                    row["selected"] = False
+                    if best_score is None or score > best_score:
+                        best_audio, best_score, best_row = generated, score, row
                     if report["valid"]:
                         accepted = True
-                        break
+                        if cue is None:
+                            break          # legacy: first valid attempt wins
                 except Exception as exc:
                     log(f"    generation error: {exc!r}")
 
@@ -426,6 +502,7 @@ def generate_layer_phrases(story_index, mood, references, motif_profile, story_d
                 raise RuntimeError(f"No candidate for {layer} phrase {phrase_index + 1}")
             if not accepted:
                 log("    fallback to best candidate")
+            best_row["selected"] = True
 
             write_audio(story_dir / f"{layer}_phrase_{phrase_index + 1:02d}.wav", best_audio, SR)
             layer_phrases[layer].append(best_audio)

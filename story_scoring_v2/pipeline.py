@@ -1,8 +1,9 @@
 # ============================================================
 # STORY SCORING LAB — GENERALIZATION V2 PIPELINE
 #
-# narration -> transcript -> mood -> 7 story sections -> fresh motif ->
-# reference windows -> core/pressure/climax phrases (quality gated) ->
+# narration -> transcript -> story cue sheet (vibe, palette, tempo, key,
+# arc, hit points) -> 7 story sections -> fresh motif (best of N takes) ->
+# reference windows -> core/pressure/climax phrases (best of N takes) ->
 # V2 exact-waveform optimizer -> exact render -> adaptive ducking ->
 # score_raw / score_ducked / voice_music_preview / manifest.json
 #
@@ -33,6 +34,7 @@ from music_generation import (
     generate_motif, choose_references, chroma_profile, generate_layer_phrases,
 )
 from run_seed import generate_run_seed
+from cue_sheet import build_cue_sheet, describe as describe_cue
 from mix_engineering import mix_and_master, qc_report, format_qc, DEFAULT_DELIVERY, DELIVERY_SPECS
 # </local-imports>
 
@@ -192,7 +194,7 @@ def score_story(layer_phrases, boundaries, voice_mono, story_dir, manifest_base,
 # FULL STORY (Stable Audio generation + scoring)
 # ============================================================
 
-def process_story(story_index, story_path, out_root, run_seed, log=print):
+def process_story(story_index, story_path, out_root, run_seed, log=print, story_aware=True):
     """run_seed: the ONE seed for this whole production job (all stories in
     the job share it). Every motif/phrase seed is derived from it, so this
     job's material differs from any other job's, while re-running this exact
@@ -225,14 +227,21 @@ def process_story(story_index, story_path, out_root, run_seed, log=print):
     for i, label in enumerate(STORY_LABELS):
         log(f"  {label:<28}{boundaries[i]:7.2f}s -> {boundaries[i + 1]:7.2f}s")
 
-    motif, motif_path, prompt, motif_seed = generate_motif(story_index, mood, story_dir, run_seed)
+    cue = build_cue_sheet(segments, duration, list(boundaries)) if story_aware else None
+    if cue is not None:
+        log("Story cue sheet:")
+        for line in describe_cue(cue):
+            log(f"  {line}")
+
+    motif, motif_path, prompt, motif_seed, motif_takes = generate_motif(
+        story_index, mood, story_dir, run_seed, cue=cue, return_report=True, log=log)
     references, reference_starts = choose_references(motif)
     for i, reference in enumerate(references, start=1):
         write_audio(story_dir / f"reference_{i:02d}.wav", reference, SR)
     motif_profile = chroma_profile(motif)
 
     layer_phrases, quality_rows = generate_layer_phrases(
-        story_index, mood, references, motif_profile, story_dir, run_seed, log=log
+        story_index, mood, references, motif_profile, story_dir, run_seed, log=log, cue=cue
     )
 
     manifest_base = {
@@ -241,10 +250,13 @@ def process_story(story_index, story_path, out_root, run_seed, log=print):
         "transcript_file": transcript_path,
         "transcript_segments": len(segments),
         "detected_mood": mood,
+        "story_aware": story_aware,
+        "cue_sheet": cue.to_dict() if cue is not None else None,
         "motif": {
             "path": motif_path,
             "prompt": prompt,
             "seed": motif_seed,
+            "takes": motif_takes,
             "reference_starts_seconds": [float(x / SR) for x in reference_starts],
         },
         "quality_report": quality_rows,
@@ -343,6 +355,9 @@ def main(argv=None):
                         help="Seed for this whole job (all stories in it). Omit for a fresh "
                              "production job (default); pass an explicit value to reproduce "
                              "a previous job's exact motif/phrases.")
+    parser.add_argument("--legacy-prompts", action="store_true",
+                        help="Use the original fixed V1/V2 prompts and first-valid-take logic "
+                             "instead of the story cue sheet (reproduces the validated benchmark).")
     # parse_known_args: Kaggle/Jupyter pass their own -f argument.
     args, _ = parser.parse_known_args(argv)
 
@@ -360,7 +375,8 @@ def main(argv=None):
     for i, path in enumerate(story_files, start=1):
         print(f"{i}. {os.path.basename(path)}")
 
-    manifests = [process_story(i, path, out_root, run_seed) for i, path in enumerate(story_files, start=1)]
+    manifests = [process_story(i, path, out_root, run_seed, story_aware=not args.legacy_prompts)
+                 for i, path in enumerate(story_files, start=1)]
 
     rows = summarize(manifests)
     for row, m in zip(rows, manifests):

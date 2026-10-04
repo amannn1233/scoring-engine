@@ -9,7 +9,7 @@ import re
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-MODULES = ["audio_io.py", "run_seed.py", "scoring_engine.py", "story_analysis.py", "music_generation.py", "mix_engineering.py", "pipeline.py"]
+MODULES = ["audio_io.py", "run_seed.py", "scoring_engine.py", "story_analysis.py", "cue_sheet.py", "music_analysis.py", "music_generation.py", "mix_engineering.py", "pipeline.py"]
 OUT = HERE / "dist" / "story_generalization_v2_exact_waveform.py"
 
 LOCAL_BLOCK = re.compile(r"# <local-imports>.*?# </local-imports>\n", re.S)
