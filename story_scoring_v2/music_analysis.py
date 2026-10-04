@@ -167,3 +167,47 @@ def analyse(audio, sr, target_bpm=None, target_key=None, target_mode=None):
     if target_key and target_mode:
         out["key_match"] = key_match(tonic, family, target_key, target_mode)
     return out
+
+
+def strong_onsets(audio, sr, min_gap_s=0.12, top_fraction=0.4):
+    """Sample-accurate times (s) of the strongest attacks: peaks of the rise
+    of a 5 ms RMS envelope, at least min_gap_s apart, top fraction kept."""
+    mono = _mono(audio)
+    w = max(1, int(0.005 * sr))
+    rms = np.sqrt(np.maximum(np.convolve(mono * mono, np.ones(w) / w, mode="same"), 0.0))
+    rise = np.maximum(np.diff(rms, prepend=rms[0]), 0.0)
+    rise = np.convolve(rise, np.ones(w) / w, mode="same")
+    gap = int(min_gap_s * sr)
+    peaks = []
+    order = np.argsort(rise)[::-1]
+    taken = np.zeros(len(rise), dtype=bool)
+    limit = max(1, int(len(rise) / gap))
+    for i in order[: limit * 50]:
+        if rise[i] <= 0 or taken[max(0, i - gap):i + gap].any():
+            continue
+        taken[i] = True
+        peaks.append((rise[i], i))
+        if len(peaks) >= limit:
+            break
+    if not peaks:
+        return np.zeros(0)
+    peaks.sort(reverse=True)
+    keep = peaks[: max(1, int(len(peaks) * top_fraction))]
+    return np.sort(np.array([i for _, i in keep])) / sr
+
+
+def grid_lock(audio, sr, bpm, tol_s=0.025):
+    """How tightly the strongest attacks sit on ONE beat grid across the
+    whole file: fraction within +-tol of the best-phase grid, rescaled so a
+    random grid scores 0 and a perfect one 1."""
+    on = strong_onsets(audio, sr)
+    if len(on) < 4:
+        return 0.0
+    beat = 60.0 / bpm
+    best = 0.0
+    for k in range(96):
+        ph = k / 96 * beat
+        d = np.abs(((on - ph + beat / 2) % beat) - beat / 2)
+        best = max(best, float(np.mean(d <= tol_s)))
+    chance = min(1.0, 2 * tol_s / beat)
+    return float(np.clip((best - chance) / (1 - chance), 0, 1))

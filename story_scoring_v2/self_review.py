@@ -108,21 +108,7 @@ def make_music(n, amp, seed=0, sr=SR):
 
 
 def grid_lock(music, sr, bpm):
-    """Fraction of onset energy within +-35 ms of the best beat grid,
-    minus what a random grid would catch. 1 = locked, 0 = no grid."""
-    env, fps = A.onset_envelope(music, sr)
-    if not env.any():
-        return 0.0
-    beat = 60.0 / bpm * fps
-    tol = 0.035 * fps
-    frames = np.arange(len(env))
-    best = 0.0
-    for k in range(48):
-        ph = k / 48 * beat
-        d = np.abs(((frames - ph + beat / 2) % beat) - beat / 2)
-        best = max(best, float(env[d <= tol].sum() / env.sum()))
-    chance = min(1.0, 2 * tol / beat)
-    return float(np.clip((best - chance) / (1 - chance), 0, 1))
+    return A.grid_lock(music, sr, bpm)
 
 
 # ============================================================
@@ -200,7 +186,7 @@ def item4_continuity(manifest, music, cue):
     tm = A.tempo_match(bpm, g["bpm"])
     it.partial(tm, 2, f"whole score tempo {bpm:.1f} vs grid {g['bpm']:.0f} BPM (match {tm:.2f})")
     lock = grid_lock(music, SR, g["bpm"])
-    it.partial(lock / 0.6, 3, f"onset energy locked to one beat grid across the whole score: {lock:.2f}")
+    it.partial(lock / 0.85, 3, f"strongest attacks on one beat grid across the whole score: {lock:.2f}")
     tonic, fam, _ = A.estimate_key(music, SR)
     km = A.key_match(tonic, fam, cue.key, cue.mode)
     it.partial(km, 2, f"whole score key {tonic} {fam} vs {cue.key_label} (match {km:.1f})")

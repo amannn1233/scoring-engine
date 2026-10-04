@@ -32,7 +32,7 @@ from scoring_engine import (
 from audio_io import write_audio
 from run_seed import derive_seed
 from cue_sheet import motif_prompt_from_cue, layer_prompts_from_cue
-from music_analysis import analyse as analyse_music, chroma as music_chroma
+from music_analysis import analyse as analyse_music, chroma as music_chroma, grid_lock as music_grid_lock
 from arrangement import plan_grid
 # </local-imports>
 
@@ -497,8 +497,16 @@ def rank_phrase(audio, report, cue):
     info["sustain_spread_db"] = prof["spread_db"]
     sustain = max(0.0, 1.0 - max(0.0, prof["drop_db"]) / 12.0)
     info["sustain"] = sustain
+    # Pulse steadiness at the take's own tempo (folded toward the cue), so a
+    # take that's 2 % fast but rock steady still scores: the arranger
+    # conforms it to the grid by beat slicing.
+    own = info["tempo_bpm"]
+    if own > 0:
+        own = min((own * k for k in (0.5, 1.0, 2.0)), key=lambda b: abs(np.log(b / cue.tempo_bpm)))
+    from_grid = music_grid_lock(audio, SR, own) if own > 0 else 0.0
+    info["grid_lock"] = from_grid
     rank = (report["quality"] + 15.0 * info["seam"] + 15.0 * info["tempo_match"]
-            + 10.0 * info["key_match"] + 5.0 * info["fullness"] + 20.0 * sustain)
+            + 10.0 * info["key_match"] + 5.0 * info["fullness"] + 20.0 * sustain + 10.0 * from_grid)
     info["rank"] = float(rank if report["valid"] else rank - 1000.0)
     return info
 

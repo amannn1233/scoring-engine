@@ -37,7 +37,7 @@ from scoring_engine import (
     SR, LAYER_NAMES, LAYER_RMS_DB, MIX_PEAK, f32, normalize_peak, set_rms_db, to_mono,
     measure_score,
 )
-from music_analysis import onset_envelope, estimate_tempo
+from music_analysis import onset_envelope, estimate_tempo, grid_lock
 # </local-imports>
 
 
@@ -149,10 +149,82 @@ def wsola_stretch(audio, rate, win_s=0.046, tol_s=0.012):
     return out[:n_out]
 
 
+def _beat_phase(env, fps, beat_s):
+    beat_frames = beat_s * fps
+    best = (-1.0, 0.0)
+    for k in range(64):
+        phase = k / 64.0 * beat_s
+        idx = (phase * fps + beat_frames * np.arange(int(len(env) / beat_frames) + 1)).astype(int)
+        idx = idx[idx < len(env)]
+        score = sum(env[np.clip(idx + d, 0, len(env) - 1)].sum() for d in (-1, 0, 1))
+        if score > best[0]:
+            best = (score, phase)
+    return best[1]
+
+
+def beat_slice_conform(audio, src_bpm, dst_bpm, keep_s=0.045, snap_s=0.03, xf_s=0.004):
+    """Tempo-conform the way a music editor does (REX-style beat slicing):
+    find every beat in the source, keep each beat's first `keep_s` (the
+    transient) untouched, and WSOLA-stretch only the rest of the beat so it
+    fills exactly one destination beat. Transients land exactly on the new
+    grid and are never smeared or doubled."""
+    audio = np.asarray(audio, dtype=np.float64)
+    env, fps = onset_envelope(audio, SR)
+    src_beat, dst_beat = 60.0 / src_bpm, 60.0 / dst_bpm
+    phase = _beat_phase(env, fps, src_beat)
+    # Sample-accurate onset strength: rise of a 5 ms RMS envelope.
+    mono = audio.mean(axis=1)
+    w = max(1, int(0.005 * SR))
+    rms = np.sqrt(np.maximum(np.convolve(mono * mono, np.ones(w) / w, mode="same"), 0.0))
+    rise = np.maximum(np.diff(rms, prepend=rms[0]), 0.0)
+    rise = np.convolve(rise, np.ones(w) / w, mode="same")
+    snap = int(round(snap_s * SR))
+    # The onset envelope's frames lag the audio by about one analysis window.
+    lag = 1536.0 / SR
+    starts = []
+    t = phase + lag
+    while t * SR < len(audio):
+        c = int(round(t * SR))
+        lo, hi = max(0, c - snap), min(len(rise), c + snap + 1)
+        if hi > lo and rise[lo:hi].max() > 0:
+            c = lo + int(np.argmax(rise[lo:hi]))       # snap to the actual onset
+        starts.append(max(0, c - int(0.002 * SR)))    # 2 ms pre-roll keeps the attack whole
+        t += src_beat
+    starts = sorted(set(starts))
+    keep = int(round(keep_s * SR))
+    dst = int(round(dst_beat * SR))
+    xf = max(1, int(round(xf_s * SR)))
+    ramp = np.linspace(0.0, 1.0, xf)
+    out = [audio[:starts[0]]] if starts and starts[0] > 0 else []
+    for i, a in enumerate(starts):
+        b = starts[i + 1] if i + 1 < len(starts) else min(len(audio), a + int(round(src_beat * SR)))
+        seg = audio[a:b]
+        if len(seg) <= keep + xf * 2:
+            piece = np.pad(seg, ((0, max(0, dst + xf - len(seg))), (0, 0)))[:dst + xf]
+        else:
+            body = seg[keep:]
+            rate = (dst - keep + 2 * xf) / len(body)
+            stretched = wsola_stretch(body, rate, win_s=0.02, tol_s=0.006) if abs(rate - 1) > 1e-4 else body
+            # dst - keep + 2*xf: one xf is eaten by the keep/body joint, one by
+            # the crossfade into the next slice, so each slice spans exactly dst.
+            need = dst - keep + 2 * xf
+            stretched = np.pad(stretched, ((0, max(0, need - len(stretched))), (0, 0)))[:need]
+            joint = seg[keep - xf:keep] * (1 - ramp)[:, None] + stretched[:xf] * ramp[:, None]
+            piece = np.concatenate([seg[:keep - xf], joint, stretched[xf:]])
+        if out and xf < len(piece):
+            prev = out[-1]
+            if len(prev) >= xf:
+                tail = prev[-xf:] * (1 - ramp)[:, None] + piece[:xf] * ramp[:, None]
+                out[-1] = prev[:-xf]
+                piece = np.concatenate([tail, piece[xf:]])
+        out.append(piece)
+    return np.concatenate(out) if out else audio.copy()
+
+
 def conform_tempo(audio, grid, max_correction=0.06):
-    """Stretch a phrase to exactly the grid tempo when the model drifted
-    a little (half/double-time readings are folded first). Returns
-    (audio, measured_bpm, stretch_rate)."""
+    """Bring a phrase to exactly the grid tempo when the model drifted a
+    little (half/double-time readings are folded first), by beat slicing.
+    Returns (audio, measured_bpm, stretch_rate)."""
     bpm, conf = estimate_tempo(audio, SR)
     if bpm <= 0 or conf < 0.2:
         return audio, bpm, 1.0
@@ -160,7 +232,9 @@ def conform_tempo(audio, grid, max_correction=0.06):
     rate = folded / grid.bpm                 # 87 BPM -> 86 BPM grid: 1.0116x longer
     if abs(rate - 1.0) < 0.002 or abs(rate - 1.0) > max_correction:
         return audio, bpm, 1.0
-    return f32(wsola_stretch(audio, rate)), bpm, rate
+    if grid_lock(audio, SR, folded) < 0.4:
+        return audio, bpm, 1.0             # no steady pulse (pads, rubato): nothing to slice
+    return f32(beat_slice_conform(audio, folded, grid.bpm)), bpm, rate
 
 
 def _low_onsets(audio):
@@ -292,10 +366,17 @@ def section_intensity(cue):
     revelation (climax section) is the peak and the aftermath releases."""
     a = np.clip(np.asarray(cue.arc, dtype=np.float64), 0.0, 1.0)
     a = 0.15 + 0.7 * (a - a.min()) / max(1e-6, a.max() - a.min())
+    # A score under narration opens present but modest (the hook is told,
+    # not scored at full tilt) and moves in steps a mixer would ride, not
+    # jumps: at most 0.22 (~2 dB of target) between neighbouring sections
+    # until the turn, which is allowed to hit.
+    a[0] = float(np.clip(a[0], 0.3, 0.55))
+    for i in range(1, 5):
+        a[i] = float(np.clip(a[i], a[i - 1] - 0.22, a[i - 1] + 0.22))
+    a[4] = max(a[4], a[3])
     a[5] = max(a[5], a[:5].max() + 0.12, 0.9)
-    a[4] = min(max(a[4], a[3]), a[5] - 0.08)
-    a[6] = min(a[6], a[5] - 0.35)
-    a[0] = max(a[0], 0.3)                     # the hook should be heard
+    a[4] = min(a[4], a[5] - 0.08)
+    a[6] = float(np.clip(a[6], a[5] - 0.5, a[5] - 0.35))
     return np.clip(a, 0.05, 1.0)
 
 
@@ -554,6 +635,7 @@ def arrange_story(phrases, cue, base_boundaries, voice_seconds, log=print):
         "section_intensity": [float(x) for x in section_intensity(cue)],
         "section_targets_db": [float(x) for x in targets],
         "search_objective": search_metrics["objective"],
+        "search_metrics": search_metrics,
         "final_without_hits_objective": search_check["objective"],
         "search_vs_final_aligned": abs(search_metrics["objective"] - search_check["objective"]) < 1e-6,
         "final_metrics": final,

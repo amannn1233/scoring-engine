@@ -8,7 +8,7 @@
 #   input  /kaggle/input   (stories 71, 72, 86; WAV preferred; 85 excluded)
 #   output /kaggle/working/story_generalization_v2_exact_waveform/
 #   zip    /kaggle/working/story_generalization_v2_exact_waveform.zip
-# Source digest: 1a51a464725bd9f9
+# Source digest: 745405a3ae1f9267
 # ============================================================
 
 # ##########  audio_io.py  ##########
@@ -1785,6 +1785,50 @@ def analyse(audio, sr, target_bpm=None, target_key=None, target_mode=None):
         out["key_match"] = key_match(tonic, family, target_key, target_mode)
     return out
 
+
+def strong_onsets(audio, sr, min_gap_s=0.12, top_fraction=0.4):
+    """Sample-accurate times (s) of the strongest attacks: peaks of the rise
+    of a 5 ms RMS envelope, at least min_gap_s apart, top fraction kept."""
+    mono = _mono(audio)
+    w = max(1, int(0.005 * sr))
+    rms = np.sqrt(np.maximum(np.convolve(mono * mono, np.ones(w) / w, mode="same"), 0.0))
+    rise = np.maximum(np.diff(rms, prepend=rms[0]), 0.0)
+    rise = np.convolve(rise, np.ones(w) / w, mode="same")
+    gap = int(min_gap_s * sr)
+    peaks = []
+    order = np.argsort(rise)[::-1]
+    taken = np.zeros(len(rise), dtype=bool)
+    limit = max(1, int(len(rise) / gap))
+    for i in order[: limit * 50]:
+        if rise[i] <= 0 or taken[max(0, i - gap):i + gap].any():
+            continue
+        taken[i] = True
+        peaks.append((rise[i], i))
+        if len(peaks) >= limit:
+            break
+    if not peaks:
+        return np.zeros(0)
+    peaks.sort(reverse=True)
+    keep = peaks[: max(1, int(len(peaks) * top_fraction))]
+    return np.sort(np.array([i for _, i in keep])) / sr
+
+
+def grid_lock(audio, sr, bpm, tol_s=0.025):
+    """How tightly the strongest attacks sit on ONE beat grid across the
+    whole file: fraction within +-tol of the best-phase grid, rescaled so a
+    random grid scores 0 and a perfect one 1."""
+    on = strong_onsets(audio, sr)
+    if len(on) < 4:
+        return 0.0
+    beat = 60.0 / bpm
+    best = 0.0
+    for k in range(96):
+        ph = k / 96 * beat
+        d = np.abs(((on - ph + beat / 2) % beat) - beat / 2)
+        best = max(best, float(np.mean(d <= tol_s)))
+    chance = min(1.0, 2 * tol_s / beat)
+    return float(np.clip((best - chance) / (1 - chance), 0, 1))
+
 # ##########  arrangement.py  ##########
 
 # ============================================================
@@ -1931,10 +1975,82 @@ def wsola_stretch(audio, rate, win_s=0.046, tol_s=0.012):
     return out[:n_out]
 
 
+def _beat_phase(env, fps, beat_s):
+    beat_frames = beat_s * fps
+    best = (-1.0, 0.0)
+    for k in range(64):
+        phase = k / 64.0 * beat_s
+        idx = (phase * fps + beat_frames * np.arange(int(len(env) / beat_frames) + 1)).astype(int)
+        idx = idx[idx < len(env)]
+        score = sum(env[np.clip(idx + d, 0, len(env) - 1)].sum() for d in (-1, 0, 1))
+        if score > best[0]:
+            best = (score, phase)
+    return best[1]
+
+
+def beat_slice_conform(audio, src_bpm, dst_bpm, keep_s=0.045, snap_s=0.03, xf_s=0.004):
+    """Tempo-conform the way a music editor does (REX-style beat slicing):
+    find every beat in the source, keep each beat's first `keep_s` (the
+    transient) untouched, and WSOLA-stretch only the rest of the beat so it
+    fills exactly one destination beat. Transients land exactly on the new
+    grid and are never smeared or doubled."""
+    audio = np.asarray(audio, dtype=np.float64)
+    env, fps = onset_envelope(audio, SR)
+    src_beat, dst_beat = 60.0 / src_bpm, 60.0 / dst_bpm
+    phase = _beat_phase(env, fps, src_beat)
+    # Sample-accurate onset strength: rise of a 5 ms RMS envelope.
+    mono = audio.mean(axis=1)
+    w = max(1, int(0.005 * SR))
+    rms = np.sqrt(np.maximum(np.convolve(mono * mono, np.ones(w) / w, mode="same"), 0.0))
+    rise = np.maximum(np.diff(rms, prepend=rms[0]), 0.0)
+    rise = np.convolve(rise, np.ones(w) / w, mode="same")
+    snap = int(round(snap_s * SR))
+    # The onset envelope's frames lag the audio by about one analysis window.
+    lag = 1536.0 / SR
+    starts = []
+    t = phase + lag
+    while t * SR < len(audio):
+        c = int(round(t * SR))
+        lo, hi = max(0, c - snap), min(len(rise), c + snap + 1)
+        if hi > lo and rise[lo:hi].max() > 0:
+            c = lo + int(np.argmax(rise[lo:hi]))       # snap to the actual onset
+        starts.append(max(0, c - int(0.002 * SR)))    # 2 ms pre-roll keeps the attack whole
+        t += src_beat
+    starts = sorted(set(starts))
+    keep = int(round(keep_s * SR))
+    dst = int(round(dst_beat * SR))
+    xf = max(1, int(round(xf_s * SR)))
+    ramp = np.linspace(0.0, 1.0, xf)
+    out = [audio[:starts[0]]] if starts and starts[0] > 0 else []
+    for i, a in enumerate(starts):
+        b = starts[i + 1] if i + 1 < len(starts) else min(len(audio), a + int(round(src_beat * SR)))
+        seg = audio[a:b]
+        if len(seg) <= keep + xf * 2:
+            piece = np.pad(seg, ((0, max(0, dst + xf - len(seg))), (0, 0)))[:dst + xf]
+        else:
+            body = seg[keep:]
+            rate = (dst - keep + 2 * xf) / len(body)
+            stretched = wsola_stretch(body, rate, win_s=0.02, tol_s=0.006) if abs(rate - 1) > 1e-4 else body
+            # dst - keep + 2*xf: one xf is eaten by the keep/body joint, one by
+            # the crossfade into the next slice, so each slice spans exactly dst.
+            need = dst - keep + 2 * xf
+            stretched = np.pad(stretched, ((0, max(0, need - len(stretched))), (0, 0)))[:need]
+            joint = seg[keep - xf:keep] * (1 - ramp)[:, None] + stretched[:xf] * ramp[:, None]
+            piece = np.concatenate([seg[:keep - xf], joint, stretched[xf:]])
+        if out and xf < len(piece):
+            prev = out[-1]
+            if len(prev) >= xf:
+                tail = prev[-xf:] * (1 - ramp)[:, None] + piece[:xf] * ramp[:, None]
+                out[-1] = prev[:-xf]
+                piece = np.concatenate([tail, piece[xf:]])
+        out.append(piece)
+    return np.concatenate(out) if out else audio.copy()
+
+
 def conform_tempo(audio, grid, max_correction=0.06):
-    """Stretch a phrase to exactly the grid tempo when the model drifted
-    a little (half/double-time readings are folded first). Returns
-    (audio, measured_bpm, stretch_rate)."""
+    """Bring a phrase to exactly the grid tempo when the model drifted a
+    little (half/double-time readings are folded first), by beat slicing.
+    Returns (audio, measured_bpm, stretch_rate)."""
     bpm, conf = estimate_tempo(audio, SR)
     if bpm <= 0 or conf < 0.2:
         return audio, bpm, 1.0
@@ -1942,7 +2058,9 @@ def conform_tempo(audio, grid, max_correction=0.06):
     rate = folded / grid.bpm                 # 87 BPM -> 86 BPM grid: 1.0116x longer
     if abs(rate - 1.0) < 0.002 or abs(rate - 1.0) > max_correction:
         return audio, bpm, 1.0
-    return f32(wsola_stretch(audio, rate)), bpm, rate
+    if grid_lock(audio, SR, folded) < 0.4:
+        return audio, bpm, 1.0             # no steady pulse (pads, rubato): nothing to slice
+    return f32(beat_slice_conform(audio, folded, grid.bpm)), bpm, rate
 
 
 def _low_onsets(audio):
@@ -2074,10 +2192,17 @@ def section_intensity(cue):
     revelation (climax section) is the peak and the aftermath releases."""
     a = np.clip(np.asarray(cue.arc, dtype=np.float64), 0.0, 1.0)
     a = 0.15 + 0.7 * (a - a.min()) / max(1e-6, a.max() - a.min())
+    # A score under narration opens present but modest (the hook is told,
+    # not scored at full tilt) and moves in steps a mixer would ride, not
+    # jumps: at most 0.22 (~2 dB of target) between neighbouring sections
+    # until the turn, which is allowed to hit.
+    a[0] = float(np.clip(a[0], 0.3, 0.55))
+    for i in range(1, 5):
+        a[i] = float(np.clip(a[i], a[i - 1] - 0.22, a[i - 1] + 0.22))
+    a[4] = max(a[4], a[3])
     a[5] = max(a[5], a[:5].max() + 0.12, 0.9)
-    a[4] = min(max(a[4], a[3]), a[5] - 0.08)
-    a[6] = min(a[6], a[5] - 0.35)
-    a[0] = max(a[0], 0.3)                     # the hook should be heard
+    a[4] = min(a[4], a[5] - 0.08)
+    a[6] = float(np.clip(a[6], a[5] - 0.5, a[5] - 0.35))
     return np.clip(a, 0.05, 1.0)
 
 
@@ -2336,6 +2461,7 @@ def arrange_story(phrases, cue, base_boundaries, voice_seconds, log=print):
         "section_intensity": [float(x) for x in section_intensity(cue)],
         "section_targets_db": [float(x) for x in targets],
         "search_objective": search_metrics["objective"],
+        "search_metrics": search_metrics,
         "final_without_hits_objective": search_check["objective"],
         "search_vs_final_aligned": abs(search_metrics["objective"] - search_check["objective"]) < 1e-6,
         "final_metrics": final,
@@ -2835,8 +2961,16 @@ def rank_phrase(audio, report, cue):
     info["sustain_spread_db"] = prof["spread_db"]
     sustain = max(0.0, 1.0 - max(0.0, prof["drop_db"]) / 12.0)
     info["sustain"] = sustain
+    # Pulse steadiness at the take's own tempo (folded toward the cue), so a
+    # take that's 2 % fast but rock steady still scores: the arranger
+    # conforms it to the grid by beat slicing.
+    own = info["tempo_bpm"]
+    if own > 0:
+        own = min((own * k for k in (0.5, 1.0, 2.0)), key=lambda b: abs(np.log(b / cue.tempo_bpm)))
+    from_grid = music_grid_lock(audio, SR, own) if own > 0 else 0.0
+    info["grid_lock"] = from_grid
     rank = (report["quality"] + 15.0 * info["seam"] + 15.0 * info["tempo_match"]
-            + 10.0 * info["key_match"] + 5.0 * info["fullness"] + 20.0 * sustain)
+            + 10.0 * info["key_match"] + 5.0 * info["fullness"] + 20.0 * sustain + 10.0 * from_grid)
     info["rank"] = float(rank if report["valid"] else rank - 1000.0)
     return info
 
