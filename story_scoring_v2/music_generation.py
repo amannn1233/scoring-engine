@@ -72,7 +72,9 @@ def best_sustained_window(audio, seconds, step_s=0.25):
     best = None
     for start in range(0, len(audio) - need + 1, step):
         prof = sustain_profile(audio[start:start + need])
-        score = abs(prof["drop_db"]) * 2.0 + prof["spread_db"] + 0.2 * start / SR
+        lv = np.asarray(prof["levels"])
+        dead = float(np.mean(lv < np.median(lv) - 20.0)) if len(lv) else 1.0
+        score = abs(prof["drop_db"]) * 2.0 + prof["spread_db"] + 40.0 * dead + 0.2 * start / SR
         if best is None or score < best[0]:
             best = (score, start)
     start = best[1]
@@ -82,6 +84,11 @@ STEPS = 8
 CFG_SCALE = 1.0
 
 LAYER_NOISE = {"core": 0.10, "pressure": 0.13, "climax": 0.16}
+# Story-aware path: the legacy 0.10-0.16 makes phrases near-copies of the
+# motif window (real renders copied its silent gaps and ignored the layer
+# prompt). More freedom lets each layer play its own part around the motif.
+STORY_LAYER_NOISE = {"core": 0.30, "pressure": 0.40, "climax": 0.50}
+MAX_EXTRA_MOTIF_TAKES = 3     # retry while every motif take has dead air
 LAYER_REFERENCE_OFFSET = {"core": 0, "pressure": 1, "climax": 2}
 
 
@@ -235,8 +242,12 @@ def rank_motif(motif, cue):
     lv = np.asarray(prof["levels"])
     usable = float(np.mean(lv > np.median(lv[: max(1, len(lv) // 3)]) - 12.0)) if len(lv) else 0.0
     info["usable_fraction"] = usable
+    # Dead air: share of half-seconds more than 20 dB under the motif's
+    # typical level (stabs separated by silence are useless as a bed).
+    dead = float(np.mean(lv < np.median(lv) - 20.0)) if len(lv) else 1.0
+    info["dead_air_fraction"] = dead
     info["rank"] = (30.0 * info["tempo_match"] + 20.0 * info["key_match"]
-                    + 20.0 * stability + 10.0 * info["fullness"] + 20.0 * usable)
+                    + 20.0 * stability + 10.0 * info["fullness"] + 20.0 * usable - 60.0 * dead)
     return info
 
 
@@ -250,17 +261,21 @@ def generate_motif(story_index, mood, output_dir, run_seed, cue=None, takes=None
         takes = MOTIF_TAKES if takes is None else int(takes)
     provider = get_provider()
     best, rows = None, []
-    for take in range(takes):
+    take = 0
+    while take < takes or (cue is not None and best is not None
+                           and best[2].get("dead_air_fraction", 0.0) > 0.05
+                           and take < takes + MAX_EXTRA_MOTIF_TAKES):
         seed = _motif_seed(run_seed, story_index, take)
         motif = f32(provider.generate_fresh(prompt, MOTIF_SECONDS, seed))
         row = {"take": take + 1, "seed": seed}
         if cue is not None:
             row.update(rank_motif(motif, cue))
-            log(f"  motif take {take + 1}/{takes}: rank={row['rank']:.1f} "
+            log(f"  motif take {take + 1}: rank={row['rank']:.1f} dead_air={row['dead_air_fraction']:.2f} "
                 f"tempo={row['tempo_bpm']:.1f} key={row['key']} seam={row['seam']:.2f}")
         rows.append(row)
         if best is None or row.get("rank", 0.0) > best[2].get("rank", 0.0):
             best = (motif, seed, row)
+        take += 1
     motif, seed, _ = best
     path = output_dir / "motif_seed_28s.wav"
     write_audio(path, motif, SR)
@@ -536,8 +551,9 @@ def generate_layer_phrases(story_index, mood, references, motif_profile, story_d
                 log(f"  phrase {phrase_index + 1}/{PHRASES_PER_LAYER} "
                     f"attempt {attempt + 1}/{attempts} ref={ref_index + 1}")
                 try:
+                    noise = LAYER_NOISE[layer] if cue is None else STORY_LAYER_NOISE[layer]
                     generated = provider.generate_conditioned(prompts[layer], model_seconds, reference,
-                                                               LAYER_NOISE[layer], seed)
+                                                               noise, seed)
                     window_start = 0.0
                     if cue is not None:
                         generated, window_start = best_sustained_window(generated, phrase_seconds)

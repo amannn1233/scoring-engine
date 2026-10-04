@@ -195,6 +195,13 @@ def item4_continuity(manifest, music, cue):
              f"phrases are {g['phrase_bars']} whole bars, joins land on bar lines")
     it.check(abs(g["xfade_seconds"] - g["beat"]) < 1e-9, 1, "crossfade is exactly one beat")
     it.check(manifest["arrangement_deterministic"], 1, "arrangement renders bit-identically twice")
+    from arrangement import dead_air_regions
+    b = manifest["arrangement"]["boundaries"]
+    end = len(music) / SR
+    protect = [(b[5] - 2 * g["beat"] - 0.1, b[5] + 0.1), (end - 2 * g["bar"], end)]
+    dead = [r for r in dead_air_regions(music) if not any(r[0] < pe and r[1] > ps for ps, pe in protect)]
+    secs = sum(e - s for s, e in dead)
+    it.check(not dead, 3, f"no dead air under the narration ({secs:.1f}s found outside the breath/outro)")
     return it
 
 

@@ -81,7 +81,7 @@ class Grid:
         return d
 
 
-def plan_grid(cue, target_phrase_seconds=10.5, max_generate_seconds=14.0):
+def plan_grid(cue, target_phrase_seconds=10.5, max_generate_seconds=20.0):
     """Bars per phrase: the even count (2, 4, 6, 8) closest to ~10 s, so
     loops are musically square, within what the model generates well."""
     bpm = float(cue.tempo_bpm)
@@ -481,6 +481,89 @@ def _reverse_swell(music, grid, climax_t):
 
 
 # ============================================================
+# DEAD-AIR GUARD
+# ============================================================
+
+def dead_air_regions(mix, min_s=0.4, below_db=18.0, frame_s=0.05):
+    """(start_s, end_s) runs where the score falls more than below_db under
+    its own median level for at least min_s."""
+    mono = np.asarray(mix, dtype=np.float64).mean(axis=1)
+    f = int(round(frame_s * SR))
+    n = len(mono) // f
+    if n < 4:
+        return []
+    lv = 10 * np.log10(np.mean(mono[: n * f].reshape(n, f) ** 2, axis=1) + 1e-12)
+    low = lv < np.median(lv) - below_db
+    out, i = [], 0
+    while i < n:
+        if low[i]:
+            j = i
+            while j < n and low[j]:
+                j += 1
+            if (j - i) * frame_s >= min_s:
+                out.append((i * frame_s, j * frame_s))
+            i = j
+        else:
+            i += 1
+    return out
+
+
+def _freeze(source, seconds, seed):
+    """Spectral freeze: the source's average magnitude spectrum, random
+    phase, overlap-added. Same harmony and timbre as the music around the
+    gap, with no attacks: it reads as the chord ringing on."""
+    n_fft, hop = 4096, 1024
+    rng = np.random.default_rng(seed)
+    win = np.hanning(n_fft)
+    mono_frames = []
+    for ch in range(source.shape[1]):
+        x = source[:, ch]
+        if len(x) < n_fft:
+            x = np.pad(x, (0, n_fft - len(x)))
+        frames = np.lib.stride_tricks.sliding_window_view(x, n_fft)[::hop] * win
+        mono_frames.append(np.abs(np.fft.rfft(frames, axis=1)).mean(axis=0))
+    total = int(round(seconds * SR)) + n_fft
+    out = np.zeros((total, source.shape[1]))
+    norm = np.zeros(total)
+    for start in range(0, total - n_fft + 1, hop):
+        phase = np.exp(2j * np.pi * rng.random(len(mono_frames[0])))
+        for ch, mag in enumerate(mono_frames):
+            out[start:start + n_fft, ch] += np.fft.irfft(mag * phase, n_fft) * win
+        norm[start:start + n_fft] += win ** 2
+    out /= np.maximum(norm, 1e-3)[:, None]
+    return out[: int(round(seconds * SR))]
+
+
+def fill_dead_air(mix, protect=(), level_db=-4.0, fade_s=0.25):
+    """Fill any stretch where the bed dropped out (real model outputs can
+    contain silences) with a spectral freeze of the second before it, so
+    the narration never sits on dead air. `protect` lists (start, end)
+    regions that are silent on purpose (the breath, the outro)."""
+    out = np.array(mix, dtype=np.float64, copy=True)
+    filled = []
+    for k, (a, b) in enumerate(dead_air_regions(mix)):
+        if any(a < pe and b > ps for ps, pe in protect):
+            continue
+        src0 = max(0, int(round((a - 1.0) * SR)))
+        src = out[src0:int(round(a * SR))]
+        if len(src) < int(0.25 * SR) or not np.any(src):
+            continue
+        g0, g1 = max(0.0, a - fade_s), min(len(out) / SR, b + fade_s)
+        length = g1 - g0
+        fz = _freeze(src, length, seed=k)
+        rms_src = np.sqrt(np.mean(src ** 2) + 1e-12)
+        fz *= rms_src * 10 ** (level_db / 20) / (np.sqrt(np.mean(fz ** 2)) + 1e-12)
+        nfade = int(round(fade_s * SR))
+        env = np.ones(len(fz))
+        env[:nfade] = np.sin(0.5 * np.pi * np.arange(nfade) / nfade) ** 2
+        env[-nfade:] = env[:nfade][::-1]
+        i0 = int(round(g0 * SR))
+        out[i0:i0 + len(fz)] += fz[: len(out) - i0] * env[: len(out) - i0, None]
+        filled.append((a, b))
+    return out, filled
+
+
+# ============================================================
 # RENDER + MEASURE + OPTIMISE
 # ============================================================
 
@@ -499,15 +582,22 @@ def music_length(grid, voice_seconds):
     return snap(grid, voice_seconds + grid.bar, "ceil")
 
 
-def _beds(phrases, grid, total):
-    """All (layer, order, offset) beds, RMS-normalised per layer/order."""
-    cache = {}
+def _beds(phrases, grid, total, max_cached=8):
+    """All (layer, order, offset) beds, RMS-normalised per layer/order.
+    float32 and a small LRU: a long story's full candidate set (3 layers x
+    6 orders x offsets x minutes of stereo) does not fit in RAM."""
+    from collections import OrderedDict
+    cache = OrderedDict()
 
     def get(name, order, offset):
         key = (name, tuple(order), int(offset))
-        if key not in cache:
-            bed = build_bed(phrases[name], order, grid, total, offset)
-            cache[key] = np.asarray(set_rms_db(bed, LAYER_RMS_DB), dtype=np.float64)
+        if key in cache:
+            cache.move_to_end(key)
+            return cache[key]
+        bed = build_bed(phrases[name], order, grid, total, offset)
+        cache[key] = np.asarray(set_rms_db(bed, LAYER_RMS_DB), dtype=np.float32)
+        while len(cache) > max_cached:
+            cache.popitem(last=False)
         return cache[key]
     return get
 
@@ -522,6 +612,8 @@ def render_arrangement(phrases, plan, cue, grid, boundaries, voice_seconds, hits
     mix = np.zeros((total, 2), dtype=np.float64)
     for name in LAYER_NAMES:
         mix += get(name, plan.orders[name], plan.offsets_bars[name]) * gains[name][:, None]
+    protect = [(boundaries[5] - 2.0 * grid.beat, boundaries[5] + 0.05), (end_t - 2.0 * grid.bar, end_t)]
+    mix, _ = fill_dead_air(mix, protect)
     if hits:
         mix = apply_hits(mix, cue, grid, boundaries)
     return normalize_peak(f32(mix), MIX_PEAK)

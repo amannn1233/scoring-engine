@@ -282,7 +282,7 @@ def segment_features(text):
 # combination of colours gives a new ensemble.
 _INSTRUMENTS = [
     # lead voices
-    ("staccato prepared piano", "lead", {"pressure": 1.0, "deceit": 0.4, "urgency": 0.3}, {"tension": 0.3}),
+    ("muted prepared piano ostinato", "lead", {"pressure": 1.0, "deceit": 0.4, "urgency": 0.3}, {"tension": 0.3}),
     ("felt piano", "lead", {"intimacy": 1.0, "melancholy": 0.8, "warmth": 0.4}, {"arousal": -0.5}),
     ("solo cello", "lead", {"melancholy": 1.0, "intimacy": 0.6, "darkness": 0.4}, {"valence": -0.4}),
     ("clean electric guitar with tremolo", "lead", {"grit": 0.9, "deceit": 0.5, "darkness": 0.3}, {"tension": 0.3}),
@@ -581,24 +581,30 @@ def build_cue_sheet(segments, duration, boundaries=None):
 NEGATIVE_TAIL = "instrumental only, no vocals, no speech, no lyrics"
 
 
+# Real Stable Audio renders (2026-10-04) of a sparse palette came out as
+# isolated stabs separated by seconds of silence, and the low-noise
+# conditioned phrases copied the gaps. Under narration the bed must never
+# stop, so every prompt states a sustained harmony bed explicitly.
+BED = "legato, continuous sustained bed, no gaps, no silence"
+
+
 def motif_prompt_from_cue(cue):
     p = cue.palette
-    return (f"{cue.style}, memorable three-note motif on {p['lead']}, {p['harmony']}, "
-            f"{p['bass']}, steady and sustained, {cue.tempo_bpm} BPM, {cue.key_label}, no fade out, "
-            f"{NEGATIVE_TAIL}")
+    return (f"{cue.style}, memorable three-note motif on {p['lead']} over sustained {p['harmony']}, "
+            f"{p['bass']}, {BED}, {cue.tempo_bpm} BPM, {cue.key_label}, no fade out, {NEGATIVE_TAIL}")
 
 
 def layer_prompts_from_cue(cue):
     p = cue.palette
     d = cue.descriptors
-    tail = f"{cue.tempo_bpm} BPM, {cue.key_label}, steady sustained loop, no fade out, {NEGATIVE_TAIL}"
+    tail = f"{BED}, {cue.tempo_bpm} BPM, {cue.key_label}, steady loop, no fade out, {NEGATIVE_TAIL}"
     return {
-        "core": (f"{d[0]} {d[-1]} cinematic underscore, same three-note motif on {p['lead']}, "
-                 f"{p['harmony']}, {p['bass']}, sparse, room for narration, {tail}"),
-        "pressure": (f"{d[min(1, len(d) - 1)]} rising tension, same motif, {p['pulse']}, "
-                     f"{p['bass']}, {p['texture']}, {tail}"),
+        "core": (f"{d[0]} {d[-1]} cinematic underscore, same motif on {p['lead']}, sustained "
+                 f"{p['harmony']}, {p['bass']}, understated, room for narration, {tail}"),
+        "pressure": (f"{d[min(1, len(d) - 1)]} rising tension, same motif, {p['pulse']}, sustained "
+                     f"{p['harmony']}, {p['bass']}, {p['texture']}, {tail}"),
         "climax": (f"{d[0]} cinematic climax, same motif on {p['lead']}, {p['hits']}, "
-                   f"{p['pulse']}, full {p['harmony']}, powerful but controlled, {tail}"),
+                   f"{p['pulse']}, full sustained {p['harmony']}, powerful but controlled, {tail}"),
     }
 
 

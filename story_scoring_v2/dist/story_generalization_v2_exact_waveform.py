@@ -8,7 +8,7 @@
 #   input  /kaggle/input   (stories 71, 72, 86; WAV preferred; 85 excluded)
 #   output /kaggle/working/story_generalization_v2_exact_waveform/
 #   zip    /kaggle/working/story_generalization_v2_exact_waveform.zip
-# Source digest: 745405a3ae1f9267
+# Source digest: fb0ba20f2b9a36cb
 # ============================================================
 
 # ##########  audio_io.py  ##########
@@ -1282,7 +1282,7 @@ def segment_features(text):
 # combination of colours gives a new ensemble.
 _INSTRUMENTS = [
     # lead voices
-    ("staccato prepared piano", "lead", {"pressure": 1.0, "deceit": 0.4, "urgency": 0.3}, {"tension": 0.3}),
+    ("muted prepared piano ostinato", "lead", {"pressure": 1.0, "deceit": 0.4, "urgency": 0.3}, {"tension": 0.3}),
     ("felt piano", "lead", {"intimacy": 1.0, "melancholy": 0.8, "warmth": 0.4}, {"arousal": -0.5}),
     ("solo cello", "lead", {"melancholy": 1.0, "intimacy": 0.6, "darkness": 0.4}, {"valence": -0.4}),
     ("clean electric guitar with tremolo", "lead", {"grit": 0.9, "deceit": 0.5, "darkness": 0.3}, {"tension": 0.3}),
@@ -1581,24 +1581,30 @@ def build_cue_sheet(segments, duration, boundaries=None):
 NEGATIVE_TAIL = "instrumental only, no vocals, no speech, no lyrics"
 
 
+# Real Stable Audio renders (2026-10-04) of a sparse palette came out as
+# isolated stabs separated by seconds of silence, and the low-noise
+# conditioned phrases copied the gaps. Under narration the bed must never
+# stop, so every prompt states a sustained harmony bed explicitly.
+BED = "legato, continuous sustained bed, no gaps, no silence"
+
+
 def motif_prompt_from_cue(cue):
     p = cue.palette
-    return (f"{cue.style}, memorable three-note motif on {p['lead']}, {p['harmony']}, "
-            f"{p['bass']}, steady and sustained, {cue.tempo_bpm} BPM, {cue.key_label}, no fade out, "
-            f"{NEGATIVE_TAIL}")
+    return (f"{cue.style}, memorable three-note motif on {p['lead']} over sustained {p['harmony']}, "
+            f"{p['bass']}, {BED}, {cue.tempo_bpm} BPM, {cue.key_label}, no fade out, {NEGATIVE_TAIL}")
 
 
 def layer_prompts_from_cue(cue):
     p = cue.palette
     d = cue.descriptors
-    tail = f"{cue.tempo_bpm} BPM, {cue.key_label}, steady sustained loop, no fade out, {NEGATIVE_TAIL}"
+    tail = f"{BED}, {cue.tempo_bpm} BPM, {cue.key_label}, steady loop, no fade out, {NEGATIVE_TAIL}"
     return {
-        "core": (f"{d[0]} {d[-1]} cinematic underscore, same three-note motif on {p['lead']}, "
-                 f"{p['harmony']}, {p['bass']}, sparse, room for narration, {tail}"),
-        "pressure": (f"{d[min(1, len(d) - 1)]} rising tension, same motif, {p['pulse']}, "
-                     f"{p['bass']}, {p['texture']}, {tail}"),
+        "core": (f"{d[0]} {d[-1]} cinematic underscore, same motif on {p['lead']}, sustained "
+                 f"{p['harmony']}, {p['bass']}, understated, room for narration, {tail}"),
+        "pressure": (f"{d[min(1, len(d) - 1)]} rising tension, same motif, {p['pulse']}, sustained "
+                     f"{p['harmony']}, {p['bass']}, {p['texture']}, {tail}"),
         "climax": (f"{d[0]} cinematic climax, same motif on {p['lead']}, {p['hits']}, "
-                   f"{p['pulse']}, full {p['harmony']}, powerful but controlled, {tail}"),
+                   f"{p['pulse']}, full sustained {p['harmony']}, powerful but controlled, {tail}"),
     }
 
 
@@ -1907,7 +1913,7 @@ class Grid:
         return d
 
 
-def plan_grid(cue, target_phrase_seconds=10.5, max_generate_seconds=14.0):
+def plan_grid(cue, target_phrase_seconds=10.5, max_generate_seconds=20.0):
     """Bars per phrase: the even count (2, 4, 6, 8) closest to ~10 s, so
     loops are musically square, within what the model generates well."""
     bpm = float(cue.tempo_bpm)
@@ -2307,6 +2313,89 @@ def _reverse_swell(music, grid, climax_t):
 
 
 # ============================================================
+# DEAD-AIR GUARD
+# ============================================================
+
+def dead_air_regions(mix, min_s=0.4, below_db=18.0, frame_s=0.05):
+    """(start_s, end_s) runs where the score falls more than below_db under
+    its own median level for at least min_s."""
+    mono = np.asarray(mix, dtype=np.float64).mean(axis=1)
+    f = int(round(frame_s * SR))
+    n = len(mono) // f
+    if n < 4:
+        return []
+    lv = 10 * np.log10(np.mean(mono[: n * f].reshape(n, f) ** 2, axis=1) + 1e-12)
+    low = lv < np.median(lv) - below_db
+    out, i = [], 0
+    while i < n:
+        if low[i]:
+            j = i
+            while j < n and low[j]:
+                j += 1
+            if (j - i) * frame_s >= min_s:
+                out.append((i * frame_s, j * frame_s))
+            i = j
+        else:
+            i += 1
+    return out
+
+
+def _freeze(source, seconds, seed):
+    """Spectral freeze: the source's average magnitude spectrum, random
+    phase, overlap-added. Same harmony and timbre as the music around the
+    gap, with no attacks: it reads as the chord ringing on."""
+    n_fft, hop = 4096, 1024
+    rng = np.random.default_rng(seed)
+    win = np.hanning(n_fft)
+    mono_frames = []
+    for ch in range(source.shape[1]):
+        x = source[:, ch]
+        if len(x) < n_fft:
+            x = np.pad(x, (0, n_fft - len(x)))
+        frames = np.lib.stride_tricks.sliding_window_view(x, n_fft)[::hop] * win
+        mono_frames.append(np.abs(np.fft.rfft(frames, axis=1)).mean(axis=0))
+    total = int(round(seconds * SR)) + n_fft
+    out = np.zeros((total, source.shape[1]))
+    norm = np.zeros(total)
+    for start in range(0, total - n_fft + 1, hop):
+        phase = np.exp(2j * np.pi * rng.random(len(mono_frames[0])))
+        for ch, mag in enumerate(mono_frames):
+            out[start:start + n_fft, ch] += np.fft.irfft(mag * phase, n_fft) * win
+        norm[start:start + n_fft] += win ** 2
+    out /= np.maximum(norm, 1e-3)[:, None]
+    return out[: int(round(seconds * SR))]
+
+
+def fill_dead_air(mix, protect=(), level_db=-4.0, fade_s=0.25):
+    """Fill any stretch where the bed dropped out (real model outputs can
+    contain silences) with a spectral freeze of the second before it, so
+    the narration never sits on dead air. `protect` lists (start, end)
+    regions that are silent on purpose (the breath, the outro)."""
+    out = np.array(mix, dtype=np.float64, copy=True)
+    filled = []
+    for k, (a, b) in enumerate(dead_air_regions(mix)):
+        if any(a < pe and b > ps for ps, pe in protect):
+            continue
+        src0 = max(0, int(round((a - 1.0) * SR)))
+        src = out[src0:int(round(a * SR))]
+        if len(src) < int(0.25 * SR) or not np.any(src):
+            continue
+        g0, g1 = max(0.0, a - fade_s), min(len(out) / SR, b + fade_s)
+        length = g1 - g0
+        fz = _freeze(src, length, seed=k)
+        rms_src = np.sqrt(np.mean(src ** 2) + 1e-12)
+        fz *= rms_src * 10 ** (level_db / 20) / (np.sqrt(np.mean(fz ** 2)) + 1e-12)
+        nfade = int(round(fade_s * SR))
+        env = np.ones(len(fz))
+        env[:nfade] = np.sin(0.5 * np.pi * np.arange(nfade) / nfade) ** 2
+        env[-nfade:] = env[:nfade][::-1]
+        i0 = int(round(g0 * SR))
+        out[i0:i0 + len(fz)] += fz[: len(out) - i0] * env[: len(out) - i0, None]
+        filled.append((a, b))
+    return out, filled
+
+
+# ============================================================
 # RENDER + MEASURE + OPTIMISE
 # ============================================================
 
@@ -2325,15 +2414,22 @@ def music_length(grid, voice_seconds):
     return snap(grid, voice_seconds + grid.bar, "ceil")
 
 
-def _beds(phrases, grid, total):
-    """All (layer, order, offset) beds, RMS-normalised per layer/order."""
-    cache = {}
+def _beds(phrases, grid, total, max_cached=8):
+    """All (layer, order, offset) beds, RMS-normalised per layer/order.
+    float32 and a small LRU: a long story's full candidate set (3 layers x
+    6 orders x offsets x minutes of stereo) does not fit in RAM."""
+    from collections import OrderedDict
+    cache = OrderedDict()
 
     def get(name, order, offset):
         key = (name, tuple(order), int(offset))
-        if key not in cache:
-            bed = build_bed(phrases[name], order, grid, total, offset)
-            cache[key] = np.asarray(set_rms_db(bed, LAYER_RMS_DB), dtype=np.float64)
+        if key in cache:
+            cache.move_to_end(key)
+            return cache[key]
+        bed = build_bed(phrases[name], order, grid, total, offset)
+        cache[key] = np.asarray(set_rms_db(bed, LAYER_RMS_DB), dtype=np.float32)
+        while len(cache) > max_cached:
+            cache.popitem(last=False)
         return cache[key]
     return get
 
@@ -2348,6 +2444,8 @@ def render_arrangement(phrases, plan, cue, grid, boundaries, voice_seconds, hits
     mix = np.zeros((total, 2), dtype=np.float64)
     for name in LAYER_NAMES:
         mix += get(name, plan.orders[name], plan.offsets_bars[name]) * gains[name][:, None]
+    protect = [(boundaries[5] - 2.0 * grid.beat, boundaries[5] + 0.05), (end_t - 2.0 * grid.bar, end_t)]
+    mix, _ = fill_dead_air(mix, protect)
     if hits:
         mix = apply_hits(mix, cue, grid, boundaries)
     return normalize_peak(f32(mix), MIX_PEAK)
@@ -2536,7 +2634,9 @@ def best_sustained_window(audio, seconds, step_s=0.25):
     best = None
     for start in range(0, len(audio) - need + 1, step):
         prof = sustain_profile(audio[start:start + need])
-        score = abs(prof["drop_db"]) * 2.0 + prof["spread_db"] + 0.2 * start / SR
+        lv = np.asarray(prof["levels"])
+        dead = float(np.mean(lv < np.median(lv) - 20.0)) if len(lv) else 1.0
+        score = abs(prof["drop_db"]) * 2.0 + prof["spread_db"] + 40.0 * dead + 0.2 * start / SR
         if best is None or score < best[0]:
             best = (score, start)
     start = best[1]
@@ -2546,6 +2646,11 @@ STEPS = 8
 CFG_SCALE = 1.0
 
 LAYER_NOISE = {"core": 0.10, "pressure": 0.13, "climax": 0.16}
+# Story-aware path: the legacy 0.10-0.16 makes phrases near-copies of the
+# motif window (real renders copied its silent gaps and ignored the layer
+# prompt). More freedom lets each layer play its own part around the motif.
+STORY_LAYER_NOISE = {"core": 0.30, "pressure": 0.40, "climax": 0.50}
+MAX_EXTRA_MOTIF_TAKES = 3     # retry while every motif take has dead air
 LAYER_REFERENCE_OFFSET = {"core": 0, "pressure": 1, "climax": 2}
 
 
@@ -2699,8 +2804,12 @@ def rank_motif(motif, cue):
     lv = np.asarray(prof["levels"])
     usable = float(np.mean(lv > np.median(lv[: max(1, len(lv) // 3)]) - 12.0)) if len(lv) else 0.0
     info["usable_fraction"] = usable
+    # Dead air: share of half-seconds more than 20 dB under the motif's
+    # typical level (stabs separated by silence are useless as a bed).
+    dead = float(np.mean(lv < np.median(lv) - 20.0)) if len(lv) else 1.0
+    info["dead_air_fraction"] = dead
     info["rank"] = (30.0 * info["tempo_match"] + 20.0 * info["key_match"]
-                    + 20.0 * stability + 10.0 * info["fullness"] + 20.0 * usable)
+                    + 20.0 * stability + 10.0 * info["fullness"] + 20.0 * usable - 60.0 * dead)
     return info
 
 
@@ -2714,17 +2823,21 @@ def generate_motif(story_index, mood, output_dir, run_seed, cue=None, takes=None
         takes = MOTIF_TAKES if takes is None else int(takes)
     provider = get_provider()
     best, rows = None, []
-    for take in range(takes):
+    take = 0
+    while take < takes or (cue is not None and best is not None
+                           and best[2].get("dead_air_fraction", 0.0) > 0.05
+                           and take < takes + MAX_EXTRA_MOTIF_TAKES):
         seed = _motif_seed(run_seed, story_index, take)
         motif = f32(provider.generate_fresh(prompt, MOTIF_SECONDS, seed))
         row = {"take": take + 1, "seed": seed}
         if cue is not None:
             row.update(rank_motif(motif, cue))
-            log(f"  motif take {take + 1}/{takes}: rank={row['rank']:.1f} "
+            log(f"  motif take {take + 1}: rank={row['rank']:.1f} dead_air={row['dead_air_fraction']:.2f} "
                 f"tempo={row['tempo_bpm']:.1f} key={row['key']} seam={row['seam']:.2f}")
         rows.append(row)
         if best is None or row.get("rank", 0.0) > best[2].get("rank", 0.0):
             best = (motif, seed, row)
+        take += 1
     motif, seed, _ = best
     path = output_dir / "motif_seed_28s.wav"
     write_audio(path, motif, SR)
@@ -3000,8 +3113,9 @@ def generate_layer_phrases(story_index, mood, references, motif_profile, story_d
                 log(f"  phrase {phrase_index + 1}/{PHRASES_PER_LAYER} "
                     f"attempt {attempt + 1}/{attempts} ref={ref_index + 1}")
                 try:
+                    noise = LAYER_NOISE[layer] if cue is None else STORY_LAYER_NOISE[layer]
                     generated = provider.generate_conditioned(prompts[layer], model_seconds, reference,
-                                                               LAYER_NOISE[layer], seed)
+                                                               noise, seed)
                     window_start = 0.0
                     if cue is not None:
                         generated, window_start = best_sustained_window(generated, phrase_seconds)
@@ -4032,6 +4146,7 @@ def score_story_arranged(layer_phrases, cue, boundaries, voice_mono, story_dir, 
     music, arrangement, _ = arrange_story(layer_phrases, cue, boundaries, voice_seconds, log=log)
     again, _, _ = arrange_story(layer_phrases, cue, boundaries, voice_seconds, log=lambda *_: None)
     deterministic = bool(np.array_equal(music, again))
+    del again
 
     raw_path = story_dir / "score_raw.wav"
     write_audio(raw_path, music, SR)

@@ -163,6 +163,16 @@ def test_bed_joins_land_on_bars():
         assert abs(bed[j + int(round(grid.beat * SR)) + 5, 0] - phrases[k][0, 0]) < 1e-6  # gone a beat later
 
 
+def test_dead_air_is_filled_but_breath_is_kept():
+    t = np.arange(SR * 12) / SR
+    x = np.stack([0.2 * np.sin(2 * np.pi * 196 * t) + 0.1 * np.sin(2 * np.pi * 233 * t)] * 2, 1)
+    x[4 * SR:6 * SR] *= 0.001        # a model dropout
+    x[9 * SR:10 * SR] *= 0.001       # an intentional breath
+    y, filled = AR.fill_dead_air(x, protect=[(9.0, 10.0)])
+    assert filled == [(4.0, 6.0)]
+    assert AR.dead_air_regions(y) == [(9.0, 10.0)]
+
+
 def test_story_boundaries_on_bar_lines_and_turn_on_twist():
     for name, (segs, dur) in STORIES.items():
         cue = CUES[name]

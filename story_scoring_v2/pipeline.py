@@ -206,6 +206,7 @@ def score_story_arranged(layer_phrases, cue, boundaries, voice_mono, story_dir, 
     music, arrangement, _ = arrange_story(layer_phrases, cue, boundaries, voice_seconds, log=log)
     again, _, _ = arrange_story(layer_phrases, cue, boundaries, voice_seconds, log=lambda *_: None)
     deterministic = bool(np.array_equal(music, again))
+    del again
 
     raw_path = story_dir / "score_raw.wav"
     write_audio(raw_path, music, SR)
