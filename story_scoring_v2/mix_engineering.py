@@ -102,6 +102,7 @@ class MixSettings:
     comp_knee_db: float = 6.0
     comp_attack_s: float = 0.005
     comp_release_s: float = 0.12
+    voice_peak_over_rms_db: float = 11.0          # dialogue peak limiter ceiling (crest)
     # Limiter.
     limiter_window_s: float = 0.015    # +-15 ms lookahead, ~30 ms ramps
     limiter_release_s: float = 0.08    # recovery after the ramp (no 30 Hz flutter)
@@ -405,8 +406,11 @@ def speech_gated_lufs(voice_mono, sr):
 
 
 def _compress(voice, sr, settings, active, times):
-    """Feed-forward soft-knee compressor on 5 ms RMS, threshold set from the
-    narration's own median active-frame level. Control signal runs at 1 ms."""
+    """Feed-forward soft-knee compressor on 5 ms RMS. The threshold sits
+    comp_threshold_over_speech_db above the narration's own RMS over speech
+    (power average, so pauses inside words don't drag it down), which makes
+    it work on the loud syllables only, the way a dialogue compressor is set.
+    Control signal runs at 1 ms."""
     hop = max(1, int(round(0.001 * sr)))
     env = np.sqrt(np.maximum(uniform_filter1d(voice * voice, size=max(1, int(0.005 * sr)), mode="nearest")[::hop], 0.0))
     level = 20.0 * np.log10(np.maximum(env, 1e-9))
@@ -414,7 +418,8 @@ def _compress(voice, sr, settings, active, times):
     speech = np.interp(ctl_t, times, active.astype(np.float64)) > 0.5
     if not speech.any():
         return voice, 0.0
-    threshold = float(np.median(level[speech])) + settings.comp_threshold_over_speech_db
+    speech_rms_db = 10.0 * np.log10(np.mean(env[speech] ** 2) + 1e-18)
+    threshold = speech_rms_db + settings.comp_threshold_over_speech_db
     over = level - threshold
     knee = settings.comp_knee_db
     slope = 1.0 - 1.0 / settings.comp_ratio
@@ -424,6 +429,21 @@ def _compress(voice, sr, settings, active, times):
     smooth = -_smooth_asymmetric(-gr, hop / sr, settings.comp_attack_s, settings.comp_release_s)
     gain_db = np.interp(np.arange(len(voice)) / sr, ctl_t, -smooth)
     return voice * 10.0 ** (gain_db / 20.0), float(np.max(smooth))
+
+
+def _voice_peak_limit(voice, sr, settings, active, times):
+    """Dialogue peak limiter: true peaks held to speech RMS + crest ceiling,
+    so plosives and shouts are caught on the voice stem instead of making
+    the master limiter pump the whole mix."""
+    frame = int(round((times[1] - times[0]) * sr)) if len(times) > 1 else len(voice)
+    n = min(len(active), len(voice) // max(frame, 1))
+    if n == 0 or not active[:n].any():
+        return voice, 0.0
+    power = np.mean(voice[: n * frame].reshape(n, frame) ** 2, axis=1)
+    rms_db = 10.0 * np.log10(np.mean(power[active[:n]]) + 1e-18)
+    ceiling = rms_db + settings.voice_peak_over_rms_db
+    out, gr = true_peak_limit(voice[:, None], sr, ceiling, 0.003, 0.05)
+    return out[:, 0], gr
 
 
 def level_dialogue(voice_mono, sr, settings=MixSettings()):
@@ -460,6 +480,8 @@ def level_dialogue(voice_mono, sr, settings=MixSettings()):
 
     voice, comp_gr = _compress(voice, sr, settings, active, times)
     stats["compressor_max_gr_db"] = comp_gr
+    voice, peak_gr = _voice_peak_limit(voice, sr, settings, active, times)
+    stats["voice_peak_limiter_max_gr_db"] = peak_gr
     lufs = speech_gated_lufs(voice, sr)
     if lufs > SILENCE_LUFS:
         voice = voice * 10.0 ** ((settings.dialogue_anchor_lufs - lufs) / 20.0)
@@ -713,10 +735,11 @@ def mix_and_master(voice_mono, music, sr, delivery=DEFAULT_DELIVERY, settings=Mi
 
     Returns (master float32 (n, 2), report dict)."""
     spec = DELIVERY_SPECS[delivery] if isinstance(delivery, str) else delivery
-    n = len(voice_mono)
-    music = as_stereo(music)[:n]
-    if len(music) < n:
-        music = np.pad(music, ((0, n - len(music)), (0, 0)))
+    # The score may run past the narration (an outro); never cut it off.
+    music = as_stereo(music)
+    n = max(len(voice_mono), len(music))
+    voice_mono = np.pad(np.asarray(voice_mono, dtype=np.float64), (0, n - len(voice_mono)))
+    music = np.pad(music, ((0, n - len(music)), (0, 0)))
 
     voice = highpass(np.asarray(voice_mono, dtype=np.float64), sr, settings.voice_highpass_hz)[:, 0]
     music = highpass(music, sr, settings.music_highpass_hz)

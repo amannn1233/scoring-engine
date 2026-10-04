@@ -35,6 +35,7 @@ from music_generation import (
 )
 from run_seed import generate_run_seed
 from cue_sheet import build_cue_sheet, describe as describe_cue
+from arrangement import arrange_story, plan_grid
 from mix_engineering import mix_and_master, qc_report, format_qc, DEFAULT_DELIVERY, DELIVERY_SPECS
 # </local-imports>
 
@@ -190,6 +191,60 @@ def score_story(layer_phrases, boundaries, voice_mono, story_dir, manifest_base,
     return manifest
 
 
+def score_story_arranged(layer_phrases, cue, boundaries, voice_mono, story_dir, manifest_base, log=print,
+                         delivery=DEFAULT_DELIVERY):
+    """Story-aware scoring: bar-grid arrangement driven by the cue sheet
+    (arrangement.py), then the engineered dialogue mix + master. The score
+    runs past the narration and ends on a bar line, so the narration is
+    padded with silence to the music's length for the mix."""
+    story_dir = Path(story_dir)
+    story_dir.mkdir(parents=True, exist_ok=True)
+    voice_mono = f32(voice_mono)
+    voice_seconds = len(voice_mono) / SR
+
+    log("\nArranging the score on the story's tempo grid...")
+    music, arrangement, _ = arrange_story(layer_phrases, cue, boundaries, voice_seconds, log=log)
+    again, _, _ = arrange_story(layer_phrases, cue, boundaries, voice_seconds, log=lambda *_: None)
+    deterministic = bool(np.array_equal(music, again))
+
+    raw_path = story_dir / "score_raw.wav"
+    write_audio(raw_path, music, SR)
+    voice_padded = fit_length(voice_mono, len(music))
+
+    master, mix_report = mix_and_master(voice_padded, music, SR, delivery)
+    master_path = story_dir / "voice_music_master.wav"
+    write_audio(master_path, master, SR, dither=True)
+    mix_report["score_raw_qc"] = qc_report(music, SR, label="score_raw")
+
+    g = arrangement["grid"]
+    manifest = dict(manifest_base)
+    manifest.update({
+        "pipeline_version": PIPELINE_VERSION + "+STORY_ARRANGEMENT",
+        "duration_seconds": voice_seconds,
+        "music_seconds": arrangement["music_seconds"],
+        "arrangement": arrangement,
+        "arrangement_deterministic": deterministic,
+        "mix_master": mix_report,
+        "files": {"raw": str(raw_path), "master": str(master_path)},
+    })
+    save_json(story_dir / "manifest.json", manifest)
+
+    log("\nFINAL STORY RESULT (story-aware)")
+    log(f"Grid: {g['bpm']:.0f} BPM, {g['phrase_bars']}-bar phrases, bar {g['bar']:.3f}s")
+    hp = arrangement["hit_points_on_grid"]
+    log(f"Hits on bar lines: build {hp['build']:.2f}s, turn {hp['turn']:.2f}s, "
+        f"aftermath {hp['aftermath']:.2f}s, end {hp['end']:.2f}s")
+    fm = arrangement["final_metrics"]
+    log(f"Arc objective {fm['objective']:.4f}, peak gap {fm['peak_gap_db']:+.2f} dB, "
+        f"release {fm['release_drop_db']:+.2f} dB, deterministic render: {deterministic}")
+    dm = mix_report["dialogue_mix"]
+    log(f"Dialogue mix: DMR {dm['achieved_dmr_lu_median']:.1f} LU (target {dm['target_dmr_lu']:.0f}), "
+        f"limiter {dm['limiter_max_gain_reduction_db']:.1f} dB")
+    for line in format_qc(mix_report["master_qc"]):
+        log(line)
+    return manifest
+
+
 # ============================================================
 # FULL STORY (Stable Audio generation + scoring)
 # ============================================================
@@ -235,10 +290,11 @@ def process_story(story_index, story_path, out_root, run_seed, log=print, story_
 
     motif, motif_path, prompt, motif_seed, motif_takes = generate_motif(
         story_index, mood, story_dir, run_seed, cue=cue, return_report=True, log=log)
-    references, reference_starts = choose_references(motif)
+    references, reference_starts = choose_references(
+        motif, None if cue is None else plan_grid(cue).generate_seconds)
     for i, reference in enumerate(references, start=1):
         write_audio(story_dir / f"reference_{i:02d}.wav", reference, SR)
-    motif_profile = chroma_profile(motif)
+    motif_profile = chroma_profile(motif, numpy_fallback=cue is not None)
 
     layer_phrases, quality_rows = generate_layer_phrases(
         story_index, mood, references, motif_profile, story_dir, run_seed, log=log, cue=cue
@@ -261,6 +317,9 @@ def process_story(story_index, story_path, out_root, run_seed, log=print, story_
         },
         "quality_report": quality_rows,
     }
+    if cue is not None:
+        return score_story_arranged(layer_phrases, cue, boundaries, voice_mono, story_dir,
+                                    manifest_base, log=log)
     return score_story(layer_phrases, boundaries, voice_mono, story_dir, manifest_base, log=log)
 
 
@@ -268,9 +327,47 @@ def process_story(story_index, story_path, out_root, run_seed, log=print, story_
 # SUMMARY
 # ============================================================
 
+def _summarize_arranged(index, m):
+    a = m["arrangement"]
+    final = a["final_metrics"]
+    qc = m["mix_master"]["master_qc"]
+    takes = [r for r in m.get("quality_report", []) if r.get("selected")]
+    fits = [r["musical_fit"] for r in takes if "musical_fit" in r]
+    return {
+        "story": index,
+        "file": os.path.basename(m["story_file"]),
+        "story_aware": True,
+        "duration_sec": m["duration_seconds"],
+        "music_sec": m["music_seconds"],
+        "style": m["cue_sheet"]["style"],
+        "tempo_bpm": m["cue_sheet"]["tempo_bpm"],
+        "key": m["cue_sheet"]["key_label"],
+        "palette": m["cue_sheet"]["palette"],
+        "final_objective": final["objective"],
+        "section_db": final["section_db"],
+        "revelation_minus_discovery_db": final["peak_gap_db"],
+        "release_drop_db": final["release_drop_db"],
+        "max_boundary_jump_db": final["max_abs_boundary_jump_db"],
+        "hit_points_on_grid": a["hit_points_on_grid"],
+        "deterministic": m["arrangement_deterministic"],
+        "selected_tempo_match_mean": float(np.mean([f["tempo_match"] for f in fits])) if fits else None,
+        "selected_key_match_mean": float(np.mean([f["key_match"] for f in fits])) if fits else None,
+        "selected_seam_mean": float(np.mean([f["seam"] for f in fits])) if fits else None,
+        "master_integrated_lufs": qc["integrated_lufs"],
+        "master_true_peak_dbtp": qc["true_peak_dbtp"],
+        "master_lra_lu": qc["loudness_range_lu"],
+        "dialogue_to_music_lu": m["mix_master"]["dialogue_mix"]["achieved_dmr_lu_median"],
+        "speech_band_margin_db": qc.get("speech_band_masking_margin_db"),
+        "master_warnings": qc["warnings"],
+    }
+
+
 def summarize(manifests):
     rows = []
     for index, m in enumerate(manifests, start=1):
+        if "arrangement" in m:
+            rows.append(_summarize_arranged(index, m))
+            continue
         final = m["final_metrics"]
         opt = m["optimizer"]["metrics"]
         sims = [r.get("motif_similarity") for r in m.get("quality_report", [])
@@ -318,6 +415,13 @@ def print_summary(rows, log=print):
     log("=" * 80)
     for row in rows:
         log(f"\nStory {row['story']}: {row['file']}")
+        if row.get("story_aware"):
+            log(f"  {row['style']}")
+            log(f"  {row['tempo_bpm']} BPM, {row['key']}; arc objective {row['final_objective']:.4f}, "
+                f"peak gap {row['revelation_minus_discovery_db']:+.2f} dB")
+            log(f"  Master {row['master_integrated_lufs']:.1f} LUFS, TP {row['master_true_peak_dbtp']:+.2f} dBTP, "
+                f"DMR {row['dialogue_to_music_lu']:.1f} LU, warnings: {row['master_warnings'] or 'none'}")
+            continue
         log(f"  Objective (optimizer / final): {row['optimizer_objective']:.4f} / {row['final_objective']:.4f}")
         log(f"  Discovery: {row['discovery_db']:.2f} dB   Revelation: {row['revelation_db']:.2f} dB")
         log(f"  Revelation - Discovery (optimizer / final): "

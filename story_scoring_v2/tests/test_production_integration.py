@@ -170,9 +170,12 @@ def test_generate_motif_same_story_index_different_story_in_same_run_differs():
 # Full process_story() with the fake provider — same run_seed vs fresh
 # ============================================================
 
-def _run_story(out_root, run_seed, narration_path):
+def _run_story(out_root, run_seed, narration_path, story_aware=False):
+    # These tests pin the validated legacy engine; the story-aware path has
+    # its own tests in test_story_scoring.py.
     with _Provider(FakeMusicProvider()):
-        return process_story(1, narration_path, out_root, run_seed, log=lambda *_: None)
+        return process_story(1, narration_path, out_root, run_seed, log=lambda *_: None,
+                             story_aware=story_aware)
 
 
 def test_process_story_same_run_seed_reproduces_bit_identical_output():

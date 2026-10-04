@@ -226,7 +226,8 @@ def _decode_via_ffmpeg(path):
 # ENTRY POINT
 # ============================================================
 
-def run_scoring_job(narration_paths, out_root, run_seed=None, provider=None, log=print):
+def run_scoring_job(narration_paths, out_root, run_seed=None, provider=None, log=print,
+                    story_aware=True):
     """Scores one or more narration files as ONE production job.
 
     narration_paths: list of audio file paths (already-finished narration —
@@ -247,6 +248,9 @@ def run_scoring_job(narration_paths, out_root, run_seed=None, provider=None, log
                       phrase generation today — see KaggleBridgeMusicProvider's
                       docstring).
 
+    story_aware:      True (default) = cue-sheet prompts, ranked takes and the
+                      bar-grid arrangement; False = the original V1/V2 path.
+
     Returns {"run_seed": int, "manifests": [...], "summary": [...]}.
     Raises on any story that fails — this function does not silently skip a
     story (matches pipeline.main()'s behaviour: a scoring job either produces
@@ -264,7 +268,7 @@ def run_scoring_job(narration_paths, out_root, run_seed=None, provider=None, log
             f"({'explicit — reproducing a previous job' if run_seed is not None else 'fresh'}), "
             f"provider={type(get_provider()).__name__}")
         manifests = [
-            process_story(i, path, out_root, resolved_seed, log=log)
+            process_story(i, path, out_root, resolved_seed, log=log, story_aware=story_aware)
             for i, path in enumerate(narration_paths, start=1)
         ]
     finally:

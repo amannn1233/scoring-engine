@@ -174,8 +174,10 @@ _NEGATORS = {"not", "never", "no", "didn't", "don't", "wasn't", "isn't", "couldn
              "nobody", "nothing", "without"}
 _INTENSIFIERS = {"very": 1.3, "really": 1.25, "so": 1.2, "extremely": 1.5, "totally": 1.3,
                  "completely": 1.3, "absolutely": 1.4, "whole": 1.15, "hard": 1.2}
-_REVEAL_CUES = ("what", "never knew", "turns out", "truth", "actually", "realized", "found out",
-                "the reason", "secret", "had been", "all along", "that's when", "it was")
+_REVEAL_CUES = ("never knew", "turns out", "truth", "actually", "realized", "found out",
+                "the reason", "secret", "had been", "all along", "that's when", "was not mine",
+                "wasn't mine", "the whole thing was", "it was him", "it was her", "already filed",
+                "what i didn't know", "little did")
 _RESOLUTION_CUES = ("now", "since then", "finally", "these days", "to this day", "ever since",
                     "in the end", "ended up", "lesson", "today", "anymore", "moved on")
 
@@ -489,8 +491,15 @@ def build_cue_sheet(segments, duration, boundaries=None):
     # Twist: where the story turns: strongest reveal cue or the steepest rise
     # in intensity, before the climax and after 35 %.
     rise = np.diff(curve, prepend=curve[0])
+    # Novelty: deceit/darkness colour appearing where the story had little
+    # of it so far is what a turn usually sounds like ("a signature that
+    # was not mine", "it was a test").
+    turn_col = np.array([f["colour"]["deceit"] + f["colour"]["darkness"] + f["colour"]["eeriness"]
+                         for f in feats])
+    seen = np.concatenate([[0.0], np.cumsum(turn_col)[:-1]]) / np.maximum(np.arange(n), 1)
+    novelty = np.maximum(turn_col - seen, 0.0)
     twist_score = np.array([feats[i]["reveal_cue"] * 0.3 + rise[i] * 2.0 + feats[i]["tension"] * 0.2
-                            for i in range(n)])
+                            + novelty[i] * 0.8 for i in range(n)])
     twist_ok = (pos >= 0.35) & (np.arange(n) < climax_i)
     twist_i = int(np.argmax(np.where(twist_ok, twist_score, -np.inf))) if twist_ok.any() else max(0, climax_i - 1)
     # Resolution: first resolution cue after the climax, else halfway from

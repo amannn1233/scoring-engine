@@ -32,7 +32,8 @@ from scoring_engine import (
 from audio_io import write_audio
 from run_seed import derive_seed
 from cue_sheet import motif_prompt_from_cue, layer_prompts_from_cue
-from music_analysis import analyse as analyse_music
+from music_analysis import analyse as analyse_music, chroma as music_chroma
+from arrangement import plan_grid
 # </local-imports>
 
 
@@ -270,8 +271,10 @@ def repair_reference(audio):
     return normalize_peak(audio * gain[:, None], 0.85)
 
 
-def choose_references(motif):
-    reference_samples = int(round(PHRASE_DURATION * SR))
+def choose_references(motif, seconds=None):
+    """seconds: reference length (story-aware path generates whole-bar
+    phrases, so its references match that length). Default: PHRASE_DURATION."""
+    reference_samples = int(round((PHRASE_DURATION if seconds is None else seconds) * SR))
     step = int(round(0.50 * SR))
     candidates = []
     for start in range(0, max(1, len(motif) - reference_samples + 1), step):
@@ -304,11 +307,16 @@ def choose_references(motif):
 # CHROMA + PHRASE QUALITY GATES
 # ============================================================
 
-def chroma_profile(audio):
+def chroma_profile(audio, numpy_fallback=False):
+    """librosa chroma (legacy behaviour: None when librosa is missing).
+    numpy_fallback=True (story-aware path) uses music_analysis.chroma so the
+    motif-similarity gate works on any machine."""
     try:
         import librosa
     except Exception:
-        return None
+        if not numpy_fallback:
+            return None
+        return f32(music_chroma(audio, SR))
     mono = to_mono(audio)
     if len(mono) < SR * 2:
         mono = np.pad(mono, (0, int(SR * 2) - len(mono)))
@@ -344,7 +352,7 @@ def phrase_quality(audio, motif_profile):
 
     similarity = None
     if motif_profile is not None:
-        candidate_profile = chroma_profile(audio)
+        candidate_profile = chroma_profile(audio, numpy_fallback=True)
         if candidate_profile is not None:
             similarity = float(np.dot(motif_profile, candidate_profile))
 
@@ -452,7 +460,10 @@ def generate_layer_phrases(story_index, mood, references, motif_profile, story_d
                            cue=None, takes=None):
     prompts = layer_prompts(mood) if cue is None else layer_prompts_from_cue(cue)
     attempts = MAX_ATTEMPTS if cue is None else (PHRASE_TAKES if takes is None else int(takes))
-    phrase_samples = int(round(PHRASE_DURATION * SR))
+    # Story-aware phrases are a whole number of bars (+ crossfade beat and
+    # one alignment beat) at the cue's tempo, so the arranger can cut on bars.
+    phrase_seconds = PHRASE_DURATION if cue is None else plan_grid(cue).generate_seconds
+    phrase_samples = int(round(phrase_seconds * SR))
     layer_phrases = {name: [] for name in LAYER_NAMES}
     quality_rows = []
     provider = get_provider()
@@ -469,7 +480,7 @@ def generate_layer_phrases(story_index, mood, references, motif_profile, story_d
                 log(f"  phrase {phrase_index + 1}/{PHRASES_PER_LAYER} "
                     f"attempt {attempt + 1}/{attempts} ref={ref_index + 1}")
                 try:
-                    generated = provider.generate_conditioned(prompts[layer], PHRASE_DURATION, reference,
+                    generated = provider.generate_conditioned(prompts[layer], phrase_seconds, reference,
                                                                LAYER_NOISE[layer], seed)
                     generated = normalize_peak(fit_length(generated, phrase_samples), 0.85)
                     report = phrase_quality(generated, motif_profile)

@@ -35,10 +35,18 @@ def read_audio(path):
     return np.ascontiguousarray(data, dtype=np.float32), int(sr)
 
 
-def write_audio(path, audio, sr):
-    """Writes 16-bit PCM WAV."""
+def write_audio(path, audio, sr, dither=False):
+    """Writes 16-bit PCM WAV. dither=True adds TPDF dither (+-1 LSB) before
+    quantising, for finished masters (fades and quiet tails stay clean
+    instead of turning into quantisation distortion). Off by default so the
+    validated score_raw files stay bit-identical."""
     path = str(path)
     audio = np.asarray(audio, dtype=np.float32)
+    if dither:
+        rng = np.random.default_rng(0x5EED)
+        lsb = 1.0 / 32768.0
+        tpdf = (rng.random(audio.shape) - rng.random(audio.shape)) * lsb
+        audio = np.clip(audio + tpdf.astype(np.float32), -1.0, 32767.0 / 32768.0)
     if SOUNDFILE_OK:
         _sf.write(path, audio, sr, subtype="PCM_16")
         return
