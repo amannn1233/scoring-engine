@@ -1,0 +1,8 @@
+numpy>=1.24
+scipy>=1.10
+# optional but recommended (Kaggle has both):
+soundfile>=0.12   # faster I/O, non-WAV narration
+librosa>=0.10     # chroma motif similarity + resampling
+# Kaggle generation run only: torch, stable_audio_3 (Stable Audio 3 Small Music,
+# pip install git+https://github.com/Stability-AI/stable-audio-3.git — verified
+# against ShortMakerPro's stable_audio_3_music_kaggle.ipynb), openai-whisper

@@ -1,0 +1,215 @@
+
+Run seed for this job: 838368497 (explicit)
+
+Eligible de-duplicated story files:
+  /tmp/smoke2/input/sub/71_extracted.wav
+  /tmp/smoke2/input/sub/72_extracted.wav
+
+Selected stories:
+1. 71_extracted.wav
+2. 72_extracted.wav
+
+================================================================================
+STORY 1: 71_extracted.wav  (run_seed=838368497)
+================================================================================
+  Whisper not available; using generic story boundaries.
+Detected mood: psychological suspense
+Story boundaries:
+  HOOK                           0.00s ->    2.80s
+  SETUP / CONFLICT               2.80s ->   10.40s
+  CONSEQUENCE                   10.40s ->   16.00s
+  HIDDEN DANGER                 16.00s ->   24.00s
+  DISCOVERY                     24.00s ->   27.60s
+  FORGERY REVELATION            27.60s ->   35.20s
+  AFTERMATH / RESOLUTION        35.20s ->   40.00s
+Loading Stable Audio 3 Small Music...
+Model: StableAudioModel
+GPU: CPU
+
+Generating core...
+  phrase 1/3 attempt 1/2 ref=1
+    quality=85.9 valley=5.6dB motif=n/a
+  phrase 2/3 attempt 1/2 ref=2
+    quality=85.6 valley=5.8dB motif=n/a
+  phrase 3/3 attempt 1/2 ref=3
+    quality=85.6 valley=5.8dB motif=n/a
+
+Generating pressure...
+  phrase 1/3 attempt 1/2 ref=2
+    quality=86.1 valley=5.5dB motif=n/a
+  phrase 2/3 attempt 1/2 ref=3
+    quality=85.7 valley=5.7dB motif=n/a
+  phrase 3/3 attempt 1/2 ref=4
+    quality=85.1 valley=6.0dB motif=n/a
+
+Generating climax...
+  phrase 1/3 attempt 1/2 ref=3
+    quality=85.9 valley=5.6dB motif=n/a
+  phrase 2/3 attempt 1/2 ref=4
+    quality=85.1 valley=6.0dB motif=n/a
+  phrase 3/3 attempt 1/2 ref=1
+    quality=86.1 valley=5.5dB motif=n/a
+
+Optimizing actual generated material (V2 exact waveform)...
+  Stage 1 pass 1 core      score=1.6467 order=(2, 1, 0) phase=5.00s
+  Stage 1 pass 1 pressure  score=0.8499 order=(1, 2, 0) phase=1.00s
+  Stage 1 pass 1 climax    score=0.6349 order=(1, 0, 2) phase=1.00s
+Stage 1 pass 1: score=0.6349 peak=+2.68dB boundary=0.0249
+  Stage 1 pass 2 core      score=0.6349 order=(2, 1, 0) phase=5.00s
+  Stage 1 pass 2 pressure  score=0.6349 order=(1, 2, 0) phase=1.00s
+  Stage 1 pass 2 climax    score=0.6349 order=(1, 0, 2) phase=1.00s
+Stage 1 pass 2: score=0.6349 peak=+2.68dB boundary=0.0249
+  Stage 2 pass 1 core      score=0.6349 order=(2, 1, 0) phase=5.00s
+  Stage 2 pass 1 pressure  score=0.6349 order=(1, 2, 0) phase=1.00s
+  Stage 2 pass 1 climax    score=0.6349 order=(1, 0, 2) phase=1.00s
+Stage 2 exact pass 1: score=0.6349 peak=+2.68dB boundary=0.0249
+  Stage 2 pass 2 core      score=0.6349 order=(2, 1, 0) phase=5.00s
+  Stage 2 pass 2 pressure  score=0.6349 order=(1, 2, 0) phase=1.00s
+  Stage 2 pass 2 climax    score=0.6349 order=(1, 0, 2) phase=1.00s
+Stage 2 exact pass 2: score=0.6349 peak=+2.68dB boundary=0.0249
+
+Best phrase orders:
+  core      (2, 1, 0) phase=5.00s
+  pressure  (1, 2, 0) phase=1.00s
+  climax    (1, 0, 2) phase=1.00s
+
+FINAL STORY RESULT
+Duration: 40.000s
+Optimizer exact objective: 0.6349   final objective: 0.6349
+Peak gap Discovery -> Revelation: optimizer +2.683 dB, final +2.683 dB
+
+Energy:
+  HOOK                          -26.23 dB   (target -26.0)
+  SETUP / CONFLICT              -23.63 dB   (target -24.8)
+  CONSEQUENCE                   -24.34 dB   (target -23.9)
+  HIDDEN DANGER                 -23.52 dB   (target -22.7)
+  DISCOVERY                     -22.40 dB   (target -22.0)
+  FORGERY REVELATION            -19.72 dB   (target -20.0)
+  AFTERMATH / RESOLUTION        -25.13 dB   (target -25.3)
+
+Boundaries:
+  HOOK -> SETUP / CONFLICT: +1.78 dB
+  SETUP / CONFLICT -> CONSEQUENCE: -2.89 dB
+  CONSEQUENCE -> HIDDEN DANGER: -2.45 dB
+  HIDDEN DANGER -> DISCOVERY: +1.98 dB
+  DISCOVERY -> FORGERY REVELATION: +2.17 dB
+  FORGERY REVELATION -> AFTERMATH / RESOLUTION: -2.46 dB
+
+Alignment optimizer vs final: worst 0.000000 dB -> ALIGNED
+Alignment optimizer vs 16-bit file: worst 0.000268 dB
+Average duck: -3.96 dB
+
+================================================================================
+STORY 2: 72_extracted.wav  (run_seed=838368497)
+================================================================================
+  Whisper not available; using generic story boundaries.
+Detected mood: psychological suspense
+Story boundaries:
+  HOOK                           0.00s ->    3.08s
+  SETUP / CONFLICT               3.08s ->   11.44s
+  CONSEQUENCE                   11.44s ->   17.60s
+  HIDDEN DANGER                 17.60s ->   26.40s
+  DISCOVERY                     26.40s ->   30.36s
+  FORGERY REVELATION            30.36s ->   38.72s
+  AFTERMATH / RESOLUTION        38.72s ->   44.00s
+
+Generating core...
+  phrase 1/3 attempt 1/2 ref=1
+    quality=85.3 valley=5.9dB motif=n/a
+  phrase 2/3 attempt 1/2 ref=2
+    quality=86.0 valley=5.6dB motif=n/a
+  phrase 3/3 attempt 1/2 ref=3
+    quality=85.3 valley=5.9dB motif=n/a
+
+Generating pressure...
+  phrase 1/3 attempt 1/2 ref=2
+    quality=84.8 valley=6.1dB motif=n/a
+  phrase 2/3 attempt 1/2 ref=3
+    quality=85.1 valley=6.0dB motif=n/a
+  phrase 3/3 attempt 1/2 ref=4
+    quality=86.5 valley=5.4dB motif=n/a
+
+Generating climax...
+  phrase 1/3 attempt 1/2 ref=3
+    quality=85.6 valley=5.7dB motif=n/a
+  phrase 2/3 attempt 1/2 ref=4
+    quality=83.9 valley=6.4dB motif=n/a
+  phrase 3/3 attempt 1/2 ref=1
+    quality=85.7 valley=5.7dB motif=n/a
+
+Optimizing actual generated material (V2 exact waveform)...
+  Stage 1 pass 1 core      score=2.7185 order=(0, 1, 2) phase=7.00s
+  Stage 1 pass 1 pressure  score=2.4101 order=(0, 2, 1) phase=0.00s
+  Stage 1 pass 1 climax    score=2.3796 order=(0, 2, 1) phase=0.00s
+Stage 1 pass 1: score=2.3796 peak=+2.27dB boundary=0.0000
+  Stage 1 pass 2 core      score=2.3796 order=(0, 1, 2) phase=7.00s
+  Stage 1 pass 2 pressure  score=2.3796 order=(0, 2, 1) phase=0.00s
+  Stage 1 pass 2 climax    score=2.3796 order=(0, 2, 1) phase=0.00s
+Stage 1 pass 2: score=2.3796 peak=+2.27dB boundary=0.0000
+  Stage 2 pass 1 core      score=1.5478 order=(0, 1, 2) phase=7.50s
+  Stage 2 pass 1 pressure  score=1.5478 order=(0, 2, 1) phase=0.00s
+  Stage 2 pass 1 climax    score=1.4883 order=(0, 2, 1) phase=0.50s
+Stage 2 exact pass 1: score=1.4883 peak=+1.67dB boundary=0.0000
+  Stage 2 pass 2 core      score=1.4883 order=(0, 1, 2) phase=7.50s
+  Stage 2 pass 2 pressure  score=1.4614 order=(1, 2, 0) phase=0.00s
+  Stage 2 pass 2 climax    score=1.4614 order=(0, 2, 1) phase=0.50s
+Stage 2 exact pass 2: score=1.4614 peak=+2.16dB boundary=0.0000
+
+Best phrase orders:
+  core      (0, 1, 2) phase=7.50s
+  pressure  (1, 2, 0) phase=0.00s
+  climax    (0, 2, 1) phase=0.50s
+
+FINAL STORY RESULT
+Duration: 44.000s
+Optimizer exact objective: 1.4614   final objective: 1.4614
+Peak gap Discovery -> Revelation: optimizer +2.155 dB, final +2.155 dB
+
+Energy:
+  HOOK                          -25.19 dB   (target -26.0)
+  SETUP / CONFLICT              -23.71 dB   (target -24.8)
+  CONSEQUENCE                   -23.58 dB   (target -23.9)
+  HIDDEN DANGER                 -20.99 dB   (target -22.7)
+  DISCOVERY                     -20.98 dB   (target -22.0)
+  FORGERY REVELATION            -18.82 dB   (target -20.0)
+  AFTERMATH / RESOLUTION        -24.19 dB   (target -25.3)
+
+Boundaries:
+  HOOK -> SETUP / CONFLICT: +2.33 dB
+  SETUP / CONFLICT -> CONSEQUENCE: -0.52 dB
+  CONSEQUENCE -> HIDDEN DANGER: +1.33 dB
+  HIDDEN DANGER -> DISCOVERY: -0.64 dB
+  DISCOVERY -> FORGERY REVELATION: +0.79 dB
+  FORGERY REVELATION -> AFTERMATH / RESOLUTION: -0.44 dB
+
+Alignment optimizer vs final: worst 0.000000 dB -> ALIGNED
+Alignment optimizer vs 16-bit file: worst 0.000268 dB
+Average duck: -4.08 dB
+
+================================================================================
+GENERALIZATION V2 SUMMARY
+================================================================================
+
+Story 1: 71_extracted.wav
+  Objective (optimizer / final): 0.6349 / 0.6349
+  Discovery: -22.40 dB   Revelation: -19.72 dB
+  Revelation - Discovery (optimizer / final): +2.683 / +2.683 dB
+  Aftermath: -25.13 dB
+  Max boundary jump: 2.89 dB
+  Optimizer vs final worst diff: 0.000000 dB (ALIGNED)
+  Average duck: -3.96 dB
+
+Story 2: 72_extracted.wav
+  Objective (optimizer / final): 1.4614 / 1.4614
+  Discovery: -20.98 dB   Revelation: -18.82 dB
+  Revelation - Discovery (optimizer / final): +2.155 / +2.155 dB
+  Aftermath: -24.19 dB
+  Max boundary jump: 2.33 dB
+  Optimizer vs final worst diff: 0.000000 dB (ALIGNED)
+  Average duck: -4.08 dB
+ZIP: /tmp/smoke2/out/jobC.zip
+
+================================================================================
+GENERALIZATION V2 COMPLETE — EXACT WAVEFORM OPTIMIZER
+================================================================================
+Summary: /tmp/smoke2/out/jobC/generalization_summary.json

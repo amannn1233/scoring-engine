@@ -1,0 +1,299 @@
+{
+  "story_file": "/kaggle/input/datasets/dangerzone4242/working/72_extracted.wav",
+  "duration_seconds": 134.32743764172335,
+  "transcript_file": null,
+  "detected_mood": "relationship betrayal, financial pressure, workplace conflict",
+  "boundaries": [
+    0.0,
+    7.2,
+    35.28,
+    45.28,
+    84.32000000000001,
+    108.8,
+    122.56,
+    134.32743764172335
+  ],
+  "motif": {
+    "path": "/kaggle/working/story_generalization_v1/story_02_72_extracted/motif_seed_28s.wav",
+    "prompt": "cinematic musical motif for a relationship betrayal, financial pressure, workplace conflict story, dark modern psychological score, clear memorable three-note descending felt piano motif, motif repeats naturally, warm deep bass, restrained dark pad, subtle rhythmic pulse, emotionally intelligent and understated, instrumental only, no vocals, no speech, no choir, no trailer bombast",
+    "reference_starts_seconds": [
+      5.0,
+      0.5,
+      7.0,
+      3.0
+    ]
+  },
+  "quality_report": [
+    {
+      "layer": "core",
+      "phrase": 1,
+      "attempt": 1,
+      "seed": 32000,
+      "reference": 1,
+      "valid": true,
+      "quality": 92.72259426116943,
+      "local_valley_db": 4.475486755371094,
+      "dropout_fraction": 0.0,
+      "longest_valley_seconds": 0.0,
+      "head_drop_db": -3.655529022216797,
+      "tail_drop_db": 4.00645637512207,
+      "level_spread_db": 11.74063777923584,
+      "motif_similarity": 0.9558758735656738,
+      "failures": []
+    },
+    {
+      "layer": "core",
+      "phrase": 2,
+      "attempt": 1,
+      "seed": 32100,
+      "reference": 2,
+      "valid": true,
+      "quality": 93.79763436317444,
+      "local_valley_db": 4.884391784667969,
+      "dropout_fraction": 0.0,
+      "longest_valley_seconds": 0.0,
+      "head_drop_db": -2.2842636108398438,
+      "tail_drop_db": 2.5221595764160156,
+      "level_spread_db": 12.44369125366211,
+      "motif_similarity": 0.9858373403549194,
+      "failures": []
+    },
+    {
+      "layer": "core",
+      "phrase": 3,
+      "attempt": 1,
+      "seed": 32200,
+      "reference": 3,
+      "valid": true,
+      "quality": 91.53346133232117,
+      "local_valley_db": 5.34282112121582,
+      "dropout_fraction": 0.0,
+      "longest_valley_seconds": 0.0,
+      "head_drop_db": -0.03782844543457031,
+      "tail_drop_db": 5.546180725097656,
+      "level_spread_db": 12.033988952636719,
+      "motif_similarity": 0.9698644876480103,
+      "failures": []
+    },
+    {
+      "layer": "pressure",
+      "phrase": 1,
+      "attempt": 1,
+      "seed": 33000,
+      "reference": 2,
+      "valid": true,
+      "quality": 93.54543697834015,
+      "local_valley_db": 4.981941223144531,
+      "dropout_fraction": 0.0,
+      "longest_valley_seconds": 0.0,
+      "head_drop_db": -2.0691146850585938,
+      "tail_drop_db": 2.3766937255859375,
+      "level_spread_db": 12.448382377624512,
+      "motif_similarity": 0.9857184290885925,
+      "failures": []
+    },
+    {
+      "layer": "pressure",
+      "phrase": 2,
+      "attempt": 1,
+      "seed": 33100,
+      "reference": 3,
+      "valid": true,
+      "quality": 90.92840504646301,
+      "local_valley_db": 5.531084060668945,
+      "dropout_fraction": 0.0,
+      "longest_valley_seconds": 0.0,
+      "head_drop_db": -0.16692733764648438,
+      "tail_drop_db": 5.191444396972656,
+      "level_spread_db": 12.550207138061523,
+      "motif_similarity": 0.9679445028305054,
+      "failures": []
+    },
+    {
+      "layer": "pressure",
+      "phrase": 3,
+      "attempt": 1,
+      "seed": 33200,
+      "reference": 4,
+      "valid": true,
+      "quality": 90.25390040874481,
+      "local_valley_db": 6.030742645263672,
+      "dropout_fraction": 0.0,
+      "longest_valley_seconds": 0.0,
+      "head_drop_db": 1.7452583312988281,
+      "tail_drop_db": 2.503246307373047,
+      "level_spread_db": 12.682188034057617,
+      "motif_similarity": 0.9761536717414856,
+      "failures": []
+    },
+    {
+      "layer": "climax",
+      "phrase": 1,
+      "attempt": 1,
+      "seed": 34000,
+      "reference": 3,
+      "valid": true,
+      "quality": 90.93234372138977,
+      "local_valley_db": 5.237192153930664,
+      "dropout_fraction": 0.0,
+      "longest_valley_seconds": 0.0,
+      "head_drop_db": -0.5236911773681641,
+      "tail_drop_db": 4.355243682861328,
+      "level_spread_db": 12.264135360717773,
+      "motif_similarity": 0.9575046300888062,
+      "failures": []
+    },
+    {
+      "layer": "climax",
+      "phrase": 2,
+      "attempt": 1,
+      "seed": 34100,
+      "reference": 4,
+      "valid": true,
+      "quality": 90.02298069000244,
+      "local_valley_db": 6.099523544311523,
+      "dropout_fraction": 0.0,
+      "longest_valley_seconds": 0.0,
+      "head_drop_db": 3.6110897064208984,
+      "tail_drop_db": 3.524198532104492,
+      "level_spread_db": 12.255013465881348,
+      "motif_similarity": 0.975311279296875,
+      "failures": []
+    },
+    {
+      "layer": "climax",
+      "phrase": 3,
+      "attempt": 1,
+      "seed": 34200,
+      "reference": 1,
+      "valid": true,
+      "quality": 93.27725481987,
+      "local_valley_db": 4.3385009765625,
+      "dropout_fraction": 0.0,
+      "longest_valley_seconds": 0.0,
+      "head_drop_db": -3.4597835540771484,
+      "tail_drop_db": 3.487020492553711,
+      "level_spread_db": 11.432842254638672,
+      "motif_similarity": 0.9589072465896606,
+      "failures": []
+    }
+  ],
+  "optimizer": {
+    "orders": {
+      "core": [
+        0,
+        1,
+        2
+      ],
+      "pressure": [
+        0,
+        1,
+        2
+      ],
+      "climax": [
+        0,
+        1,
+        2
+      ]
+    },
+    "phases_seconds": {
+      "core": 1.0,
+      "pressure": 10.0,
+      "climax": 0.0
+    },
+    "objective": 0.6112574100494385,
+    "metrics": {
+      "energy_error": 0.5093811750411987,
+      "boundary_penalty": 0.0,
+      "revelation_penalty": 0.0,
+      "release_penalty": 0.0,
+      "local_penalty": 0.0,
+      "peak_gap_db": 2.106464385986328
+    }
+  },
+  "final_story_energy": [
+    {
+      "section": "HOOK",
+      "start": 0.0,
+      "end": 7.2,
+      "rms_db": -24.325191497802734
+    },
+    {
+      "section": "SETUP / CONFLICT",
+      "start": 7.2,
+      "end": 35.28,
+      "rms_db": -23.999011993408203
+    },
+    {
+      "section": "CONSEQUENCE",
+      "start": 35.28,
+      "end": 45.28,
+      "rms_db": -24.332189559936523
+    },
+    {
+      "section": "HIDDEN DANGER",
+      "start": 45.28,
+      "end": 84.32000000000001,
+      "rms_db": -22.56235122680664
+    },
+    {
+      "section": "DISCOVERY",
+      "start": 84.32000000000001,
+      "end": 108.8,
+      "rms_db": -21.579797744750977
+    },
+    {
+      "section": "FORGERY REVELATION",
+      "start": 108.8,
+      "end": 122.56,
+      "rms_db": -20.856708526611328
+    },
+    {
+      "section": "AFTERMATH / RESOLUTION",
+      "start": 122.56,
+      "end": 134.32743764172335,
+      "rms_db": -25.914213180541992
+    }
+  ],
+  "final_boundary_continuity": [
+    {
+      "boundary": "HOOK -> SETUP / CONFLICT",
+      "jump_db": -2.7740345001220703
+    },
+    {
+      "boundary": "SETUP / CONFLICT -> CONSEQUENCE",
+      "jump_db": -5.897377014160156
+    },
+    {
+      "boundary": "CONSEQUENCE -> HIDDEN DANGER",
+      "jump_db": -2.523965835571289
+    },
+    {
+      "boundary": "HIDDEN DANGER -> DISCOVERY",
+      "jump_db": 0.6245937347412109
+    },
+    {
+      "boundary": "DISCOVERY -> FORGERY REVELATION",
+      "jump_db": -3.0448875427246094
+    },
+    {
+      "boundary": "FORGERY REVELATION -> AFTERMATH / RESOLUTION",
+      "jump_db": -1.805318832397461
+    }
+  ],
+  "ducking": {
+    "max_duck_db": 5.0,
+    "average_duck_db": -4.285566806793213,
+    "max_actual_duck_db": -4.978028297424316,
+    "voice_p10_db": -44.42643432617187,
+    "voice_p20_db": -31.68174018859863,
+    "voice_p50_db": -21.407455444335938,
+    "voice_p80_db": -16.840205001831055,
+    "voice_p90_db": -15.512215232849119
+  },
+  "files": {
+    "raw": "/kaggle/working/story_generalization_v1/story_02_72_extracted/score_raw.wav",
+    "ducked": "/kaggle/working/story_generalization_v1/story_02_72_extracted/score_ducked.wav",
+    "preview": "/kaggle/working/story_generalization_v1/story_02_72_extracted/voice_music_preview.wav"
+  }
+}

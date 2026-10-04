@@ -1,0 +1,2978 @@
+{
+  "audio_path": "/kaggle/input/datasets/dangerzone4242/working/85_extracted.wav",
+  "duration_sec": 115.94,
+  "language": "en",
+  "text": "Graham told me to stop running his brother's workshop, so I stopped. Nine days later, inspectors shut the whole place down. I'm 31, a licensed structural engineer, married to Graham for four years. His younger brother Reese opened the custom furniture shop four years ago with a small business loan and no safety training at all. From the very first month, I signed off on everything myself. Shelving loads, mezzanine weight limits, wiring near the finishing booth. Nobody paid me for it. Nobody ever asked me to stop. Then three weeks ago, a client watched me correct one of Reese's rigging diagrams in front of him, and Reese told Graham I made him look incompetent in his own shop. That night, Graham said I needed to let his brother run his own business for once. I didn't argue. I just stopped answering Reese's text. The annual recertification was due that same month, and I let the deadline pass without filing it. Nine days later, the county fire marshal did a routine walkthrough and found no current structural sign-off on file anywhere. He shut the shop down on the spot, pending a full recertification. What Reese never knew was how close that shop had already come to disaster. Two years ago, I found a mezzanine storage loft rated to hold half of what he was stacking on it. Last spring, I caught wiring running six inches from the lacquer booth, close enough to start a fire in seconds. I fixed both quietly and told nobody, not even Graham. Reese had a delivery due for a hotel chain called Bellamy & Finch worth $82,000 due the second week of December, with a penalty clause for every day it was late. Closing the shop was costing him roughly $1,000 a day. He called me 11 times in four days. I didn't answer once. On the fifth day, I drove over to return a mixer I'd borrowed, not to check on him. Sitting open on his desk was the county's recertification binder. A new structural sign-off page was already filed inside it, dated two days after our fight, carrying my license number and a signature that was not mine. I called the inspector's office listed on the form. She confirmed it had been accepted and to reopen that same morning. I asked Graham if he'd known. He said, Reese wouldn't do that. He did, I said. Graham stared at the binder, then asked, You've been signing off on that place since the beginning? Yes, I said. Why would he forge it instead of just calling you? Because he knew I'd say no. A forged engineering stamp is not a family disagreement. It is a felony filed under my license number, not his. I called the county that afternoon and reported the signature myself, before an inspector or an insurance auditor found at first. The shop closed again within the hour, this time flagged for fraud instead of a routine violation. Reese has not called since that day. Graham sleeps on his own side of the bed again, not the couch, but he has not brought up the workshop since either.",
+  "segments": [
+    {
+      "id": 0,
+      "start": 0.0,
+      "end": 2.32,
+      "text": "Graham told me to stop running his brother's workshop, so I stopped.",
+      "words": [
+        {
+          "word": "Graham",
+          "start": 0.0,
+          "end": 0.26
+        },
+        {
+          "word": "told",
+          "start": 0.26,
+          "end": 0.4
+        },
+        {
+          "word": "me",
+          "start": 0.4,
+          "end": 0.56
+        },
+        {
+          "word": "to",
+          "start": 0.56,
+          "end": 0.66
+        },
+        {
+          "word": "stop",
+          "start": 0.66,
+          "end": 0.8
+        },
+        {
+          "word": "running",
+          "start": 0.8,
+          "end": 0.96
+        },
+        {
+          "word": "his",
+          "start": 0.96,
+          "end": 1.16
+        },
+        {
+          "word": "brother's",
+          "start": 1.16,
+          "end": 1.4
+        },
+        {
+          "word": "workshop,",
+          "start": 1.4,
+          "end": 1.66
+        },
+        {
+          "word": "so",
+          "start": 1.74,
+          "end": 1.86
+        },
+        {
+          "word": "I",
+          "start": 1.86,
+          "end": 2.04
+        },
+        {
+          "word": "stopped.",
+          "start": 2.04,
+          "end": 2.32
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "start": 2.7,
+      "end": 4.58,
+      "text": "Nine days later, inspectors shut the whole place down.",
+      "words": [
+        {
+          "word": "Nine",
+          "start": 2.7,
+          "end": 2.84
+        },
+        {
+          "word": "days",
+          "start": 2.84,
+          "end": 3.02
+        },
+        {
+          "word": "later,",
+          "start": 3.02,
+          "end": 3.3
+        },
+        {
+          "word": "inspectors",
+          "start": 3.46,
+          "end": 3.66
+        },
+        {
+          "word": "shut",
+          "start": 3.66,
+          "end": 3.8
+        },
+        {
+          "word": "the",
+          "start": 3.8,
+          "end": 3.92
+        },
+        {
+          "word": "whole",
+          "start": 3.92,
+          "end": 4.08
+        },
+        {
+          "word": "place",
+          "start": 4.08,
+          "end": 4.26
+        },
+        {
+          "word": "down.",
+          "start": 4.26,
+          "end": 4.58
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "start": 4.9,
+      "end": 7.8,
+      "text": "I'm 31, a licensed structural engineer, married to Graham for four years.",
+      "words": [
+        {
+          "word": "I'm",
+          "start": 4.9,
+          "end": 5.0
+        },
+        {
+          "word": "31,",
+          "start": 5.0,
+          "end": 5.36
+        },
+        {
+          "word": "a",
+          "start": 5.48,
+          "end": 5.62
+        },
+        {
+          "word": "licensed",
+          "start": 5.62,
+          "end": 5.84
+        },
+        {
+          "word": "structural",
+          "start": 5.84,
+          "end": 6.16
+        },
+        {
+          "word": "engineer,",
+          "start": 6.16,
+          "end": 6.56
+        },
+        {
+          "word": "married",
+          "start": 6.74,
+          "end": 6.88
+        },
+        {
+          "word": "to",
+          "start": 6.88,
+          "end": 7.04
+        },
+        {
+          "word": "Graham",
+          "start": 7.04,
+          "end": 7.16
+        },
+        {
+          "word": "for",
+          "start": 7.16,
+          "end": 7.3
+        },
+        {
+          "word": "four",
+          "start": 7.3,
+          "end": 7.5
+        },
+        {
+          "word": "years.",
+          "start": 7.5,
+          "end": 7.8
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "start": 7.96,
+      "end": 10.48,
+      "text": "His younger brother Reese opened the custom furniture shop four years ago",
+      "words": [
+        {
+          "word": "His",
+          "start": 7.96,
+          "end": 8.08
+        },
+        {
+          "word": "younger",
+          "start": 8.08,
+          "end": 8.32
+        },
+        {
+          "word": "brother",
+          "start": 8.32,
+          "end": 8.54
+        },
+        {
+          "word": "Reese",
+          "start": 8.54,
+          "end": 8.74
+        },
+        {
+          "word": "opened",
+          "start": 8.74,
+          "end": 9.0
+        },
+        {
+          "word": "the",
+          "start": 9.0,
+          "end": 9.18
+        },
+        {
+          "word": "custom",
+          "start": 9.18,
+          "end": 9.38
+        },
+        {
+          "word": "furniture",
+          "start": 9.38,
+          "end": 9.72
+        },
+        {
+          "word": "shop",
+          "start": 9.72,
+          "end": 9.9
+        },
+        {
+          "word": "four",
+          "start": 9.9,
+          "end": 10.14
+        },
+        {
+          "word": "years",
+          "start": 10.14,
+          "end": 10.32
+        },
+        {
+          "word": "ago",
+          "start": 10.32,
+          "end": 10.48
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "start": 10.48,
+      "end": 12.5,
+      "text": "with a small business loan and no safety training at all.",
+      "words": [
+        {
+          "word": "with",
+          "start": 10.48,
+          "end": 10.6
+        },
+        {
+          "word": "a",
+          "start": 10.6,
+          "end": 10.78
+        },
+        {
+          "word": "small",
+          "start": 10.78,
+          "end": 10.9
+        },
+        {
+          "word": "business",
+          "start": 10.9,
+          "end": 11.24
+        },
+        {
+          "word": "loan",
+          "start": 11.24,
+          "end": 11.4
+        },
+        {
+          "word": "and",
+          "start": 11.4,
+          "end": 11.54
+        },
+        {
+          "word": "no",
+          "start": 11.54,
+          "end": 11.72
+        },
+        {
+          "word": "safety",
+          "start": 11.72,
+          "end": 11.98
+        },
+        {
+          "word": "training",
+          "start": 11.98,
+          "end": 12.18
+        },
+        {
+          "word": "at",
+          "start": 12.18,
+          "end": 12.34
+        },
+        {
+          "word": "all.",
+          "start": 12.34,
+          "end": 12.5
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "start": 12.56,
+      "end": 14.54,
+      "text": "From the very first month, I signed off on everything myself.",
+      "words": [
+        {
+          "word": "From",
+          "start": 12.56,
+          "end": 12.64
+        },
+        {
+          "word": "the",
+          "start": 12.64,
+          "end": 12.76
+        },
+        {
+          "word": "very",
+          "start": 12.76,
+          "end": 12.94
+        },
+        {
+          "word": "first",
+          "start": 12.94,
+          "end": 13.14
+        },
+        {
+          "word": "month,",
+          "start": 13.14,
+          "end": 13.32
+        },
+        {
+          "word": "I",
+          "start": 13.36,
+          "end": 13.5
+        },
+        {
+          "word": "signed",
+          "start": 13.5,
+          "end": 13.66
+        },
+        {
+          "word": "off",
+          "start": 13.66,
+          "end": 13.82
+        },
+        {
+          "word": "on",
+          "start": 13.82,
+          "end": 13.98
+        },
+        {
+          "word": "everything",
+          "start": 13.98,
+          "end": 14.18
+        },
+        {
+          "word": "myself.",
+          "start": 14.18,
+          "end": 14.54
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "start": 14.6,
+      "end": 17.08,
+      "text": "Shelving loads, mezzanine weight limits, wiring near the finishing booth.",
+      "words": [
+        {
+          "word": "Shelving",
+          "start": 14.6,
+          "end": 14.86
+        },
+        {
+          "word": "loads,",
+          "start": 14.86,
+          "end": 15.12
+        },
+        {
+          "word": "mezzanine",
+          "start": 15.3,
+          "end": 15.56
+        },
+        {
+          "word": "weight",
+          "start": 15.56,
+          "end": 15.7
+        },
+        {
+          "word": "limits,",
+          "start": 15.7,
+          "end": 15.94
+        },
+        {
+          "word": "wiring",
+          "start": 16.12,
+          "end": 16.28
+        },
+        {
+          "word": "near",
+          "start": 16.28,
+          "end": 16.46
+        },
+        {
+          "word": "the",
+          "start": 16.46,
+          "end": 16.66
+        },
+        {
+          "word": "finishing",
+          "start": 16.66,
+          "end": 16.84
+        },
+        {
+          "word": "booth.",
+          "start": 16.84,
+          "end": 17.08
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "start": 17.46,
+      "end": 18.28,
+      "text": "Nobody paid me for it.",
+      "words": [
+        {
+          "word": "Nobody",
+          "start": 17.46,
+          "end": 17.64
+        },
+        {
+          "word": "paid",
+          "start": 17.64,
+          "end": 17.82
+        },
+        {
+          "word": "me",
+          "start": 17.82,
+          "end": 18.0
+        },
+        {
+          "word": "for",
+          "start": 18.0,
+          "end": 18.14
+        },
+        {
+          "word": "it.",
+          "start": 18.14,
+          "end": 18.28
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "start": 18.4,
+      "end": 19.36,
+      "text": "Nobody ever asked me to stop.",
+      "words": [
+        {
+          "word": "Nobody",
+          "start": 18.4,
+          "end": 18.58
+        },
+        {
+          "word": "ever",
+          "start": 18.58,
+          "end": 18.78
+        },
+        {
+          "word": "asked",
+          "start": 18.78,
+          "end": 18.9
+        },
+        {
+          "word": "me",
+          "start": 18.9,
+          "end": 19.04
+        },
+        {
+          "word": "to",
+          "start": 19.04,
+          "end": 19.2
+        },
+        {
+          "word": "stop.",
+          "start": 19.2,
+          "end": 19.36
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "start": 19.48,
+      "end": 23.04,
+      "text": "Then three weeks ago, a client watched me correct one of Reese's rigging diagrams in front of him,",
+      "words": [
+        {
+          "word": "Then",
+          "start": 19.48,
+          "end": 19.58
+        },
+        {
+          "word": "three",
+          "start": 19.58,
+          "end": 19.74
+        },
+        {
+          "word": "weeks",
+          "start": 19.74,
+          "end": 19.96
+        },
+        {
+          "word": "ago,",
+          "start": 19.96,
+          "end": 20.16
+        },
+        {
+          "word": "a",
+          "start": 20.22,
+          "end": 20.38
+        },
+        {
+          "word": "client",
+          "start": 20.38,
+          "end": 20.54
+        },
+        {
+          "word": "watched",
+          "start": 20.54,
+          "end": 20.82
+        },
+        {
+          "word": "me",
+          "start": 20.82,
+          "end": 21.02
+        },
+        {
+          "word": "correct",
+          "start": 21.02,
+          "end": 21.22
+        },
+        {
+          "word": "one",
+          "start": 21.22,
+          "end": 21.42
+        },
+        {
+          "word": "of",
+          "start": 21.42,
+          "end": 21.5
+        },
+        {
+          "word": "Reese's",
+          "start": 21.5,
+          "end": 21.86
+        },
+        {
+          "word": "rigging",
+          "start": 21.86,
+          "end": 22.16
+        },
+        {
+          "word": "diagrams",
+          "start": 22.16,
+          "end": 22.44
+        },
+        {
+          "word": "in",
+          "start": 22.44,
+          "end": 22.68
+        },
+        {
+          "word": "front",
+          "start": 22.68,
+          "end": 22.76
+        },
+        {
+          "word": "of",
+          "start": 22.76,
+          "end": 22.88
+        },
+        {
+          "word": "him,",
+          "start": 22.88,
+          "end": 23.04
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "start": 23.1,
+      "end": 25.7,
+      "text": "and Reese told Graham I made him look incompetent in his own shop.",
+      "words": [
+        {
+          "word": "and",
+          "start": 23.1,
+          "end": 23.26
+        },
+        {
+          "word": "Reese",
+          "start": 23.26,
+          "end": 23.42
+        },
+        {
+          "word": "told",
+          "start": 23.42,
+          "end": 23.6
+        },
+        {
+          "word": "Graham",
+          "start": 23.6,
+          "end": 23.84
+        },
+        {
+          "word": "I",
+          "start": 23.84,
+          "end": 24.04
+        },
+        {
+          "word": "made",
+          "start": 24.04,
+          "end": 24.16
+        },
+        {
+          "word": "him",
+          "start": 24.16,
+          "end": 24.34
+        },
+        {
+          "word": "look",
+          "start": 24.34,
+          "end": 24.5
+        },
+        {
+          "word": "incompetent",
+          "start": 24.5,
+          "end": 25.08
+        },
+        {
+          "word": "in",
+          "start": 25.08,
+          "end": 25.18
+        },
+        {
+          "word": "his",
+          "start": 25.18,
+          "end": 25.3
+        },
+        {
+          "word": "own",
+          "start": 25.3,
+          "end": 25.44
+        },
+        {
+          "word": "shop.",
+          "start": 25.44,
+          "end": 25.7
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "start": 25.94,
+      "end": 28.7,
+      "text": "That night, Graham said I needed to let his brother run his own business for once.",
+      "words": [
+        {
+          "word": "That",
+          "start": 25.94,
+          "end": 26.08
+        },
+        {
+          "word": "night,",
+          "start": 26.08,
+          "end": 26.3
+        },
+        {
+          "word": "Graham",
+          "start": 26.42,
+          "end": 26.56
+        },
+        {
+          "word": "said",
+          "start": 26.56,
+          "end": 26.72
+        },
+        {
+          "word": "I",
+          "start": 26.72,
+          "end": 26.84
+        },
+        {
+          "word": "needed",
+          "start": 26.84,
+          "end": 27.02
+        },
+        {
+          "word": "to",
+          "start": 27.02,
+          "end": 27.18
+        },
+        {
+          "word": "let",
+          "start": 27.18,
+          "end": 27.24
+        },
+        {
+          "word": "his",
+          "start": 27.24,
+          "end": 27.44
+        },
+        {
+          "word": "brother",
+          "start": 27.44,
+          "end": 27.58
+        },
+        {
+          "word": "run",
+          "start": 27.58,
+          "end": 27.74
+        },
+        {
+          "word": "his",
+          "start": 27.74,
+          "end": 27.9
+        },
+        {
+          "word": "own",
+          "start": 27.9,
+          "end": 28.04
+        },
+        {
+          "word": "business",
+          "start": 28.04,
+          "end": 28.28
+        },
+        {
+          "word": "for",
+          "start": 28.28,
+          "end": 28.5
+        },
+        {
+          "word": "once.",
+          "start": 28.5,
+          "end": 28.7
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "start": 28.7,
+      "end": 30.9,
+      "text": "I didn't argue. I just stopped answering Reese's text.",
+      "words": [
+        {
+          "word": "I",
+          "start": 28.7,
+          "end": 28.96
+        },
+        {
+          "word": "didn't",
+          "start": 28.96,
+          "end": 29.12
+        },
+        {
+          "word": "argue.",
+          "start": 29.12,
+          "end": 29.42
+        },
+        {
+          "word": "I",
+          "start": 29.54,
+          "end": 29.64
+        },
+        {
+          "word": "just",
+          "start": 29.64,
+          "end": 29.78
+        },
+        {
+          "word": "stopped",
+          "start": 29.78,
+          "end": 29.98
+        },
+        {
+          "word": "answering",
+          "start": 29.98,
+          "end": 30.28
+        },
+        {
+          "word": "Reese's",
+          "start": 30.28,
+          "end": 30.62
+        },
+        {
+          "word": "text.",
+          "start": 30.62,
+          "end": 30.9
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "start": 31.08,
+      "end": 34.34,
+      "text": "The annual recertification was due that same month, and I let the deadline pass without filing it.",
+      "words": [
+        {
+          "word": "The",
+          "start": 31.08,
+          "end": 31.2
+        },
+        {
+          "word": "annual",
+          "start": 31.2,
+          "end": 31.44
+        },
+        {
+          "word": "recertification",
+          "start": 31.44,
+          "end": 32.0
+        },
+        {
+          "word": "was",
+          "start": 32.0,
+          "end": 32.18
+        },
+        {
+          "word": "due",
+          "start": 32.18,
+          "end": 32.28
+        },
+        {
+          "word": "that",
+          "start": 32.28,
+          "end": 32.48
+        },
+        {
+          "word": "same",
+          "start": 32.48,
+          "end": 32.64
+        },
+        {
+          "word": "month,",
+          "start": 32.64,
+          "end": 32.84
+        },
+        {
+          "word": "and",
+          "start": 32.86,
+          "end": 32.96
+        },
+        {
+          "word": "I",
+          "start": 32.96,
+          "end": 33.06
+        },
+        {
+          "word": "let",
+          "start": 33.06,
+          "end": 33.14
+        },
+        {
+          "word": "the",
+          "start": 33.14,
+          "end": 33.28
+        },
+        {
+          "word": "deadline",
+          "start": 33.28,
+          "end": 33.46
+        },
+        {
+          "word": "pass",
+          "start": 33.46,
+          "end": 33.74
+        },
+        {
+          "word": "without",
+          "start": 33.74,
+          "end": 33.94
+        },
+        {
+          "word": "filing",
+          "start": 33.94,
+          "end": 34.18
+        },
+        {
+          "word": "it.",
+          "start": 34.18,
+          "end": 34.34
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "start": 34.42,
+      "end": 37.98,
+      "text": "Nine days later, the county fire marshal did a routine walkthrough and found no current structural",
+      "words": [
+        {
+          "word": "Nine",
+          "start": 34.42,
+          "end": 34.56
+        },
+        {
+          "word": "days",
+          "start": 34.56,
+          "end": 34.74
+        },
+        {
+          "word": "later,",
+          "start": 34.74,
+          "end": 35.02
+        },
+        {
+          "word": "the",
+          "start": 35.12,
+          "end": 35.24
+        },
+        {
+          "word": "county",
+          "start": 35.24,
+          "end": 35.46
+        },
+        {
+          "word": "fire",
+          "start": 35.46,
+          "end": 35.68
+        },
+        {
+          "word": "marshal",
+          "start": 35.68,
+          "end": 35.94
+        },
+        {
+          "word": "did",
+          "start": 35.94,
+          "end": 36.06
+        },
+        {
+          "word": "a",
+          "start": 36.06,
+          "end": 36.18
+        },
+        {
+          "word": "routine",
+          "start": 36.18,
+          "end": 36.44
+        },
+        {
+          "word": "walkthrough",
+          "start": 36.44,
+          "end": 36.88
+        },
+        {
+          "word": "and",
+          "start": 36.88,
+          "end": 37.0
+        },
+        {
+          "word": "found",
+          "start": 37.0,
+          "end": 37.18
+        },
+        {
+          "word": "no",
+          "start": 37.18,
+          "end": 37.38
+        },
+        {
+          "word": "current",
+          "start": 37.38,
+          "end": 37.64
+        },
+        {
+          "word": "structural",
+          "start": 37.64,
+          "end": 37.98
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "start": 37.98,
+      "end": 41.72,
+      "text": "sign-off on file anywhere. He shut the shop down on the spot, pending a full recertification.",
+      "words": [
+        {
+          "word": "sign",
+          "start": 37.98,
+          "end": 38.24
+        },
+        {
+          "word": "-off",
+          "start": 38.24,
+          "end": 38.38
+        },
+        {
+          "word": "on",
+          "start": 38.38,
+          "end": 38.64
+        },
+        {
+          "word": "file",
+          "start": 38.64,
+          "end": 38.86
+        },
+        {
+          "word": "anywhere.",
+          "start": 38.86,
+          "end": 39.26
+        },
+        {
+          "word": "He",
+          "start": 39.32,
+          "end": 39.48
+        },
+        {
+          "word": "shut",
+          "start": 39.48,
+          "end": 39.64
+        },
+        {
+          "word": "the",
+          "start": 39.64,
+          "end": 39.82
+        },
+        {
+          "word": "shop",
+          "start": 39.82,
+          "end": 39.9
+        },
+        {
+          "word": "down",
+          "start": 39.9,
+          "end": 40.08
+        },
+        {
+          "word": "on",
+          "start": 40.08,
+          "end": 40.18
+        },
+        {
+          "word": "the",
+          "start": 40.18,
+          "end": 40.34
+        },
+        {
+          "word": "spot,",
+          "start": 40.34,
+          "end": 40.5
+        },
+        {
+          "word": "pending",
+          "start": 40.58,
+          "end": 40.76
+        },
+        {
+          "word": "a",
+          "start": 40.76,
+          "end": 40.88
+        },
+        {
+          "word": "full",
+          "start": 40.88,
+          "end": 41.06
+        },
+        {
+          "word": "recertification.",
+          "start": 41.06,
+          "end": 41.72
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "start": 42.12,
+      "end": 44.76,
+      "text": "What Reese never knew was how close that shop had already come to disaster.",
+      "words": [
+        {
+          "word": "What",
+          "start": 42.12,
+          "end": 42.26
+        },
+        {
+          "word": "Reese",
+          "start": 42.26,
+          "end": 42.4
+        },
+        {
+          "word": "never",
+          "start": 42.4,
+          "end": 42.62
+        },
+        {
+          "word": "knew",
+          "start": 42.62,
+          "end": 42.78
+        },
+        {
+          "word": "was",
+          "start": 42.78,
+          "end": 42.9
+        },
+        {
+          "word": "how",
+          "start": 42.9,
+          "end": 43.1
+        },
+        {
+          "word": "close",
+          "start": 43.1,
+          "end": 43.26
+        },
+        {
+          "word": "that",
+          "start": 43.26,
+          "end": 43.44
+        },
+        {
+          "word": "shop",
+          "start": 43.44,
+          "end": 43.62
+        },
+        {
+          "word": "had",
+          "start": 43.62,
+          "end": 43.78
+        },
+        {
+          "word": "already",
+          "start": 43.78,
+          "end": 44.06
+        },
+        {
+          "word": "come",
+          "start": 44.06,
+          "end": 44.2
+        },
+        {
+          "word": "to",
+          "start": 44.2,
+          "end": 44.36
+        },
+        {
+          "word": "disaster.",
+          "start": 44.36,
+          "end": 44.76
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "start": 45.26,
+      "end": 48.78,
+      "text": "Two years ago, I found a mezzanine storage loft rated to hold half of what he was stacking on it.",
+      "words": [
+        {
+          "word": "Two",
+          "start": 45.26,
+          "end": 45.38
+        },
+        {
+          "word": "years",
+          "start": 45.38,
+          "end": 45.6
+        },
+        {
+          "word": "ago,",
+          "start": 45.6,
+          "end": 45.78
+        },
+        {
+          "word": "I",
+          "start": 45.78,
+          "end": 45.9
+        },
+        {
+          "word": "found",
+          "start": 45.9,
+          "end": 46.08
+        },
+        {
+          "word": "a",
+          "start": 46.08,
+          "end": 46.22
+        },
+        {
+          "word": "mezzanine",
+          "start": 46.22,
+          "end": 46.52
+        },
+        {
+          "word": "storage",
+          "start": 46.52,
+          "end": 46.8
+        },
+        {
+          "word": "loft",
+          "start": 46.8,
+          "end": 47.0
+        },
+        {
+          "word": "rated",
+          "start": 47.0,
+          "end": 47.22
+        },
+        {
+          "word": "to",
+          "start": 47.22,
+          "end": 47.44
+        },
+        {
+          "word": "hold",
+          "start": 47.44,
+          "end": 47.54
+        },
+        {
+          "word": "half",
+          "start": 47.54,
+          "end": 47.8
+        },
+        {
+          "word": "of",
+          "start": 47.8,
+          "end": 47.9
+        },
+        {
+          "word": "what",
+          "start": 47.9,
+          "end": 48.02
+        },
+        {
+          "word": "he",
+          "start": 48.02,
+          "end": 48.14
+        },
+        {
+          "word": "was",
+          "start": 48.14,
+          "end": 48.32
+        },
+        {
+          "word": "stacking",
+          "start": 48.32,
+          "end": 48.48
+        },
+        {
+          "word": "on",
+          "start": 48.48,
+          "end": 48.68
+        },
+        {
+          "word": "it.",
+          "start": 48.68,
+          "end": 48.78
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "start": 48.84,
+      "end": 51.28,
+      "text": "Last spring, I caught wiring running six inches from the lacquer booth,",
+      "words": [
+        {
+          "word": "Last",
+          "start": 48.84,
+          "end": 49.04
+        },
+        {
+          "word": "spring,",
+          "start": 49.04,
+          "end": 49.28
+        },
+        {
+          "word": "I",
+          "start": 49.32,
+          "end": 49.52
+        },
+        {
+          "word": "caught",
+          "start": 49.52,
+          "end": 49.64
+        },
+        {
+          "word": "wiring",
+          "start": 49.64,
+          "end": 49.9
+        },
+        {
+          "word": "running",
+          "start": 49.9,
+          "end": 50.14
+        },
+        {
+          "word": "six",
+          "start": 50.14,
+          "end": 50.4
+        },
+        {
+          "word": "inches",
+          "start": 50.4,
+          "end": 50.64
+        },
+        {
+          "word": "from",
+          "start": 50.64,
+          "end": 50.78
+        },
+        {
+          "word": "the",
+          "start": 50.78,
+          "end": 50.94
+        },
+        {
+          "word": "lacquer",
+          "start": 50.94,
+          "end": 51.16
+        },
+        {
+          "word": "booth,",
+          "start": 51.16,
+          "end": 51.28
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "start": 51.3,
+      "end": 52.72,
+      "text": "close enough to start a fire in seconds.",
+      "words": [
+        {
+          "word": "close",
+          "start": 51.3,
+          "end": 51.54
+        },
+        {
+          "word": "enough",
+          "start": 51.54,
+          "end": 51.68
+        },
+        {
+          "word": "to",
+          "start": 51.68,
+          "end": 51.86
+        },
+        {
+          "word": "start",
+          "start": 51.86,
+          "end": 51.98
+        },
+        {
+          "word": "a",
+          "start": 51.98,
+          "end": 52.1
+        },
+        {
+          "word": "fire",
+          "start": 52.1,
+          "end": 52.24
+        },
+        {
+          "word": "in",
+          "start": 52.24,
+          "end": 52.44
+        },
+        {
+          "word": "seconds.",
+          "start": 52.44,
+          "end": 52.72
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "start": 52.94,
+      "end": 55.3,
+      "text": "I fixed both quietly and told nobody, not even Graham.",
+      "words": [
+        {
+          "word": "I",
+          "start": 52.94,
+          "end": 53.18
+        },
+        {
+          "word": "fixed",
+          "start": 53.18,
+          "end": 53.36
+        },
+        {
+          "word": "both",
+          "start": 53.36,
+          "end": 53.58
+        },
+        {
+          "word": "quietly",
+          "start": 53.58,
+          "end": 53.94
+        },
+        {
+          "word": "and",
+          "start": 53.94,
+          "end": 54.12
+        },
+        {
+          "word": "told",
+          "start": 54.12,
+          "end": 54.24
+        },
+        {
+          "word": "nobody,",
+          "start": 54.24,
+          "end": 54.56
+        },
+        {
+          "word": "not",
+          "start": 54.7,
+          "end": 54.88
+        },
+        {
+          "word": "even",
+          "start": 54.88,
+          "end": 55.04
+        },
+        {
+          "word": "Graham.",
+          "start": 55.04,
+          "end": 55.3
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "start": 55.3,
+      "end": 60.1,
+      "text": "Reese had a delivery due for a hotel chain called Bellamy & Finch worth $82,000 due the second week",
+      "words": [
+        {
+          "word": "Reese",
+          "start": 55.3,
+          "end": 55.6
+        },
+        {
+          "word": "had",
+          "start": 55.6,
+          "end": 55.78
+        },
+        {
+          "word": "a",
+          "start": 55.78,
+          "end": 55.88
+        },
+        {
+          "word": "delivery",
+          "start": 55.88,
+          "end": 56.18
+        },
+        {
+          "word": "due",
+          "start": 56.18,
+          "end": 56.34
+        },
+        {
+          "word": "for",
+          "start": 56.34,
+          "end": 56.52
+        },
+        {
+          "word": "a",
+          "start": 56.52,
+          "end": 56.64
+        },
+        {
+          "word": "hotel",
+          "start": 56.64,
+          "end": 56.92
+        },
+        {
+          "word": "chain",
+          "start": 56.92,
+          "end": 57.16
+        },
+        {
+          "word": "called",
+          "start": 57.16,
+          "end": 57.38
+        },
+        {
+          "word": "Bellamy",
+          "start": 57.38,
+          "end": 57.74
+        },
+        {
+          "word": "&",
+          "start": 57.74,
+          "end": 57.9
+        },
+        {
+          "word": "Finch",
+          "start": 57.9,
+          "end": 58.2
+        },
+        {
+          "word": "worth",
+          "start": 58.2,
+          "end": 58.42
+        },
+        {
+          "word": "$82",
+          "start": 58.42,
+          "end": 58.84
+        },
+        {
+          "word": ",000",
+          "start": 58.84,
+          "end": 59.46
+        },
+        {
+          "word": "due",
+          "start": 59.46,
+          "end": 59.58
+        },
+        {
+          "word": "the",
+          "start": 59.58,
+          "end": 59.74
+        },
+        {
+          "word": "second",
+          "start": 59.74,
+          "end": 59.94
+        },
+        {
+          "word": "week",
+          "start": 59.94,
+          "end": 60.1
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "start": 60.1,
+      "end": 63.64,
+      "text": "of December, with a penalty clause for every day it was late. Closing the shop was costing",
+      "words": [
+        {
+          "word": "of",
+          "start": 60.1,
+          "end": 60.24
+        },
+        {
+          "word": "December,",
+          "start": 60.24,
+          "end": 60.58
+        },
+        {
+          "word": "with",
+          "start": 60.62,
+          "end": 60.78
+        },
+        {
+          "word": "a",
+          "start": 60.78,
+          "end": 60.94
+        },
+        {
+          "word": "penalty",
+          "start": 60.94,
+          "end": 61.2
+        },
+        {
+          "word": "clause",
+          "start": 61.2,
+          "end": 61.42
+        },
+        {
+          "word": "for",
+          "start": 61.42,
+          "end": 61.64
+        },
+        {
+          "word": "every",
+          "start": 61.64,
+          "end": 61.86
+        },
+        {
+          "word": "day",
+          "start": 61.86,
+          "end": 61.96
+        },
+        {
+          "word": "it",
+          "start": 61.96,
+          "end": 62.04
+        },
+        {
+          "word": "was",
+          "start": 62.04,
+          "end": 62.22
+        },
+        {
+          "word": "late.",
+          "start": 62.22,
+          "end": 62.48
+        },
+        {
+          "word": "Closing",
+          "start": 62.66,
+          "end": 62.92
+        },
+        {
+          "word": "the",
+          "start": 62.92,
+          "end": 63.1
+        },
+        {
+          "word": "shop",
+          "start": 63.1,
+          "end": 63.22
+        },
+        {
+          "word": "was",
+          "start": 63.22,
+          "end": 63.4
+        },
+        {
+          "word": "costing",
+          "start": 63.4,
+          "end": 63.64
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "start": 63.64,
+      "end": 67.84,
+      "text": "him roughly $1,000 a day. He called me 11 times in four days. I didn't answer once.",
+      "words": [
+        {
+          "word": "him",
+          "start": 63.64,
+          "end": 63.78
+        },
+        {
+          "word": "roughly",
+          "start": 63.78,
+          "end": 64.06
+        },
+        {
+          "word": "$1",
+          "start": 64.06,
+          "end": 64.36
+        },
+        {
+          "word": ",000",
+          "start": 64.36,
+          "end": 64.66
+        },
+        {
+          "word": "a",
+          "start": 64.66,
+          "end": 64.86
+        },
+        {
+          "word": "day.",
+          "start": 64.86,
+          "end": 65.08
+        },
+        {
+          "word": "He",
+          "start": 65.32,
+          "end": 65.42
+        },
+        {
+          "word": "called",
+          "start": 65.42,
+          "end": 65.62
+        },
+        {
+          "word": "me",
+          "start": 65.62,
+          "end": 65.78
+        },
+        {
+          "word": "11",
+          "start": 65.78,
+          "end": 66.0
+        },
+        {
+          "word": "times",
+          "start": 66.0,
+          "end": 66.26
+        },
+        {
+          "word": "in",
+          "start": 66.26,
+          "end": 66.38
+        },
+        {
+          "word": "four",
+          "start": 66.38,
+          "end": 66.58
+        },
+        {
+          "word": "days.",
+          "start": 66.58,
+          "end": 66.9
+        },
+        {
+          "word": "I",
+          "start": 67.04,
+          "end": 67.12
+        },
+        {
+          "word": "didn't",
+          "start": 67.12,
+          "end": 67.28
+        },
+        {
+          "word": "answer",
+          "start": 67.28,
+          "end": 67.52
+        },
+        {
+          "word": "once.",
+          "start": 67.52,
+          "end": 67.84
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "start": 68.06,
+      "end": 71.24,
+      "text": "On the fifth day, I drove over to return a mixer I'd borrowed, not to check on him.",
+      "words": [
+        {
+          "word": "On",
+          "start": 68.06,
+          "end": 68.14
+        },
+        {
+          "word": "the",
+          "start": 68.14,
+          "end": 68.26
+        },
+        {
+          "word": "fifth",
+          "start": 68.26,
+          "end": 68.42
+        },
+        {
+          "word": "day,",
+          "start": 68.42,
+          "end": 68.66
+        },
+        {
+          "word": "I",
+          "start": 69.0,
+          "end": 69.08
+        },
+        {
+          "word": "drove",
+          "start": 69.08,
+          "end": 69.24
+        },
+        {
+          "word": "over",
+          "start": 69.24,
+          "end": 69.46
+        },
+        {
+          "word": "to",
+          "start": 69.46,
+          "end": 69.58
+        },
+        {
+          "word": "return",
+          "start": 69.58,
+          "end": 69.78
+        },
+        {
+          "word": "a",
+          "start": 69.78,
+          "end": 69.92
+        },
+        {
+          "word": "mixer",
+          "start": 69.92,
+          "end": 70.08
+        },
+        {
+          "word": "I'd",
+          "start": 70.08,
+          "end": 70.38
+        },
+        {
+          "word": "borrowed,",
+          "start": 70.38,
+          "end": 70.5
+        },
+        {
+          "word": "not",
+          "start": 70.62,
+          "end": 70.72
+        },
+        {
+          "word": "to",
+          "start": 70.72,
+          "end": 70.86
+        },
+        {
+          "word": "check",
+          "start": 70.86,
+          "end": 70.96
+        },
+        {
+          "word": "on",
+          "start": 70.96,
+          "end": 71.1
+        },
+        {
+          "word": "him.",
+          "start": 71.1,
+          "end": 71.24
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "start": 71.58,
+      "end": 73.8,
+      "text": "Sitting open on his desk was the county's recertification binder.",
+      "words": [
+        {
+          "word": "Sitting",
+          "start": 71.58,
+          "end": 71.78
+        },
+        {
+          "word": "open",
+          "start": 71.78,
+          "end": 71.98
+        },
+        {
+          "word": "on",
+          "start": 71.98,
+          "end": 72.1
+        },
+        {
+          "word": "his",
+          "start": 72.1,
+          "end": 72.26
+        },
+        {
+          "word": "desk",
+          "start": 72.26,
+          "end": 72.42
+        },
+        {
+          "word": "was",
+          "start": 72.42,
+          "end": 72.56
+        },
+        {
+          "word": "the",
+          "start": 72.56,
+          "end": 72.72
+        },
+        {
+          "word": "county's",
+          "start": 72.72,
+          "end": 73.02
+        },
+        {
+          "word": "recertification",
+          "start": 73.02,
+          "end": 73.52
+        },
+        {
+          "word": "binder.",
+          "start": 73.52,
+          "end": 73.8
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "start": 74.04,
+      "end": 77.46,
+      "text": "A new structural sign-off page was already filed inside it, dated two days after our fight,",
+      "words": [
+        {
+          "word": "A",
+          "start": 74.04,
+          "end": 74.14
+        },
+        {
+          "word": "new",
+          "start": 74.14,
+          "end": 74.3
+        },
+        {
+          "word": "structural",
+          "start": 74.3,
+          "end": 74.64
+        },
+        {
+          "word": "sign",
+          "start": 74.64,
+          "end": 74.84
+        },
+        {
+          "word": "-off",
+          "start": 74.84,
+          "end": 74.94
+        },
+        {
+          "word": "page",
+          "start": 74.94,
+          "end": 75.18
+        },
+        {
+          "word": "was",
+          "start": 75.18,
+          "end": 75.36
+        },
+        {
+          "word": "already",
+          "start": 75.36,
+          "end": 75.6
+        },
+        {
+          "word": "filed",
+          "start": 75.6,
+          "end": 75.82
+        },
+        {
+          "word": "inside",
+          "start": 75.82,
+          "end": 76.12
+        },
+        {
+          "word": "it,",
+          "start": 76.12,
+          "end": 76.26
+        },
+        {
+          "word": "dated",
+          "start": 76.36,
+          "end": 76.46
+        },
+        {
+          "word": "two",
+          "start": 76.46,
+          "end": 76.66
+        },
+        {
+          "word": "days",
+          "start": 76.66,
+          "end": 76.88
+        },
+        {
+          "word": "after",
+          "start": 76.88,
+          "end": 77.14
+        },
+        {
+          "word": "our",
+          "start": 77.14,
+          "end": 77.32
+        },
+        {
+          "word": "fight,",
+          "start": 77.32,
+          "end": 77.46
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "start": 77.52,
+      "end": 79.56,
+      "text": "carrying my license number and a signature that was not mine.",
+      "words": [
+        {
+          "word": "carrying",
+          "start": 77.52,
+          "end": 77.72
+        },
+        {
+          "word": "my",
+          "start": 77.72,
+          "end": 77.88
+        },
+        {
+          "word": "license",
+          "start": 77.88,
+          "end": 78.18
+        },
+        {
+          "word": "number",
+          "start": 78.18,
+          "end": 78.42
+        },
+        {
+          "word": "and",
+          "start": 78.42,
+          "end": 78.54
+        },
+        {
+          "word": "a",
+          "start": 78.54,
+          "end": 78.68
+        },
+        {
+          "word": "signature",
+          "start": 78.68,
+          "end": 78.94
+        },
+        {
+          "word": "that",
+          "start": 78.94,
+          "end": 79.04
+        },
+        {
+          "word": "was",
+          "start": 79.04,
+          "end": 79.22
+        },
+        {
+          "word": "not",
+          "start": 79.22,
+          "end": 79.36
+        },
+        {
+          "word": "mine.",
+          "start": 79.36,
+          "end": 79.56
+        }
+      ]
+    },
+    {
+      "id": 28,
+      "start": 79.78,
+      "end": 83.06,
+      "text": "I called the inspector's office listed on the form. She confirmed it had been accepted and",
+      "words": [
+        {
+          "word": "I",
+          "start": 79.78,
+          "end": 79.94
+        },
+        {
+          "word": "called",
+          "start": 79.94,
+          "end": 80.06
+        },
+        {
+          "word": "the",
+          "start": 80.06,
+          "end": 80.26
+        },
+        {
+          "word": "inspector's",
+          "start": 80.26,
+          "end": 80.68
+        },
+        {
+          "word": "office",
+          "start": 80.68,
+          "end": 80.88
+        },
+        {
+          "word": "listed",
+          "start": 80.88,
+          "end": 81.12
+        },
+        {
+          "word": "on",
+          "start": 81.12,
+          "end": 81.26
+        },
+        {
+          "word": "the",
+          "start": 81.26,
+          "end": 81.4
+        },
+        {
+          "word": "form.",
+          "start": 81.4,
+          "end": 81.6
+        },
+        {
+          "word": "She",
+          "start": 81.8,
+          "end": 82.0
+        },
+        {
+          "word": "confirmed",
+          "start": 82.0,
+          "end": 82.24
+        },
+        {
+          "word": "it",
+          "start": 82.24,
+          "end": 82.38
+        },
+        {
+          "word": "had",
+          "start": 82.38,
+          "end": 82.44
+        },
+        {
+          "word": "been",
+          "start": 82.44,
+          "end": 82.62
+        },
+        {
+          "word": "accepted",
+          "start": 82.62,
+          "end": 82.9
+        },
+        {
+          "word": "and",
+          "start": 82.9,
+          "end": 83.06
+        }
+      ]
+    },
+    {
+      "id": 29,
+      "start": 83.06,
+      "end": 86.34,
+      "text": "to reopen that same morning. I asked Graham if he'd known. He said,",
+      "words": [
+        {
+          "word": "to",
+          "start": 83.06,
+          "end": 83.58
+        },
+        {
+          "word": "reopen",
+          "start": 83.58,
+          "end": 83.98
+        },
+        {
+          "word": "that",
+          "start": 83.98,
+          "end": 84.2
+        },
+        {
+          "word": "same",
+          "start": 84.2,
+          "end": 84.34
+        },
+        {
+          "word": "morning.",
+          "start": 84.34,
+          "end": 84.62
+        },
+        {
+          "word": "I",
+          "start": 84.84,
+          "end": 84.84
+        },
+        {
+          "word": "asked",
+          "start": 84.84,
+          "end": 85.0
+        },
+        {
+          "word": "Graham",
+          "start": 85.0,
+          "end": 85.18
+        },
+        {
+          "word": "if",
+          "start": 85.18,
+          "end": 85.28
+        },
+        {
+          "word": "he'd",
+          "start": 85.28,
+          "end": 85.5
+        },
+        {
+          "word": "known.",
+          "start": 85.5,
+          "end": 85.68
+        },
+        {
+          "word": "He",
+          "start": 86.0,
+          "end": 86.12
+        },
+        {
+          "word": "said,",
+          "start": 86.12,
+          "end": 86.34
+        }
+      ]
+    },
+    {
+      "id": 30,
+      "start": 86.48,
+      "end": 89.84,
+      "text": "Reese wouldn't do that. He did, I said. Graham stared at the binder, then asked,",
+      "words": [
+        {
+          "word": "Reese",
+          "start": 86.48,
+          "end": 86.56
+        },
+        {
+          "word": "wouldn't",
+          "start": 86.56,
+          "end": 86.74
+        },
+        {
+          "word": "do",
+          "start": 86.74,
+          "end": 86.92
+        },
+        {
+          "word": "that.",
+          "start": 86.92,
+          "end": 87.1
+        },
+        {
+          "word": "He",
+          "start": 87.38,
+          "end": 87.54
+        },
+        {
+          "word": "did,",
+          "start": 87.54,
+          "end": 87.78
+        },
+        {
+          "word": "I",
+          "start": 87.84,
+          "end": 88.02
+        },
+        {
+          "word": "said.",
+          "start": 88.02,
+          "end": 88.28
+        },
+        {
+          "word": "Graham",
+          "start": 88.54,
+          "end": 88.72
+        },
+        {
+          "word": "stared",
+          "start": 88.72,
+          "end": 88.94
+        },
+        {
+          "word": "at",
+          "start": 88.94,
+          "end": 89.06
+        },
+        {
+          "word": "the",
+          "start": 89.06,
+          "end": 89.18
+        },
+        {
+          "word": "binder,",
+          "start": 89.18,
+          "end": 89.36
+        },
+        {
+          "word": "then",
+          "start": 89.48,
+          "end": 89.66
+        },
+        {
+          "word": "asked,",
+          "start": 89.66,
+          "end": 89.84
+        }
+      ]
+    },
+    {
+      "id": 31,
+      "start": 89.88,
+      "end": 91.62,
+      "text": "You've been signing off on that place since the beginning?",
+      "words": [
+        {
+          "word": "You've",
+          "start": 89.88,
+          "end": 90.1
+        },
+        {
+          "word": "been",
+          "start": 90.1,
+          "end": 90.22
+        },
+        {
+          "word": "signing",
+          "start": 90.22,
+          "end": 90.42
+        },
+        {
+          "word": "off",
+          "start": 90.42,
+          "end": 90.62
+        },
+        {
+          "word": "on",
+          "start": 90.62,
+          "end": 90.74
+        },
+        {
+          "word": "that",
+          "start": 90.74,
+          "end": 90.92
+        },
+        {
+          "word": "place",
+          "start": 90.92,
+          "end": 91.02
+        },
+        {
+          "word": "since",
+          "start": 91.02,
+          "end": 91.24
+        },
+        {
+          "word": "the",
+          "start": 91.24,
+          "end": 91.4
+        },
+        {
+          "word": "beginning?",
+          "start": 91.4,
+          "end": 91.62
+        }
+      ]
+    },
+    {
+      "id": 32,
+      "start": 92.2,
+      "end": 94.64,
+      "text": "Yes, I said. Why would he forge it instead of just calling you?",
+      "words": [
+        {
+          "word": "Yes,",
+          "start": 92.2,
+          "end": 92.46
+        },
+        {
+          "word": "I",
+          "start": 92.46,
+          "end": 92.64
+        },
+        {
+          "word": "said.",
+          "start": 92.64,
+          "end": 92.84
+        },
+        {
+          "word": "Why",
+          "start": 92.94,
+          "end": 93.1
+        },
+        {
+          "word": "would",
+          "start": 93.1,
+          "end": 93.2
+        },
+        {
+          "word": "he",
+          "start": 93.2,
+          "end": 93.4
+        },
+        {
+          "word": "forge",
+          "start": 93.4,
+          "end": 93.5
+        },
+        {
+          "word": "it",
+          "start": 93.5,
+          "end": 93.64
+        },
+        {
+          "word": "instead",
+          "start": 93.64,
+          "end": 93.82
+        },
+        {
+          "word": "of",
+          "start": 93.82,
+          "end": 93.9
+        },
+        {
+          "word": "just",
+          "start": 93.9,
+          "end": 94.14
+        },
+        {
+          "word": "calling",
+          "start": 94.14,
+          "end": 94.3
+        },
+        {
+          "word": "you?",
+          "start": 94.3,
+          "end": 94.64
+        }
+      ]
+    },
+    {
+      "id": 33,
+      "start": 94.86,
+      "end": 98.82,
+      "text": "Because he knew I'd say no. A forged engineering stamp is not a family disagreement.",
+      "words": [
+        {
+          "word": "Because",
+          "start": 94.86,
+          "end": 95.14
+        },
+        {
+          "word": "he",
+          "start": 95.14,
+          "end": 95.32
+        },
+        {
+          "word": "knew",
+          "start": 95.32,
+          "end": 95.46
+        },
+        {
+          "word": "I'd",
+          "start": 95.46,
+          "end": 95.68
+        },
+        {
+          "word": "say",
+          "start": 95.68,
+          "end": 95.78
+        },
+        {
+          "word": "no.",
+          "start": 95.78,
+          "end": 96.08
+        },
+        {
+          "word": "A",
+          "start": 96.42,
+          "end": 96.6
+        },
+        {
+          "word": "forged",
+          "start": 96.6,
+          "end": 96.82
+        },
+        {
+          "word": "engineering",
+          "start": 96.82,
+          "end": 97.3
+        },
+        {
+          "word": "stamp",
+          "start": 97.3,
+          "end": 97.54
+        },
+        {
+          "word": "is",
+          "start": 97.54,
+          "end": 97.8
+        },
+        {
+          "word": "not",
+          "start": 97.8,
+          "end": 97.96
+        },
+        {
+          "word": "a",
+          "start": 97.96,
+          "end": 98.04
+        },
+        {
+          "word": "family",
+          "start": 98.04,
+          "end": 98.28
+        },
+        {
+          "word": "disagreement.",
+          "start": 98.28,
+          "end": 98.82
+        }
+      ]
+    },
+    {
+      "id": 34,
+      "start": 99.24,
+      "end": 101.82,
+      "text": "It is a felony filed under my license number, not his.",
+      "words": [
+        {
+          "word": "It",
+          "start": 99.24,
+          "end": 99.32
+        },
+        {
+          "word": "is",
+          "start": 99.32,
+          "end": 99.54
+        },
+        {
+          "word": "a",
+          "start": 99.54,
+          "end": 99.64
+        },
+        {
+          "word": "felony",
+          "start": 99.64,
+          "end": 99.88
+        },
+        {
+          "word": "filed",
+          "start": 99.88,
+          "end": 100.2
+        },
+        {
+          "word": "under",
+          "start": 100.2,
+          "end": 100.42
+        },
+        {
+          "word": "my",
+          "start": 100.42,
+          "end": 100.6
+        },
+        {
+          "word": "license",
+          "start": 100.6,
+          "end": 100.92
+        },
+        {
+          "word": "number,",
+          "start": 100.92,
+          "end": 101.24
+        },
+        {
+          "word": "not",
+          "start": 101.42,
+          "end": 101.54
+        },
+        {
+          "word": "his.",
+          "start": 101.54,
+          "end": 101.82
+        }
+      ]
+    },
+    {
+      "id": 35,
+      "start": 102.16,
+      "end": 105.66,
+      "text": "I called the county that afternoon and reported the signature myself, before an inspector or",
+      "words": [
+        {
+          "word": "I",
+          "start": 102.16,
+          "end": 102.28
+        },
+        {
+          "word": "called",
+          "start": 102.28,
+          "end": 102.42
+        },
+        {
+          "word": "the",
+          "start": 102.42,
+          "end": 102.6
+        },
+        {
+          "word": "county",
+          "start": 102.6,
+          "end": 102.76
+        },
+        {
+          "word": "that",
+          "start": 102.76,
+          "end": 102.98
+        },
+        {
+          "word": "afternoon",
+          "start": 102.98,
+          "end": 103.28
+        },
+        {
+          "word": "and",
+          "start": 103.28,
+          "end": 103.46
+        },
+        {
+          "word": "reported",
+          "start": 103.46,
+          "end": 103.68
+        },
+        {
+          "word": "the",
+          "start": 103.68,
+          "end": 103.9
+        },
+        {
+          "word": "signature",
+          "start": 103.9,
+          "end": 104.12
+        },
+        {
+          "word": "myself,",
+          "start": 104.12,
+          "end": 104.56
+        },
+        {
+          "word": "before",
+          "start": 104.62,
+          "end": 104.86
+        },
+        {
+          "word": "an",
+          "start": 104.86,
+          "end": 105.08
+        },
+        {
+          "word": "inspector",
+          "start": 105.08,
+          "end": 105.44
+        },
+        {
+          "word": "or",
+          "start": 105.44,
+          "end": 105.66
+        }
+      ]
+    },
+    {
+      "id": 36,
+      "start": 105.66,
+      "end": 108.36,
+      "text": "an insurance auditor found at first. The shop closed again within the hour,",
+      "words": [
+        {
+          "word": "an",
+          "start": 105.66,
+          "end": 105.86
+        },
+        {
+          "word": "insurance",
+          "start": 105.86,
+          "end": 106.14
+        },
+        {
+          "word": "auditor",
+          "start": 106.14,
+          "end": 106.42
+        },
+        {
+          "word": "found",
+          "start": 106.42,
+          "end": 106.64
+        },
+        {
+          "word": "at",
+          "start": 106.64,
+          "end": 106.84
+        },
+        {
+          "word": "first.",
+          "start": 106.84,
+          "end": 107.02
+        },
+        {
+          "word": "The",
+          "start": 107.1,
+          "end": 107.28
+        },
+        {
+          "word": "shop",
+          "start": 107.28,
+          "end": 107.36
+        },
+        {
+          "word": "closed",
+          "start": 107.36,
+          "end": 107.58
+        },
+        {
+          "word": "again",
+          "start": 107.58,
+          "end": 107.8
+        },
+        {
+          "word": "within",
+          "start": 107.8,
+          "end": 107.98
+        },
+        {
+          "word": "the",
+          "start": 107.98,
+          "end": 108.18
+        },
+        {
+          "word": "hour,",
+          "start": 108.18,
+          "end": 108.36
+        }
+      ]
+    },
+    {
+      "id": 37,
+      "start": 108.48,
+      "end": 112.14,
+      "text": "this time flagged for fraud instead of a routine violation. Reese has not called since that day.",
+      "words": [
+        {
+          "word": "this",
+          "start": 108.48,
+          "end": 108.62
+        },
+        {
+          "word": "time",
+          "start": 108.62,
+          "end": 108.78
+        },
+        {
+          "word": "flagged",
+          "start": 108.78,
+          "end": 109.02
+        },
+        {
+          "word": "for",
+          "start": 109.02,
+          "end": 109.22
+        },
+        {
+          "word": "fraud",
+          "start": 109.22,
+          "end": 109.38
+        },
+        {
+          "word": "instead",
+          "start": 109.38,
+          "end": 109.68
+        },
+        {
+          "word": "of",
+          "start": 109.68,
+          "end": 109.8
+        },
+        {
+          "word": "a",
+          "start": 109.8,
+          "end": 109.94
+        },
+        {
+          "word": "routine",
+          "start": 109.94,
+          "end": 110.16
+        },
+        {
+          "word": "violation.",
+          "start": 110.16,
+          "end": 110.64
+        },
+        {
+          "word": "Reese",
+          "start": 110.84,
+          "end": 110.96
+        },
+        {
+          "word": "has",
+          "start": 110.96,
+          "end": 111.16
+        },
+        {
+          "word": "not",
+          "start": 111.16,
+          "end": 111.3
+        },
+        {
+          "word": "called",
+          "start": 111.3,
+          "end": 111.48
+        },
+        {
+          "word": "since",
+          "start": 111.48,
+          "end": 111.7
+        },
+        {
+          "word": "that",
+          "start": 111.7,
+          "end": 111.9
+        },
+        {
+          "word": "day.",
+          "start": 111.9,
+          "end": 112.14
+        }
+      ]
+    },
+    {
+      "id": 38,
+      "start": 112.14,
+      "end": 114.28,
+      "text": "Graham sleeps on his own side of the bed again, not the couch,",
+      "words": [
+        {
+          "word": "Graham",
+          "start": 112.14,
+          "end": 112.46
+        },
+        {
+          "word": "sleeps",
+          "start": 112.46,
+          "end": 112.72
+        },
+        {
+          "word": "on",
+          "start": 112.72,
+          "end": 112.84
+        },
+        {
+          "word": "his",
+          "start": 112.84,
+          "end": 112.96
+        },
+        {
+          "word": "own",
+          "start": 112.96,
+          "end": 113.12
+        },
+        {
+          "word": "side",
+          "start": 113.12,
+          "end": 113.24
+        },
+        {
+          "word": "of",
+          "start": 113.24,
+          "end": 113.34
+        },
+        {
+          "word": "the",
+          "start": 113.34,
+          "end": 113.44
+        },
+        {
+          "word": "bed",
+          "start": 113.44,
+          "end": 113.52
+        },
+        {
+          "word": "again,",
+          "start": 113.52,
+          "end": 113.72
+        },
+        {
+          "word": "not",
+          "start": 113.82,
+          "end": 113.96
+        },
+        {
+          "word": "the",
+          "start": 113.96,
+          "end": 114.1
+        },
+        {
+          "word": "couch,",
+          "start": 114.1,
+          "end": 114.28
+        }
+      ]
+    },
+    {
+      "id": 39,
+      "start": 114.36,
+      "end": 115.94,
+      "text": "but he has not brought up the workshop since either.",
+      "words": [
+        {
+          "word": "but",
+          "start": 114.36,
+          "end": 114.46
+        },
+        {
+          "word": "he",
+          "start": 114.46,
+          "end": 114.6
+        },
+        {
+          "word": "has",
+          "start": 114.6,
+          "end": 114.7
+        },
+        {
+          "word": "not",
+          "start": 114.7,
+          "end": 114.84
+        },
+        {
+          "word": "brought",
+          "start": 114.84,
+          "end": 114.94
+        },
+        {
+          "word": "up",
+          "start": 114.94,
+          "end": 115.08
+        },
+        {
+          "word": "the",
+          "start": 115.08,
+          "end": 115.2
+        },
+        {
+          "word": "workshop",
+          "start": 115.2,
+          "end": 115.46
+        },
+        {
+          "word": "since",
+          "start": 115.46,
+          "end": 115.68
+        },
+        {
+          "word": "either.",
+          "start": 115.68,
+          "end": 115.94
+        }
+      ]
+    }
+  ]
+}

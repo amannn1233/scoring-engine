@@ -1,0 +1,4511 @@
+{
+  "text": " Graham told me to stop running his brother's workshop, so I stopped. Nine days later, inspectors shut the whole place down. I'm 31, a licensed structural engineer, married to Graham for four years. His younger brother Reese opened the custom furniture shop four years ago with a small business loan and no safety training at all. From the very first month, I signed off on everything myself. Shelving loads, mezzanine weight limits, wiring near the finishing booth. Nobody paid me for it. Nobody ever asked me to stop. Then three weeks ago, a client watched me correct one of Reese's rigging diagrams in front of him, and Reese told Graham I made him look incompetent in his own shop. That night, Graham said I needed to let his brother run his own business for once. I didn't argue. I just stopped answering Reese's text. The annual recertification was due that same month, and I let the deadline pass without filing it. Nine days later, the county fire marshal did a routine walkthrough and found no current structural sign-off on file anywhere. He shut the shop down on the spot, pending a full recertification. What Reese never knew was how close that shop had already come to disaster. Two years ago, I found a mezzanine storage loft rated to hold half of what he was stacking on it. Last spring, I caught wiring running six inches from the lacquer booth, close enough to start a fire in seconds. I fixed both quietly and told nobody, not even Graham. Reese had a delivery due for a hotel chain called Bellamy & Finch worth $82,000 due the second week of December, with a penalty clause for every day it was late. Closing the shop was costing him roughly $1,000 a day. He called me 11 times in four days. I didn't answer once. On the fifth day, I drove over to return a mixer I'd borrowed, not to check on him. Sitting open on his desk was the county's recertification binder. A new structural sign-off page was already filed inside it, dated two days after our fight, carrying my license number and a signature that was not mine. I called the inspector's office listed on the form. She confirmed it had been accepted and to reopen that same morning. I asked Graham if he'd known. He said, Reese wouldn't do that. He did, I said. Graham stared at the binder, then asked, You've been signing off on that place since the beginning? Yes, I said. Why would he forge it instead of just calling you? Because he knew I'd say no. A forged engineering stamp is not a family disagreement. It is a felony filed under my license number, not his. I called the county that afternoon and reported the signature myself, before an inspector or an insurance auditor found at first. The shop closed again within the hour, this time flagged for fraud instead of a routine violation. Reese has not called since that day. Graham sleeps on his own side of the bed again, not the couch, but he has not brought up the workshop since either.",
+  "segments": [
+    {
+      "id": 0,
+      "seek": 0,
+      "start": 0.0,
+      "end": 2.32,
+      "text": " Graham told me to stop running his brother's workshop, so I stopped.",
+      "tokens": [
+        50364,
+        22691,
+        1907,
+        385,
+        281,
+        1590,
+        2614,
+        702,
+        3708,
+        311,
+        13541,
+        11,
+        370,
+        286,
+        5936,
+        13,
+        50492
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.0819248429143616,
+      "compression_ratio": 1.7471526195899771,
+      "no_speech_prob": 0.03356238827109337,
+      "words": [
+        {
+          "word": " Graham",
+          "start": 0.0,
+          "end": 0.26,
+          "probability": 0.7094845771789551
+        },
+        {
+          "word": " told",
+          "start": 0.26,
+          "end": 0.4,
+          "probability": 0.9898651242256165
+        },
+        {
+          "word": " me",
+          "start": 0.4,
+          "end": 0.56,
+          "probability": 0.9986793398857117
+        },
+        {
+          "word": " to",
+          "start": 0.56,
+          "end": 0.66,
+          "probability": 0.9978657364845276
+        },
+        {
+          "word": " stop",
+          "start": 0.66,
+          "end": 0.8,
+          "probability": 0.9981822967529297
+        },
+        {
+          "word": " running",
+          "start": 0.8,
+          "end": 0.96,
+          "probability": 0.9814343452453613
+        },
+        {
+          "word": " his",
+          "start": 0.96,
+          "end": 1.16,
+          "probability": 0.9963304400444031
+        },
+        {
+          "word": " brother's",
+          "start": 1.16,
+          "end": 1.4,
+          "probability": 0.9740901589393616
+        },
+        {
+          "word": " workshop,",
+          "start": 1.4,
+          "end": 1.66,
+          "probability": 0.9806386828422546
+        },
+        {
+          "word": " so",
+          "start": 1.74,
+          "end": 1.86,
+          "probability": 0.9897770285606384
+        },
+        {
+          "word": " I",
+          "start": 1.86,
+          "end": 2.04,
+          "probability": 0.9857444167137146
+        },
+        {
+          "word": " stopped.",
+          "start": 2.04,
+          "end": 2.32,
+          "probability": 0.9974873065948486
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "seek": 0,
+      "start": 2.7,
+      "end": 4.58,
+      "text": " Nine days later, inspectors shut the whole place down.",
+      "tokens": [
+        50492,
+        18939,
+        1708,
+        1780,
+        11,
+        15018,
+        830,
+        5309,
+        264,
+        1379,
+        1081,
+        760,
+        13,
+        50600
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.0819248429143616,
+      "compression_ratio": 1.7471526195899771,
+      "no_speech_prob": 0.03356238827109337,
+      "words": [
+        {
+          "word": " Nine",
+          "start": 2.7,
+          "end": 2.84,
+          "probability": 0.7789776921272278
+        },
+        {
+          "word": " days",
+          "start": 2.84,
+          "end": 3.02,
+          "probability": 0.9974072575569153
+        },
+        {
+          "word": " later,",
+          "start": 3.02,
+          "end": 3.3,
+          "probability": 0.9985338449478149
+        },
+        {
+          "word": " inspectors",
+          "start": 3.46,
+          "end": 3.66,
+          "probability": 0.789577454328537
+        },
+        {
+          "word": " shut",
+          "start": 3.66,
+          "end": 3.8,
+          "probability": 0.9978559613227844
+        },
+        {
+          "word": " the",
+          "start": 3.8,
+          "end": 3.92,
+          "probability": 0.9957565665245056
+        },
+        {
+          "word": " whole",
+          "start": 3.92,
+          "end": 4.08,
+          "probability": 0.9960554838180542
+        },
+        {
+          "word": " place",
+          "start": 4.08,
+          "end": 4.26,
+          "probability": 0.9986390471458435
+        },
+        {
+          "word": " down.",
+          "start": 4.26,
+          "end": 4.58,
+          "probability": 0.9985733032226562
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "seek": 0,
+      "start": 4.9,
+      "end": 7.8,
+      "text": " I'm 31, a licensed structural engineer, married to Graham for four years.",
+      "tokens": [
+        50600,
+        286,
+        478,
+        10353,
+        11,
+        257,
+        25225,
+        15067,
+        11403,
+        11,
+        5259,
+        281,
+        22691,
+        337,
+        1451,
+        924,
+        13,
+        50752
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.0819248429143616,
+      "compression_ratio": 1.7471526195899771,
+      "no_speech_prob": 0.03356238827109337,
+      "words": [
+        {
+          "word": " I'm",
+          "start": 4.9,
+          "end": 5.0,
+          "probability": 0.8560124635696411
+        },
+        {
+          "word": " 31,",
+          "start": 5.0,
+          "end": 5.36,
+          "probability": 0.863594651222229
+        },
+        {
+          "word": " a",
+          "start": 5.48,
+          "end": 5.62,
+          "probability": 0.9930626749992371
+        },
+        {
+          "word": " licensed",
+          "start": 5.62,
+          "end": 5.84,
+          "probability": 0.9844415783882141
+        },
+        {
+          "word": " structural",
+          "start": 5.84,
+          "end": 6.16,
+          "probability": 0.9943892359733582
+        },
+        {
+          "word": " engineer,",
+          "start": 6.16,
+          "end": 6.56,
+          "probability": 0.9979793429374695
+        },
+        {
+          "word": " married",
+          "start": 6.74,
+          "end": 6.88,
+          "probability": 0.9910805821418762
+        },
+        {
+          "word": " to",
+          "start": 6.88,
+          "end": 7.04,
+          "probability": 0.9988749623298645
+        },
+        {
+          "word": " Graham",
+          "start": 7.04,
+          "end": 7.16,
+          "probability": 0.9716952443122864
+        },
+        {
+          "word": " for",
+          "start": 7.16,
+          "end": 7.3,
+          "probability": 0.9885233044624329
+        },
+        {
+          "word": " four",
+          "start": 7.3,
+          "end": 7.5,
+          "probability": 0.8978898525238037
+        },
+        {
+          "word": " years.",
+          "start": 7.5,
+          "end": 7.8,
+          "probability": 0.9992875456809998
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "seek": 0,
+      "start": 7.96,
+      "end": 10.48,
+      "text": " His younger brother Reese opened the custom furniture shop four years ago",
+      "tokens": [
+        50752,
+        2812,
+        7037,
+        3708,
+        49474,
+        5625,
+        264,
+        2375,
+        15671,
+        3945,
+        1451,
+        924,
+        2057,
+        50884
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.0819248429143616,
+      "compression_ratio": 1.7471526195899771,
+      "no_speech_prob": 0.03356238827109337,
+      "words": [
+        {
+          "word": " His",
+          "start": 7.96,
+          "end": 8.08,
+          "probability": 0.9935534000396729
+        },
+        {
+          "word": " younger",
+          "start": 8.08,
+          "end": 8.32,
+          "probability": 0.9980837106704712
+        },
+        {
+          "word": " brother",
+          "start": 8.32,
+          "end": 8.54,
+          "probability": 0.997688889503479
+        },
+        {
+          "word": " Reese",
+          "start": 8.54,
+          "end": 8.74,
+          "probability": 0.359596848487854
+        },
+        {
+          "word": " opened",
+          "start": 8.74,
+          "end": 9.0,
+          "probability": 0.9285565614700317
+        },
+        {
+          "word": " the",
+          "start": 9.0,
+          "end": 9.18,
+          "probability": 0.6696509122848511
+        },
+        {
+          "word": " custom",
+          "start": 9.18,
+          "end": 9.38,
+          "probability": 0.9784449934959412
+        },
+        {
+          "word": " furniture",
+          "start": 9.38,
+          "end": 9.72,
+          "probability": 0.9931865930557251
+        },
+        {
+          "word": " shop",
+          "start": 9.72,
+          "end": 9.9,
+          "probability": 0.9982353448867798
+        },
+        {
+          "word": " four",
+          "start": 9.9,
+          "end": 10.14,
+          "probability": 0.9654190540313721
+        },
+        {
+          "word": " years",
+          "start": 10.14,
+          "end": 10.32,
+          "probability": 0.999523401260376
+        },
+        {
+          "word": " ago",
+          "start": 10.32,
+          "end": 10.48,
+          "probability": 0.9996762275695801
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "seek": 0,
+      "start": 10.48,
+      "end": 12.5,
+      "text": " with a small business loan and no safety training at all.",
+      "tokens": [
+        50884,
+        365,
+        257,
+        1359,
+        1606,
+        10529,
+        293,
+        572,
+        4514,
+        3097,
+        412,
+        439,
+        13,
+        50984
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.0819248429143616,
+      "compression_ratio": 1.7471526195899771,
+      "no_speech_prob": 0.03356238827109337,
+      "words": [
+        {
+          "word": " with",
+          "start": 10.48,
+          "end": 10.6,
+          "probability": 0.9504290223121643
+        },
+        {
+          "word": " a",
+          "start": 10.6,
+          "end": 10.78,
+          "probability": 0.9993187189102173
+        },
+        {
+          "word": " small",
+          "start": 10.78,
+          "end": 10.9,
+          "probability": 0.998868465423584
+        },
+        {
+          "word": " business",
+          "start": 10.9,
+          "end": 11.24,
+          "probability": 0.9957419037818909
+        },
+        {
+          "word": " loan",
+          "start": 11.24,
+          "end": 11.4,
+          "probability": 0.9989925026893616
+        },
+        {
+          "word": " and",
+          "start": 11.4,
+          "end": 11.54,
+          "probability": 0.9931259155273438
+        },
+        {
+          "word": " no",
+          "start": 11.54,
+          "end": 11.72,
+          "probability": 0.9993579983711243
+        },
+        {
+          "word": " safety",
+          "start": 11.72,
+          "end": 11.98,
+          "probability": 0.9994699358940125
+        },
+        {
+          "word": " training",
+          "start": 11.98,
+          "end": 12.18,
+          "probability": 0.9996556043624878
+        },
+        {
+          "word": " at",
+          "start": 12.18,
+          "end": 12.34,
+          "probability": 0.9972250461578369
+        },
+        {
+          "word": " all.",
+          "start": 12.34,
+          "end": 12.5,
+          "probability": 0.9996115565299988
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "seek": 0,
+      "start": 12.56,
+      "end": 14.54,
+      "text": " From the very first month, I signed off on everything myself.",
+      "tokens": [
+        50984,
+        3358,
+        264,
+        588,
+        700,
+        1618,
+        11,
+        286,
+        8175,
+        766,
+        322,
+        1203,
+        2059,
+        13,
+        51088
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.0819248429143616,
+      "compression_ratio": 1.7471526195899771,
+      "no_speech_prob": 0.03356238827109337,
+      "words": [
+        {
+          "word": " From",
+          "start": 12.56,
+          "end": 12.64,
+          "probability": 0.9913052916526794
+        },
+        {
+          "word": " the",
+          "start": 12.64,
+          "end": 12.76,
+          "probability": 0.9993359446525574
+        },
+        {
+          "word": " very",
+          "start": 12.76,
+          "end": 12.94,
+          "probability": 0.9990081191062927
+        },
+        {
+          "word": " first",
+          "start": 12.94,
+          "end": 13.14,
+          "probability": 0.9985670447349548
+        },
+        {
+          "word": " month,",
+          "start": 13.14,
+          "end": 13.32,
+          "probability": 0.9991028308868408
+        },
+        {
+          "word": " I",
+          "start": 13.36,
+          "end": 13.5,
+          "probability": 0.9991182684898376
+        },
+        {
+          "word": " signed",
+          "start": 13.5,
+          "end": 13.66,
+          "probability": 0.9991017580032349
+        },
+        {
+          "word": " off",
+          "start": 13.66,
+          "end": 13.82,
+          "probability": 0.998967170715332
+        },
+        {
+          "word": " on",
+          "start": 13.82,
+          "end": 13.98,
+          "probability": 0.9994885921478271
+        },
+        {
+          "word": " everything",
+          "start": 13.98,
+          "end": 14.18,
+          "probability": 0.9985283613204956
+        },
+        {
+          "word": " myself.",
+          "start": 14.18,
+          "end": 14.54,
+          "probability": 0.9839856028556824
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "seek": 0,
+      "start": 14.6,
+      "end": 17.08,
+      "text": " Shelving loads, mezzanine weight limits, wiring near the finishing booth.",
+      "tokens": [
+        51088,
+        24415,
+        798,
+        12668,
+        11,
+        385,
+        4313,
+        282,
+        533,
+        3364,
+        10406,
+        11,
+        27520,
+        2651,
+        264,
+        12693,
+        20912,
+        13,
+        51228
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.0819248429143616,
+      "compression_ratio": 1.7471526195899771,
+      "no_speech_prob": 0.03356238827109337,
+      "words": [
+        {
+          "word": " Shelving",
+          "start": 14.6,
+          "end": 14.86,
+          "probability": 0.8473386764526367
+        },
+        {
+          "word": " loads,",
+          "start": 14.86,
+          "end": 15.12,
+          "probability": 0.9500410556793213
+        },
+        {
+          "word": " mezzanine",
+          "start": 15.3,
+          "end": 15.56,
+          "probability": 0.987930104136467
+        },
+        {
+          "word": " weight",
+          "start": 15.56,
+          "end": 15.7,
+          "probability": 0.9936760067939758
+        },
+        {
+          "word": " limits,",
+          "start": 15.7,
+          "end": 15.94,
+          "probability": 0.955483615398407
+        },
+        {
+          "word": " wiring",
+          "start": 16.12,
+          "end": 16.28,
+          "probability": 0.9969191551208496
+        },
+        {
+          "word": " near",
+          "start": 16.28,
+          "end": 16.46,
+          "probability": 0.9961169958114624
+        },
+        {
+          "word": " the",
+          "start": 16.46,
+          "end": 16.66,
+          "probability": 0.9994580149650574
+        },
+        {
+          "word": " finishing",
+          "start": 16.66,
+          "end": 16.84,
+          "probability": 0.9982578158378601
+        },
+        {
+          "word": " booth.",
+          "start": 16.84,
+          "end": 17.08,
+          "probability": 0.9973529577255249
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "seek": 0,
+      "start": 17.46,
+      "end": 18.28,
+      "text": " Nobody paid me for it.",
+      "tokens": [
+        51228,
+        9297,
+        4835,
+        385,
+        337,
+        309,
+        13,
+        51272
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.0819248429143616,
+      "compression_ratio": 1.7471526195899771,
+      "no_speech_prob": 0.03356238827109337,
+      "words": [
+        {
+          "word": " Nobody",
+          "start": 17.46,
+          "end": 17.64,
+          "probability": 0.995589017868042
+        },
+        {
+          "word": " paid",
+          "start": 17.64,
+          "end": 17.82,
+          "probability": 0.9973666071891785
+        },
+        {
+          "word": " me",
+          "start": 17.82,
+          "end": 18.0,
+          "probability": 0.9997349381446838
+        },
+        {
+          "word": " for",
+          "start": 18.0,
+          "end": 18.14,
+          "probability": 0.9997166991233826
+        },
+        {
+          "word": " it.",
+          "start": 18.14,
+          "end": 18.28,
+          "probability": 0.9995653033256531
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "seek": 0,
+      "start": 18.4,
+      "end": 19.36,
+      "text": " Nobody ever asked me to stop.",
+      "tokens": [
+        51272,
+        9297,
+        1562,
+        2351,
+        385,
+        281,
+        1590,
+        13,
+        51328
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.0819248429143616,
+      "compression_ratio": 1.7471526195899771,
+      "no_speech_prob": 0.03356238827109337,
+      "words": [
+        {
+          "word": " Nobody",
+          "start": 18.4,
+          "end": 18.58,
+          "probability": 0.9965819716453552
+        },
+        {
+          "word": " ever",
+          "start": 18.58,
+          "end": 18.78,
+          "probability": 0.997847318649292
+        },
+        {
+          "word": " asked",
+          "start": 18.78,
+          "end": 18.9,
+          "probability": 0.9990774393081665
+        },
+        {
+          "word": " me",
+          "start": 18.9,
+          "end": 19.04,
+          "probability": 0.9998337030410767
+        },
+        {
+          "word": " to",
+          "start": 19.04,
+          "end": 19.2,
+          "probability": 0.9998210072517395
+        },
+        {
+          "word": " stop.",
+          "start": 19.2,
+          "end": 19.36,
+          "probability": 0.9995179176330566
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "seek": 0,
+      "start": 19.48,
+      "end": 23.04,
+      "text": " Then three weeks ago, a client watched me correct one of Reese's rigging diagrams in front of him,",
+      "tokens": [
+        51328,
+        1396,
+        1045,
+        3259,
+        2057,
+        11,
+        257,
+        6423,
+        6337,
+        385,
+        3006,
+        472,
+        295,
+        49474,
+        311,
+        8329,
+        3249,
+        36709,
+        294,
+        1868,
+        295,
+        796,
+        11,
+        51512
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.0819248429143616,
+      "compression_ratio": 1.7471526195899771,
+      "no_speech_prob": 0.03356238827109337,
+      "words": [
+        {
+          "word": " Then",
+          "start": 19.48,
+          "end": 19.58,
+          "probability": 0.9889272451400757
+        },
+        {
+          "word": " three",
+          "start": 19.58,
+          "end": 19.74,
+          "probability": 0.92034512758255
+        },
+        {
+          "word": " weeks",
+          "start": 19.74,
+          "end": 19.96,
+          "probability": 0.9996596574783325
+        },
+        {
+          "word": " ago,",
+          "start": 19.96,
+          "end": 20.16,
+          "probability": 0.9995112419128418
+        },
+        {
+          "word": " a",
+          "start": 20.22,
+          "end": 20.38,
+          "probability": 0.9978558421134949
+        },
+        {
+          "word": " client",
+          "start": 20.38,
+          "end": 20.54,
+          "probability": 0.9996122717857361
+        },
+        {
+          "word": " watched",
+          "start": 20.54,
+          "end": 20.82,
+          "probability": 0.9979711174964905
+        },
+        {
+          "word": " me",
+          "start": 20.82,
+          "end": 21.02,
+          "probability": 0.9993165731430054
+        },
+        {
+          "word": " correct",
+          "start": 21.02,
+          "end": 21.22,
+          "probability": 0.9744214415550232
+        },
+        {
+          "word": " one",
+          "start": 21.22,
+          "end": 21.42,
+          "probability": 0.9974270462989807
+        },
+        {
+          "word": " of",
+          "start": 21.42,
+          "end": 21.5,
+          "probability": 0.9981920123100281
+        },
+        {
+          "word": " Reese's",
+          "start": 21.5,
+          "end": 21.86,
+          "probability": 0.9874944686889648
+        },
+        {
+          "word": " rigging",
+          "start": 21.86,
+          "end": 22.16,
+          "probability": 0.9342507719993591
+        },
+        {
+          "word": " diagrams",
+          "start": 22.16,
+          "end": 22.44,
+          "probability": 0.9951232075691223
+        },
+        {
+          "word": " in",
+          "start": 22.44,
+          "end": 22.68,
+          "probability": 0.9983205199241638
+        },
+        {
+          "word": " front",
+          "start": 22.68,
+          "end": 22.76,
+          "probability": 0.9996888637542725
+        },
+        {
+          "word": " of",
+          "start": 22.76,
+          "end": 22.88,
+          "probability": 0.9996987581253052
+        },
+        {
+          "word": " him,",
+          "start": 22.88,
+          "end": 23.04,
+          "probability": 0.9991911053657532
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "seek": 0,
+      "start": 23.1,
+      "end": 25.7,
+      "text": " and Reese told Graham I made him look incompetent in his own shop.",
+      "tokens": [
+        51512,
+        293,
+        49474,
+        1907,
+        22691,
+        286,
+        1027,
+        796,
+        574,
+        41602,
+        317,
+        294,
+        702,
+        1065,
+        3945,
+        13,
+        51652
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.0819248429143616,
+      "compression_ratio": 1.7471526195899771,
+      "no_speech_prob": 0.03356238827109337,
+      "words": [
+        {
+          "word": " and",
+          "start": 23.1,
+          "end": 23.26,
+          "probability": 0.9957778453826904
+        },
+        {
+          "word": " Reese",
+          "start": 23.26,
+          "end": 23.42,
+          "probability": 0.9888697862625122
+        },
+        {
+          "word": " told",
+          "start": 23.42,
+          "end": 23.6,
+          "probability": 0.9975929856300354
+        },
+        {
+          "word": " Graham",
+          "start": 23.6,
+          "end": 23.84,
+          "probability": 0.9887186288833618
+        },
+        {
+          "word": " I",
+          "start": 23.84,
+          "end": 24.04,
+          "probability": 0.7787255644798279
+        },
+        {
+          "word": " made",
+          "start": 24.04,
+          "end": 24.16,
+          "probability": 0.9982579350471497
+        },
+        {
+          "word": " him",
+          "start": 24.16,
+          "end": 24.34,
+          "probability": 0.9991216063499451
+        },
+        {
+          "word": " look",
+          "start": 24.34,
+          "end": 24.5,
+          "probability": 0.9950645565986633
+        },
+        {
+          "word": " incompetent",
+          "start": 24.5,
+          "end": 25.08,
+          "probability": 0.8156518638134003
+        },
+        {
+          "word": " in",
+          "start": 25.08,
+          "end": 25.18,
+          "probability": 0.9961749315261841
+        },
+        {
+          "word": " his",
+          "start": 25.18,
+          "end": 25.3,
+          "probability": 0.9996410608291626
+        },
+        {
+          "word": " own",
+          "start": 25.3,
+          "end": 25.44,
+          "probability": 0.9990729093551636
+        },
+        {
+          "word": " shop.",
+          "start": 25.44,
+          "end": 25.7,
+          "probability": 0.9985859394073486
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "seek": 0,
+      "start": 25.94,
+      "end": 28.7,
+      "text": " That night, Graham said I needed to let his brother run his own business for once.",
+      "tokens": [
+        51652,
+        663,
+        1818,
+        11,
+        22691,
+        848,
+        286,
+        2978,
+        281,
+        718,
+        702,
+        3708,
+        1190,
+        702,
+        1065,
+        1606,
+        337,
+        1564,
+        13,
+        51800
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.0819248429143616,
+      "compression_ratio": 1.7471526195899771,
+      "no_speech_prob": 0.03356238827109337,
+      "words": [
+        {
+          "word": " That",
+          "start": 25.94,
+          "end": 26.08,
+          "probability": 0.989041268825531
+        },
+        {
+          "word": " night,",
+          "start": 26.08,
+          "end": 26.3,
+          "probability": 0.9989036321640015
+        },
+        {
+          "word": " Graham",
+          "start": 26.42,
+          "end": 26.56,
+          "probability": 0.988423764705658
+        },
+        {
+          "word": " said",
+          "start": 26.56,
+          "end": 26.72,
+          "probability": 0.9987785220146179
+        },
+        {
+          "word": " I",
+          "start": 26.72,
+          "end": 26.84,
+          "probability": 0.9792130589485168
+        },
+        {
+          "word": " needed",
+          "start": 26.84,
+          "end": 27.02,
+          "probability": 0.9987736344337463
+        },
+        {
+          "word": " to",
+          "start": 27.02,
+          "end": 27.18,
+          "probability": 0.9997681975364685
+        },
+        {
+          "word": " let",
+          "start": 27.18,
+          "end": 27.24,
+          "probability": 0.9992074370384216
+        },
+        {
+          "word": " his",
+          "start": 27.24,
+          "end": 27.44,
+          "probability": 0.9993282556533813
+        },
+        {
+          "word": " brother",
+          "start": 27.44,
+          "end": 27.58,
+          "probability": 0.9988647699356079
+        },
+        {
+          "word": " run",
+          "start": 27.58,
+          "end": 27.74,
+          "probability": 0.998611569404602
+        },
+        {
+          "word": " his",
+          "start": 27.74,
+          "end": 27.9,
+          "probability": 0.9996652603149414
+        },
+        {
+          "word": " own",
+          "start": 27.9,
+          "end": 28.04,
+          "probability": 0.9990503191947937
+        },
+        {
+          "word": " business",
+          "start": 28.04,
+          "end": 28.28,
+          "probability": 0.9993084669113159
+        },
+        {
+          "word": " for",
+          "start": 28.28,
+          "end": 28.5,
+          "probability": 0.9903032183647156
+        },
+        {
+          "word": " once.",
+          "start": 28.5,
+          "end": 28.7,
+          "probability": 0.9992058873176575
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "seek": 2870,
+      "start": 28.7,
+      "end": 30.9,
+      "text": " I didn't argue. I just stopped answering Reese's text.",
+      "tokens": [
+        50364,
+        286,
+        994,
+        380,
+        9695,
+        13,
+        286,
+        445,
+        5936,
+        13430,
+        49474,
+        311,
+        2487,
+        13,
+        50472
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.06396208253017692,
+      "compression_ratio": 1.6618357487922706,
+      "no_speech_prob": 0.060065265744924545,
+      "words": [
+        {
+          "word": " I",
+          "start": 28.7,
+          "end": 28.96,
+          "probability": 0.8460698127746582
+        },
+        {
+          "word": " didn't",
+          "start": 28.96,
+          "end": 29.12,
+          "probability": 0.9703547954559326
+        },
+        {
+          "word": " argue.",
+          "start": 29.12,
+          "end": 29.42,
+          "probability": 0.9964021444320679
+        },
+        {
+          "word": " I",
+          "start": 29.54,
+          "end": 29.64,
+          "probability": 0.99234938621521
+        },
+        {
+          "word": " just",
+          "start": 29.64,
+          "end": 29.78,
+          "probability": 0.9963276982307434
+        },
+        {
+          "word": " stopped",
+          "start": 29.78,
+          "end": 29.98,
+          "probability": 0.9927369356155396
+        },
+        {
+          "word": " answering",
+          "start": 29.98,
+          "end": 30.28,
+          "probability": 0.9982578158378601
+        },
+        {
+          "word": " Reese's",
+          "start": 30.28,
+          "end": 30.62,
+          "probability": 0.7991316616535187
+        },
+        {
+          "word": " text.",
+          "start": 30.62,
+          "end": 30.9,
+          "probability": 0.7416722178459167
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "seek": 2870,
+      "start": 31.08,
+      "end": 34.34,
+      "text": " The annual recertification was due that same month, and I let the deadline pass without filing it.",
+      "tokens": [
+        50472,
+        440,
+        9784,
+        850,
+        911,
+        3774,
+        390,
+        3462,
+        300,
+        912,
+        1618,
+        11,
+        293,
+        286,
+        718,
+        264,
+        20615,
+        1320,
+        1553,
+        26854,
+        309,
+        13,
+        50644
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.06396208253017692,
+      "compression_ratio": 1.6618357487922706,
+      "no_speech_prob": 0.060065265744924545,
+      "words": [
+        {
+          "word": " The",
+          "start": 31.08,
+          "end": 31.2,
+          "probability": 0.9562515616416931
+        },
+        {
+          "word": " annual",
+          "start": 31.2,
+          "end": 31.44,
+          "probability": 0.9610220789909363
+        },
+        {
+          "word": " recertification",
+          "start": 31.44,
+          "end": 32.0,
+          "probability": 0.953746477762858
+        },
+        {
+          "word": " was",
+          "start": 32.0,
+          "end": 32.18,
+          "probability": 0.9980267882347107
+        },
+        {
+          "word": " due",
+          "start": 32.18,
+          "end": 32.28,
+          "probability": 0.9998711347579956
+        },
+        {
+          "word": " that",
+          "start": 32.28,
+          "end": 32.48,
+          "probability": 0.9981131553649902
+        },
+        {
+          "word": " same",
+          "start": 32.48,
+          "end": 32.64,
+          "probability": 0.9984000325202942
+        },
+        {
+          "word": " month,",
+          "start": 32.64,
+          "end": 32.84,
+          "probability": 0.9965603947639465
+        },
+        {
+          "word": " and",
+          "start": 32.86,
+          "end": 32.96,
+          "probability": 0.992378830909729
+        },
+        {
+          "word": " I",
+          "start": 32.96,
+          "end": 33.06,
+          "probability": 0.9931710958480835
+        },
+        {
+          "word": " let",
+          "start": 33.06,
+          "end": 33.14,
+          "probability": 0.9808022975921631
+        },
+        {
+          "word": " the",
+          "start": 33.14,
+          "end": 33.28,
+          "probability": 0.9964720010757446
+        },
+        {
+          "word": " deadline",
+          "start": 33.28,
+          "end": 33.46,
+          "probability": 0.9986599683761597
+        },
+        {
+          "word": " pass",
+          "start": 33.46,
+          "end": 33.74,
+          "probability": 0.9975038170814514
+        },
+        {
+          "word": " without",
+          "start": 33.74,
+          "end": 33.94,
+          "probability": 0.9930510520935059
+        },
+        {
+          "word": " filing",
+          "start": 33.94,
+          "end": 34.18,
+          "probability": 0.9989995360374451
+        },
+        {
+          "word": " it.",
+          "start": 34.18,
+          "end": 34.34,
+          "probability": 0.9990947246551514
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "seek": 2870,
+      "start": 34.42,
+      "end": 37.98,
+      "text": " Nine days later, the county fire marshal did a routine walkthrough and found no current structural",
+      "tokens": [
+        50644,
+        18939,
+        1708,
+        1780,
+        11,
+        264,
+        9928,
+        2610,
+        30517,
+        4947,
+        630,
+        257,
+        9927,
+        1792,
+        11529,
+        293,
+        1352,
+        572,
+        2190,
+        15067,
+        50824
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.06396208253017692,
+      "compression_ratio": 1.6618357487922706,
+      "no_speech_prob": 0.060065265744924545,
+      "words": [
+        {
+          "word": " Nine",
+          "start": 34.42,
+          "end": 34.56,
+          "probability": 0.7020346522331238
+        },
+        {
+          "word": " days",
+          "start": 34.56,
+          "end": 34.74,
+          "probability": 0.997041642665863
+        },
+        {
+          "word": " later,",
+          "start": 34.74,
+          "end": 35.02,
+          "probability": 0.9988986253738403
+        },
+        {
+          "word": " the",
+          "start": 35.12,
+          "end": 35.24,
+          "probability": 0.9912847280502319
+        },
+        {
+          "word": " county",
+          "start": 35.24,
+          "end": 35.46,
+          "probability": 0.7255455255508423
+        },
+        {
+          "word": " fire",
+          "start": 35.46,
+          "end": 35.68,
+          "probability": 0.9037720561027527
+        },
+        {
+          "word": " marshal",
+          "start": 35.68,
+          "end": 35.94,
+          "probability": 0.9751542806625366
+        },
+        {
+          "word": " did",
+          "start": 35.94,
+          "end": 36.06,
+          "probability": 0.9972846508026123
+        },
+        {
+          "word": " a",
+          "start": 36.06,
+          "end": 36.18,
+          "probability": 0.9993411898612976
+        },
+        {
+          "word": " routine",
+          "start": 36.18,
+          "end": 36.44,
+          "probability": 0.9984155893325806
+        },
+        {
+          "word": " walkthrough",
+          "start": 36.44,
+          "end": 36.88,
+          "probability": 0.8528112173080444
+        },
+        {
+          "word": " and",
+          "start": 36.88,
+          "end": 37.0,
+          "probability": 0.9749898314476013
+        },
+        {
+          "word": " found",
+          "start": 37.0,
+          "end": 37.18,
+          "probability": 0.9990081191062927
+        },
+        {
+          "word": " no",
+          "start": 37.18,
+          "end": 37.38,
+          "probability": 0.9829156398773193
+        },
+        {
+          "word": " current",
+          "start": 37.38,
+          "end": 37.64,
+          "probability": 0.9866697788238525
+        },
+        {
+          "word": " structural",
+          "start": 37.64,
+          "end": 37.98,
+          "probability": 0.9960756897926331
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "seek": 2870,
+      "start": 37.98,
+      "end": 41.72,
+      "text": " sign-off on file anywhere. He shut the shop down on the spot, pending a full recertification.",
+      "tokens": [
+        50824,
+        1465,
+        12,
+        4506,
+        322,
+        3991,
+        4992,
+        13,
+        634,
+        5309,
+        264,
+        3945,
+        760,
+        322,
+        264,
+        4008,
+        11,
+        32110,
+        257,
+        1577,
+        850,
+        911,
+        3774,
+        13,
+        51024
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.06396208253017692,
+      "compression_ratio": 1.6618357487922706,
+      "no_speech_prob": 0.060065265744924545,
+      "words": [
+        {
+          "word": " sign",
+          "start": 37.98,
+          "end": 38.24,
+          "probability": 0.9964784979820251
+        },
+        {
+          "word": "-off",
+          "start": 38.24,
+          "end": 38.38,
+          "probability": 0.777084469795227
+        },
+        {
+          "word": " on",
+          "start": 38.38,
+          "end": 38.64,
+          "probability": 0.9938547015190125
+        },
+        {
+          "word": " file",
+          "start": 38.64,
+          "end": 38.86,
+          "probability": 0.642309844493866
+        },
+        {
+          "word": " anywhere.",
+          "start": 38.86,
+          "end": 39.26,
+          "probability": 0.9717763066291809
+        },
+        {
+          "word": " He",
+          "start": 39.32,
+          "end": 39.48,
+          "probability": 0.9932946562767029
+        },
+        {
+          "word": " shut",
+          "start": 39.48,
+          "end": 39.64,
+          "probability": 0.9644843935966492
+        },
+        {
+          "word": " the",
+          "start": 39.64,
+          "end": 39.82,
+          "probability": 0.997461199760437
+        },
+        {
+          "word": " shop",
+          "start": 39.82,
+          "end": 39.9,
+          "probability": 0.9984279870986938
+        },
+        {
+          "word": " down",
+          "start": 39.9,
+          "end": 40.08,
+          "probability": 0.9989377856254578
+        },
+        {
+          "word": " on",
+          "start": 40.08,
+          "end": 40.18,
+          "probability": 0.9981151819229126
+        },
+        {
+          "word": " the",
+          "start": 40.18,
+          "end": 40.34,
+          "probability": 0.9946322441101074
+        },
+        {
+          "word": " spot,",
+          "start": 40.34,
+          "end": 40.5,
+          "probability": 0.9996417760848999
+        },
+        {
+          "word": " pending",
+          "start": 40.58,
+          "end": 40.76,
+          "probability": 0.9958844780921936
+        },
+        {
+          "word": " a",
+          "start": 40.76,
+          "end": 40.88,
+          "probability": 0.9984435439109802
+        },
+        {
+          "word": " full",
+          "start": 40.88,
+          "end": 41.06,
+          "probability": 0.9976853132247925
+        },
+        {
+          "word": " recertification.",
+          "start": 41.06,
+          "end": 41.72,
+          "probability": 0.9959291617075602
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "seek": 2870,
+      "start": 42.12,
+      "end": 44.76,
+      "text": " What Reese never knew was how close that shop had already come to disaster.",
+      "tokens": [
+        51024,
+        708,
+        49474,
+        1128,
+        2586,
+        390,
+        577,
+        1998,
+        300,
+        3945,
+        632,
+        1217,
+        808,
+        281,
+        11293,
+        13,
+        51184
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.06396208253017692,
+      "compression_ratio": 1.6618357487922706,
+      "no_speech_prob": 0.060065265744924545,
+      "words": [
+        {
+          "word": " What",
+          "start": 42.12,
+          "end": 42.26,
+          "probability": 0.9831010103225708
+        },
+        {
+          "word": " Reese",
+          "start": 42.26,
+          "end": 42.4,
+          "probability": 0.9872991442680359
+        },
+        {
+          "word": " never",
+          "start": 42.4,
+          "end": 42.62,
+          "probability": 0.9977224469184875
+        },
+        {
+          "word": " knew",
+          "start": 42.62,
+          "end": 42.78,
+          "probability": 0.9983903169631958
+        },
+        {
+          "word": " was",
+          "start": 42.78,
+          "end": 42.9,
+          "probability": 0.9838048815727234
+        },
+        {
+          "word": " how",
+          "start": 42.9,
+          "end": 43.1,
+          "probability": 0.9989688396453857
+        },
+        {
+          "word": " close",
+          "start": 43.1,
+          "end": 43.26,
+          "probability": 0.9986000657081604
+        },
+        {
+          "word": " that",
+          "start": 43.26,
+          "end": 43.44,
+          "probability": 0.9973604083061218
+        },
+        {
+          "word": " shop",
+          "start": 43.44,
+          "end": 43.62,
+          "probability": 0.9984466433525085
+        },
+        {
+          "word": " had",
+          "start": 43.62,
+          "end": 43.78,
+          "probability": 0.9982926249504089
+        },
+        {
+          "word": " already",
+          "start": 43.78,
+          "end": 44.06,
+          "probability": 0.9984514713287354
+        },
+        {
+          "word": " come",
+          "start": 44.06,
+          "end": 44.2,
+          "probability": 0.9959145188331604
+        },
+        {
+          "word": " to",
+          "start": 44.2,
+          "end": 44.36,
+          "probability": 0.9993187189102173
+        },
+        {
+          "word": " disaster.",
+          "start": 44.36,
+          "end": 44.76,
+          "probability": 0.995595395565033
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "seek": 2870,
+      "start": 45.26,
+      "end": 48.78,
+      "text": " Two years ago, I found a mezzanine storage loft rated to hold half of what he was stacking on it.",
+      "tokens": [
+        51184,
+        4453,
+        924,
+        2057,
+        11,
+        286,
+        1352,
+        257,
+        385,
+        4313,
+        282,
+        533,
+        6725,
+        34419,
+        22103,
+        281,
+        1797,
+        1922,
+        295,
+        437,
+        415,
+        390,
+        41376,
+        322,
+        309,
+        13,
+        51364
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.06396208253017692,
+      "compression_ratio": 1.6618357487922706,
+      "no_speech_prob": 0.060065265744924545,
+      "words": [
+        {
+          "word": " Two",
+          "start": 45.26,
+          "end": 45.38,
+          "probability": 0.9400033950805664
+        },
+        {
+          "word": " years",
+          "start": 45.38,
+          "end": 45.6,
+          "probability": 0.9983215928077698
+        },
+        {
+          "word": " ago,",
+          "start": 45.6,
+          "end": 45.78,
+          "probability": 0.9992851614952087
+        },
+        {
+          "word": " I",
+          "start": 45.78,
+          "end": 45.9,
+          "probability": 0.9980117082595825
+        },
+        {
+          "word": " found",
+          "start": 45.9,
+          "end": 46.08,
+          "probability": 0.9990179538726807
+        },
+        {
+          "word": " a",
+          "start": 46.08,
+          "end": 46.22,
+          "probability": 0.9962626099586487
+        },
+        {
+          "word": " mezzanine",
+          "start": 46.22,
+          "end": 46.52,
+          "probability": 0.9681249558925629
+        },
+        {
+          "word": " storage",
+          "start": 46.52,
+          "end": 46.8,
+          "probability": 0.9955081939697266
+        },
+        {
+          "word": " loft",
+          "start": 46.8,
+          "end": 47.0,
+          "probability": 0.9857957363128662
+        },
+        {
+          "word": " rated",
+          "start": 47.0,
+          "end": 47.22,
+          "probability": 0.7138016223907471
+        },
+        {
+          "word": " to",
+          "start": 47.22,
+          "end": 47.44,
+          "probability": 0.9991445541381836
+        },
+        {
+          "word": " hold",
+          "start": 47.44,
+          "end": 47.54,
+          "probability": 0.9994305968284607
+        },
+        {
+          "word": " half",
+          "start": 47.54,
+          "end": 47.8,
+          "probability": 0.9969047904014587
+        },
+        {
+          "word": " of",
+          "start": 47.8,
+          "end": 47.9,
+          "probability": 0.9974950551986694
+        },
+        {
+          "word": " what",
+          "start": 47.9,
+          "end": 48.02,
+          "probability": 0.9990710020065308
+        },
+        {
+          "word": " he",
+          "start": 48.02,
+          "end": 48.14,
+          "probability": 0.9975383281707764
+        },
+        {
+          "word": " was",
+          "start": 48.14,
+          "end": 48.32,
+          "probability": 0.9987120628356934
+        },
+        {
+          "word": " stacking",
+          "start": 48.32,
+          "end": 48.48,
+          "probability": 0.9972586631774902
+        },
+        {
+          "word": " on",
+          "start": 48.48,
+          "end": 48.68,
+          "probability": 0.9980629086494446
+        },
+        {
+          "word": " it.",
+          "start": 48.68,
+          "end": 48.78,
+          "probability": 0.9935378432273865
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "seek": 2870,
+      "start": 48.84,
+      "end": 51.28,
+      "text": " Last spring, I caught wiring running six inches from the lacquer booth,",
+      "tokens": [
+        51364,
+        5264,
+        5587,
+        11,
+        286,
+        5415,
+        27520,
+        2614,
+        2309,
+        8478,
+        490,
+        264,
+        28027,
+        8035,
+        20912,
+        11,
+        51488
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.06396208253017692,
+      "compression_ratio": 1.6618357487922706,
+      "no_speech_prob": 0.060065265744924545,
+      "words": [
+        {
+          "word": " Last",
+          "start": 48.84,
+          "end": 49.04,
+          "probability": 0.9888090491294861
+        },
+        {
+          "word": " spring,",
+          "start": 49.04,
+          "end": 49.28,
+          "probability": 0.9583898186683655
+        },
+        {
+          "word": " I",
+          "start": 49.32,
+          "end": 49.52,
+          "probability": 0.998117208480835
+        },
+        {
+          "word": " caught",
+          "start": 49.52,
+          "end": 49.64,
+          "probability": 0.9971916079521179
+        },
+        {
+          "word": " wiring",
+          "start": 49.64,
+          "end": 49.9,
+          "probability": 0.9950248599052429
+        },
+        {
+          "word": " running",
+          "start": 49.9,
+          "end": 50.14,
+          "probability": 0.9975601434707642
+        },
+        {
+          "word": " six",
+          "start": 50.14,
+          "end": 50.4,
+          "probability": 0.7339648008346558
+        },
+        {
+          "word": " inches",
+          "start": 50.4,
+          "end": 50.64,
+          "probability": 0.9971153736114502
+        },
+        {
+          "word": " from",
+          "start": 50.64,
+          "end": 50.78,
+          "probability": 0.9988595247268677
+        },
+        {
+          "word": " the",
+          "start": 50.78,
+          "end": 50.94,
+          "probability": 0.9979935884475708
+        },
+        {
+          "word": " lacquer",
+          "start": 50.94,
+          "end": 51.16,
+          "probability": 0.9670805037021637
+        },
+        {
+          "word": " booth,",
+          "start": 51.16,
+          "end": 51.28,
+          "probability": 0.9972360730171204
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "seek": 2870,
+      "start": 51.3,
+      "end": 52.72,
+      "text": " close enough to start a fire in seconds.",
+      "tokens": [
+        51488,
+        1998,
+        1547,
+        281,
+        722,
+        257,
+        2610,
+        294,
+        3949,
+        13,
+        51572
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.06396208253017692,
+      "compression_ratio": 1.6618357487922706,
+      "no_speech_prob": 0.060065265744924545,
+      "words": [
+        {
+          "word": " close",
+          "start": 51.3,
+          "end": 51.54,
+          "probability": 0.995211660861969
+        },
+        {
+          "word": " enough",
+          "start": 51.54,
+          "end": 51.68,
+          "probability": 0.9991127848625183
+        },
+        {
+          "word": " to",
+          "start": 51.68,
+          "end": 51.86,
+          "probability": 0.9995079040527344
+        },
+        {
+          "word": " start",
+          "start": 51.86,
+          "end": 51.98,
+          "probability": 0.9964578747749329
+        },
+        {
+          "word": " a",
+          "start": 51.98,
+          "end": 52.1,
+          "probability": 0.9962790608406067
+        },
+        {
+          "word": " fire",
+          "start": 52.1,
+          "end": 52.24,
+          "probability": 0.9991014003753662
+        },
+        {
+          "word": " in",
+          "start": 52.24,
+          "end": 52.44,
+          "probability": 0.9939417839050293
+        },
+        {
+          "word": " seconds.",
+          "start": 52.44,
+          "end": 52.72,
+          "probability": 0.9988718628883362
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "seek": 2870,
+      "start": 52.94,
+      "end": 55.3,
+      "text": " I fixed both quietly and told nobody, not even Graham.",
+      "tokens": [
+        51572,
+        286,
+        6806,
+        1293,
+        19141,
+        293,
+        1907,
+        5079,
+        11,
+        406,
+        754,
+        22691,
+        13,
+        51692
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.06396208253017692,
+      "compression_ratio": 1.6618357487922706,
+      "no_speech_prob": 0.060065265744924545,
+      "words": [
+        {
+          "word": " I",
+          "start": 52.94,
+          "end": 53.18,
+          "probability": 0.997944176197052
+        },
+        {
+          "word": " fixed",
+          "start": 53.18,
+          "end": 53.36,
+          "probability": 0.9965805411338806
+        },
+        {
+          "word": " both",
+          "start": 53.36,
+          "end": 53.58,
+          "probability": 0.9974856376647949
+        },
+        {
+          "word": " quietly",
+          "start": 53.58,
+          "end": 53.94,
+          "probability": 0.9944955706596375
+        },
+        {
+          "word": " and",
+          "start": 53.94,
+          "end": 54.12,
+          "probability": 0.8870918154716492
+        },
+        {
+          "word": " told",
+          "start": 54.12,
+          "end": 54.24,
+          "probability": 0.9990679621696472
+        },
+        {
+          "word": " nobody,",
+          "start": 54.24,
+          "end": 54.56,
+          "probability": 0.9973986148834229
+        },
+        {
+          "word": " not",
+          "start": 54.7,
+          "end": 54.88,
+          "probability": 0.9967769980430603
+        },
+        {
+          "word": " even",
+          "start": 54.88,
+          "end": 55.04,
+          "probability": 0.9997377991676331
+        },
+        {
+          "word": " Graham.",
+          "start": 55.04,
+          "end": 55.3,
+          "probability": 0.7876893281936646
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "seek": 5530,
+      "start": 55.3,
+      "end": 60.1,
+      "text": " Reese had a delivery due for a hotel chain called Bellamy & Finch worth $82,000 due the second week",
+      "tokens": [
+        50364,
+        49474,
+        632,
+        257,
+        8982,
+        3462,
+        337,
+        257,
+        7622,
+        5021,
+        1219,
+        11485,
+        7804,
+        3693,
+        3773,
+        339,
+        3163,
+        1848,
+        32848,
+        11,
+        1360,
+        3462,
+        264,
+        1150,
+        1243,
+        50600
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.054863940837771394,
+      "compression_ratio": 1.6356968215158925,
+      "no_speech_prob": 0.3413867652416229,
+      "words": [
+        {
+          "word": " Reese",
+          "start": 55.3,
+          "end": 55.6,
+          "probability": 0.5519254803657532
+        },
+        {
+          "word": " had",
+          "start": 55.6,
+          "end": 55.78,
+          "probability": 0.9909069538116455
+        },
+        {
+          "word": " a",
+          "start": 55.78,
+          "end": 55.88,
+          "probability": 0.9952061772346497
+        },
+        {
+          "word": " delivery",
+          "start": 55.88,
+          "end": 56.18,
+          "probability": 0.9910932183265686
+        },
+        {
+          "word": " due",
+          "start": 56.18,
+          "end": 56.34,
+          "probability": 0.9981083869934082
+        },
+        {
+          "word": " for",
+          "start": 56.34,
+          "end": 56.52,
+          "probability": 0.9948025941848755
+        },
+        {
+          "word": " a",
+          "start": 56.52,
+          "end": 56.64,
+          "probability": 0.9961280226707458
+        },
+        {
+          "word": " hotel",
+          "start": 56.64,
+          "end": 56.92,
+          "probability": 0.9923041462898254
+        },
+        {
+          "word": " chain",
+          "start": 56.92,
+          "end": 57.16,
+          "probability": 0.999245285987854
+        },
+        {
+          "word": " called",
+          "start": 57.16,
+          "end": 57.38,
+          "probability": 0.9873225092887878
+        },
+        {
+          "word": " Bellamy",
+          "start": 57.38,
+          "end": 57.74,
+          "probability": 0.9495660066604614
+        },
+        {
+          "word": " &",
+          "start": 57.74,
+          "end": 57.9,
+          "probability": 0.6969050765037537
+        },
+        {
+          "word": " Finch",
+          "start": 57.9,
+          "end": 58.2,
+          "probability": 0.9853302538394928
+        },
+        {
+          "word": " worth",
+          "start": 58.2,
+          "end": 58.42,
+          "probability": 0.5855007767677307
+        },
+        {
+          "word": " $82",
+          "start": 58.42,
+          "end": 58.84,
+          "probability": 0.9273494184017181
+        },
+        {
+          "word": ",000",
+          "start": 58.84,
+          "end": 59.46,
+          "probability": 0.9768218696117401
+        },
+        {
+          "word": " due",
+          "start": 59.46,
+          "end": 59.58,
+          "probability": 0.9756184220314026
+        },
+        {
+          "word": " the",
+          "start": 59.58,
+          "end": 59.74,
+          "probability": 0.9935259819030762
+        },
+        {
+          "word": " second",
+          "start": 59.74,
+          "end": 59.94,
+          "probability": 0.8898139595985413
+        },
+        {
+          "word": " week",
+          "start": 59.94,
+          "end": 60.1,
+          "probability": 0.9988247752189636
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "seek": 5530,
+      "start": 60.1,
+      "end": 63.64,
+      "text": " of December, with a penalty clause for every day it was late. Closing the shop was costing",
+      "tokens": [
+        50600,
+        295,
+        7687,
+        11,
+        365,
+        257,
+        16263,
+        25925,
+        337,
+        633,
+        786,
+        309,
+        390,
+        3469,
+        13,
+        2033,
+        6110,
+        264,
+        3945,
+        390,
+        37917,
+        50776
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.054863940837771394,
+      "compression_ratio": 1.6356968215158925,
+      "no_speech_prob": 0.3413867652416229,
+      "words": [
+        {
+          "word": " of",
+          "start": 60.1,
+          "end": 60.24,
+          "probability": 0.9973330497741699
+        },
+        {
+          "word": " December,",
+          "start": 60.24,
+          "end": 60.58,
+          "probability": 0.9880483150482178
+        },
+        {
+          "word": " with",
+          "start": 60.62,
+          "end": 60.78,
+          "probability": 0.9847468137741089
+        },
+        {
+          "word": " a",
+          "start": 60.78,
+          "end": 60.94,
+          "probability": 0.9899184107780457
+        },
+        {
+          "word": " penalty",
+          "start": 60.94,
+          "end": 61.2,
+          "probability": 0.9927120208740234
+        },
+        {
+          "word": " clause",
+          "start": 61.2,
+          "end": 61.42,
+          "probability": 0.9989539384841919
+        },
+        {
+          "word": " for",
+          "start": 61.42,
+          "end": 61.64,
+          "probability": 0.9709851741790771
+        },
+        {
+          "word": " every",
+          "start": 61.64,
+          "end": 61.86,
+          "probability": 0.9482920169830322
+        },
+        {
+          "word": " day",
+          "start": 61.86,
+          "end": 61.96,
+          "probability": 0.9976420998573303
+        },
+        {
+          "word": " it",
+          "start": 61.96,
+          "end": 62.04,
+          "probability": 0.9422933459281921
+        },
+        {
+          "word": " was",
+          "start": 62.04,
+          "end": 62.22,
+          "probability": 0.9993048906326294
+        },
+        {
+          "word": " late.",
+          "start": 62.22,
+          "end": 62.48,
+          "probability": 0.9971951246261597
+        },
+        {
+          "word": " Closing",
+          "start": 62.66,
+          "end": 62.92,
+          "probability": 0.9969388544559479
+        },
+        {
+          "word": " the",
+          "start": 62.92,
+          "end": 63.1,
+          "probability": 0.9990484118461609
+        },
+        {
+          "word": " shop",
+          "start": 63.1,
+          "end": 63.22,
+          "probability": 0.9984307885169983
+        },
+        {
+          "word": " was",
+          "start": 63.22,
+          "end": 63.4,
+          "probability": 0.9975422620773315
+        },
+        {
+          "word": " costing",
+          "start": 63.4,
+          "end": 63.64,
+          "probability": 0.9991067051887512
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "seek": 5530,
+      "start": 63.64,
+      "end": 67.84,
+      "text": " him roughly $1,000 a day. He called me 11 times in four days. I didn't answer once.",
+      "tokens": [
+        50776,
+        796,
+        9810,
+        1848,
+        16,
+        11,
+        1360,
+        257,
+        786,
+        13,
+        634,
+        1219,
+        385,
+        2975,
+        1413,
+        294,
+        1451,
+        1708,
+        13,
+        286,
+        994,
+        380,
+        1867,
+        1564,
+        13,
+        50992
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.054863940837771394,
+      "compression_ratio": 1.6356968215158925,
+      "no_speech_prob": 0.3413867652416229,
+      "words": [
+        {
+          "word": " him",
+          "start": 63.64,
+          "end": 63.78,
+          "probability": 0.9992114305496216
+        },
+        {
+          "word": " roughly",
+          "start": 63.78,
+          "end": 64.06,
+          "probability": 0.9957857728004456
+        },
+        {
+          "word": " $1",
+          "start": 64.06,
+          "end": 64.36,
+          "probability": 0.8233420252799988
+        },
+        {
+          "word": ",000",
+          "start": 64.36,
+          "end": 64.66,
+          "probability": 0.9985442161560059
+        },
+        {
+          "word": " a",
+          "start": 64.66,
+          "end": 64.86,
+          "probability": 0.9792537689208984
+        },
+        {
+          "word": " day.",
+          "start": 64.86,
+          "end": 65.08,
+          "probability": 0.9995610117912292
+        },
+        {
+          "word": " He",
+          "start": 65.32,
+          "end": 65.42,
+          "probability": 0.8222877383232117
+        },
+        {
+          "word": " called",
+          "start": 65.42,
+          "end": 65.62,
+          "probability": 0.9977144002914429
+        },
+        {
+          "word": " me",
+          "start": 65.62,
+          "end": 65.78,
+          "probability": 0.9987238049507141
+        },
+        {
+          "word": " 11",
+          "start": 65.78,
+          "end": 66.0,
+          "probability": 0.9255331754684448
+        },
+        {
+          "word": " times",
+          "start": 66.0,
+          "end": 66.26,
+          "probability": 0.9953619837760925
+        },
+        {
+          "word": " in",
+          "start": 66.26,
+          "end": 66.38,
+          "probability": 0.9958129525184631
+        },
+        {
+          "word": " four",
+          "start": 66.38,
+          "end": 66.58,
+          "probability": 0.6431642174720764
+        },
+        {
+          "word": " days.",
+          "start": 66.58,
+          "end": 66.9,
+          "probability": 0.9986982345581055
+        },
+        {
+          "word": " I",
+          "start": 67.04,
+          "end": 67.12,
+          "probability": 0.9914829134941101
+        },
+        {
+          "word": " didn't",
+          "start": 67.12,
+          "end": 67.28,
+          "probability": 0.9981605708599091
+        },
+        {
+          "word": " answer",
+          "start": 67.28,
+          "end": 67.52,
+          "probability": 0.9993115663528442
+        },
+        {
+          "word": " once.",
+          "start": 67.52,
+          "end": 67.84,
+          "probability": 0.9968456625938416
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "seek": 5530,
+      "start": 68.06,
+      "end": 71.24,
+      "text": " On the fifth day, I drove over to return a mixer I'd borrowed, not to check on him.",
+      "tokens": [
+        50992,
+        1282,
+        264,
+        9266,
+        786,
+        11,
+        286,
+        13226,
+        670,
+        281,
+        2736,
+        257,
+        24063,
+        286,
+        1116,
+        26805,
+        11,
+        406,
+        281,
+        1520,
+        322,
+        796,
+        13,
+        51168
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.054863940837771394,
+      "compression_ratio": 1.6356968215158925,
+      "no_speech_prob": 0.3413867652416229,
+      "words": [
+        {
+          "word": " On",
+          "start": 68.06,
+          "end": 68.14,
+          "probability": 0.9833727478981018
+        },
+        {
+          "word": " the",
+          "start": 68.14,
+          "end": 68.26,
+          "probability": 0.9993257522583008
+        },
+        {
+          "word": " fifth",
+          "start": 68.26,
+          "end": 68.42,
+          "probability": 0.8602293133735657
+        },
+        {
+          "word": " day,",
+          "start": 68.42,
+          "end": 68.66,
+          "probability": 0.9991996884346008
+        },
+        {
+          "word": " I",
+          "start": 69.0,
+          "end": 69.08,
+          "probability": 0.9966365098953247
+        },
+        {
+          "word": " drove",
+          "start": 69.08,
+          "end": 69.24,
+          "probability": 0.9992063641548157
+        },
+        {
+          "word": " over",
+          "start": 69.24,
+          "end": 69.46,
+          "probability": 0.9992892742156982
+        },
+        {
+          "word": " to",
+          "start": 69.46,
+          "end": 69.58,
+          "probability": 0.9995381832122803
+        },
+        {
+          "word": " return",
+          "start": 69.58,
+          "end": 69.78,
+          "probability": 0.9985468983650208
+        },
+        {
+          "word": " a",
+          "start": 69.78,
+          "end": 69.92,
+          "probability": 0.9925923943519592
+        },
+        {
+          "word": " mixer",
+          "start": 69.92,
+          "end": 70.08,
+          "probability": 0.9814897179603577
+        },
+        {
+          "word": " I'd",
+          "start": 70.08,
+          "end": 70.38,
+          "probability": 0.8394032716751099
+        },
+        {
+          "word": " borrowed,",
+          "start": 70.38,
+          "end": 70.5,
+          "probability": 0.9988524913787842
+        },
+        {
+          "word": " not",
+          "start": 70.62,
+          "end": 70.72,
+          "probability": 0.9973740577697754
+        },
+        {
+          "word": " to",
+          "start": 70.72,
+          "end": 70.86,
+          "probability": 0.9961968660354614
+        },
+        {
+          "word": " check",
+          "start": 70.86,
+          "end": 70.96,
+          "probability": 0.9992799162864685
+        },
+        {
+          "word": " on",
+          "start": 70.96,
+          "end": 71.1,
+          "probability": 0.9995206594467163
+        },
+        {
+          "word": " him.",
+          "start": 71.1,
+          "end": 71.24,
+          "probability": 0.9994612336158752
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "seek": 5530,
+      "start": 71.58,
+      "end": 73.8,
+      "text": " Sitting open on his desk was the county's recertification binder.",
+      "tokens": [
+        51168,
+        43129,
+        1269,
+        322,
+        702,
+        10026,
+        390,
+        264,
+        9928,
+        311,
+        850,
+        911,
+        3774,
+        45630,
+        13,
+        51292
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.054863940837771394,
+      "compression_ratio": 1.6356968215158925,
+      "no_speech_prob": 0.3413867652416229,
+      "words": [
+        {
+          "word": " Sitting",
+          "start": 71.58,
+          "end": 71.78,
+          "probability": 0.9932249188423157
+        },
+        {
+          "word": " open",
+          "start": 71.78,
+          "end": 71.98,
+          "probability": 0.9862587451934814
+        },
+        {
+          "word": " on",
+          "start": 71.98,
+          "end": 72.1,
+          "probability": 0.9986770749092102
+        },
+        {
+          "word": " his",
+          "start": 72.1,
+          "end": 72.26,
+          "probability": 0.9988540410995483
+        },
+        {
+          "word": " desk",
+          "start": 72.26,
+          "end": 72.42,
+          "probability": 0.9998053908348083
+        },
+        {
+          "word": " was",
+          "start": 72.42,
+          "end": 72.56,
+          "probability": 0.9938297867774963
+        },
+        {
+          "word": " the",
+          "start": 72.56,
+          "end": 72.72,
+          "probability": 0.9947198629379272
+        },
+        {
+          "word": " county's",
+          "start": 72.72,
+          "end": 73.02,
+          "probability": 0.9648507535457611
+        },
+        {
+          "word": " recertification",
+          "start": 73.02,
+          "end": 73.52,
+          "probability": 0.9266763130823771
+        },
+        {
+          "word": " binder.",
+          "start": 73.52,
+          "end": 73.8,
+          "probability": 0.9964871406555176
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "seek": 5530,
+      "start": 74.04,
+      "end": 77.46,
+      "text": " A new structural sign-off page was already filed inside it, dated two days after our fight,",
+      "tokens": [
+        51292,
+        316,
+        777,
+        15067,
+        1465,
+        12,
+        4506,
+        3028,
+        390,
+        1217,
+        18789,
+        1854,
+        309,
+        11,
+        23804,
+        732,
+        1708,
+        934,
+        527,
+        2092,
+        11,
+        51468
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.054863940837771394,
+      "compression_ratio": 1.6356968215158925,
+      "no_speech_prob": 0.3413867652416229,
+      "words": [
+        {
+          "word": " A",
+          "start": 74.04,
+          "end": 74.14,
+          "probability": 0.9638694524765015
+        },
+        {
+          "word": " new",
+          "start": 74.14,
+          "end": 74.3,
+          "probability": 0.9981251358985901
+        },
+        {
+          "word": " structural",
+          "start": 74.3,
+          "end": 74.64,
+          "probability": 0.9905513525009155
+        },
+        {
+          "word": " sign",
+          "start": 74.64,
+          "end": 74.84,
+          "probability": 0.9978014826774597
+        },
+        {
+          "word": "-off",
+          "start": 74.84,
+          "end": 74.94,
+          "probability": 0.806991696357727
+        },
+        {
+          "word": " page",
+          "start": 74.94,
+          "end": 75.18,
+          "probability": 0.9958726763725281
+        },
+        {
+          "word": " was",
+          "start": 75.18,
+          "end": 75.36,
+          "probability": 0.9985610842704773
+        },
+        {
+          "word": " already",
+          "start": 75.36,
+          "end": 75.6,
+          "probability": 0.9987735152244568
+        },
+        {
+          "word": " filed",
+          "start": 75.6,
+          "end": 75.82,
+          "probability": 0.9960201382637024
+        },
+        {
+          "word": " inside",
+          "start": 75.82,
+          "end": 76.12,
+          "probability": 0.9977600574493408
+        },
+        {
+          "word": " it,",
+          "start": 76.12,
+          "end": 76.26,
+          "probability": 0.993719220161438
+        },
+        {
+          "word": " dated",
+          "start": 76.36,
+          "end": 76.46,
+          "probability": 0.9922906756401062
+        },
+        {
+          "word": " two",
+          "start": 76.46,
+          "end": 76.66,
+          "probability": 0.9163567423820496
+        },
+        {
+          "word": " days",
+          "start": 76.66,
+          "end": 76.88,
+          "probability": 0.9989086389541626
+        },
+        {
+          "word": " after",
+          "start": 76.88,
+          "end": 77.14,
+          "probability": 0.9984973669052124
+        },
+        {
+          "word": " our",
+          "start": 77.14,
+          "end": 77.32,
+          "probability": 0.9985448122024536
+        },
+        {
+          "word": " fight,",
+          "start": 77.32,
+          "end": 77.46,
+          "probability": 0.9977660179138184
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "seek": 5530,
+      "start": 77.52,
+      "end": 79.56,
+      "text": " carrying my license number and a signature that was not mine.",
+      "tokens": [
+        51468,
+        9792,
+        452,
+        10476,
+        1230,
+        293,
+        257,
+        13397,
+        300,
+        390,
+        406,
+        3892,
+        13,
+        51580
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.054863940837771394,
+      "compression_ratio": 1.6356968215158925,
+      "no_speech_prob": 0.3413867652416229,
+      "words": [
+        {
+          "word": " carrying",
+          "start": 77.52,
+          "end": 77.72,
+          "probability": 0.994520366191864
+        },
+        {
+          "word": " my",
+          "start": 77.72,
+          "end": 77.88,
+          "probability": 0.9991381168365479
+        },
+        {
+          "word": " license",
+          "start": 77.88,
+          "end": 78.18,
+          "probability": 0.9665402770042419
+        },
+        {
+          "word": " number",
+          "start": 78.18,
+          "end": 78.42,
+          "probability": 0.9984169006347656
+        },
+        {
+          "word": " and",
+          "start": 78.42,
+          "end": 78.54,
+          "probability": 0.9760860204696655
+        },
+        {
+          "word": " a",
+          "start": 78.54,
+          "end": 78.68,
+          "probability": 0.9962420463562012
+        },
+        {
+          "word": " signature",
+          "start": 78.68,
+          "end": 78.94,
+          "probability": 0.9986975193023682
+        },
+        {
+          "word": " that",
+          "start": 78.94,
+          "end": 79.04,
+          "probability": 0.9977654218673706
+        },
+        {
+          "word": " was",
+          "start": 79.04,
+          "end": 79.22,
+          "probability": 0.9988386034965515
+        },
+        {
+          "word": " not",
+          "start": 79.22,
+          "end": 79.36,
+          "probability": 0.9992184638977051
+        },
+        {
+          "word": " mine.",
+          "start": 79.36,
+          "end": 79.56,
+          "probability": 0.9993377327919006
+        }
+      ]
+    },
+    {
+      "id": 28,
+      "seek": 5530,
+      "start": 79.78,
+      "end": 83.06,
+      "text": " I called the inspector's office listed on the form. She confirmed it had been accepted and",
+      "tokens": [
+        51580,
+        286,
+        1219,
+        264,
+        34564,
+        311,
+        3398,
+        10052,
+        322,
+        264,
+        1254,
+        13,
+        1240,
+        11341,
+        309,
+        632,
+        668,
+        9035,
+        293,
+        51744
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.054863940837771394,
+      "compression_ratio": 1.6356968215158925,
+      "no_speech_prob": 0.3413867652416229,
+      "words": [
+        {
+          "word": " I",
+          "start": 79.78,
+          "end": 79.94,
+          "probability": 0.9943373799324036
+        },
+        {
+          "word": " called",
+          "start": 79.94,
+          "end": 80.06,
+          "probability": 0.9991886019706726
+        },
+        {
+          "word": " the",
+          "start": 80.06,
+          "end": 80.26,
+          "probability": 0.9987261891365051
+        },
+        {
+          "word": " inspector's",
+          "start": 80.26,
+          "end": 80.68,
+          "probability": 0.9782302677631378
+        },
+        {
+          "word": " office",
+          "start": 80.68,
+          "end": 80.88,
+          "probability": 0.9993927478790283
+        },
+        {
+          "word": " listed",
+          "start": 80.88,
+          "end": 81.12,
+          "probability": 0.9610981941223145
+        },
+        {
+          "word": " on",
+          "start": 81.12,
+          "end": 81.26,
+          "probability": 0.9991034865379333
+        },
+        {
+          "word": " the",
+          "start": 81.26,
+          "end": 81.4,
+          "probability": 0.9993033409118652
+        },
+        {
+          "word": " form.",
+          "start": 81.4,
+          "end": 81.6,
+          "probability": 0.9990566372871399
+        },
+        {
+          "word": " She",
+          "start": 81.8,
+          "end": 82.0,
+          "probability": 0.9942575693130493
+        },
+        {
+          "word": " confirmed",
+          "start": 82.0,
+          "end": 82.24,
+          "probability": 0.9959685802459717
+        },
+        {
+          "word": " it",
+          "start": 82.24,
+          "end": 82.38,
+          "probability": 0.9968270659446716
+        },
+        {
+          "word": " had",
+          "start": 82.38,
+          "end": 82.44,
+          "probability": 0.9990060925483704
+        },
+        {
+          "word": " been",
+          "start": 82.44,
+          "end": 82.62,
+          "probability": 0.999832034111023
+        },
+        {
+          "word": " accepted",
+          "start": 82.62,
+          "end": 82.9,
+          "probability": 0.9988542795181274
+        },
+        {
+          "word": " and",
+          "start": 82.9,
+          "end": 83.06,
+          "probability": 0.9310161471366882
+        }
+      ]
+    },
+    {
+      "id": 29,
+      "seek": 8306,
+      "start": 83.06,
+      "end": 86.34,
+      "text": " to reopen that same morning. I asked Graham if he'd known. He said,",
+      "tokens": [
+        50388,
+        281,
+        33861,
+        300,
+        912,
+        2446,
+        13,
+        286,
+        2351,
+        22691,
+        498,
+        415,
+        1116,
+        2570,
+        13,
+        634,
+        848,
+        11,
+        50520
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.09110139097486224,
+      "compression_ratio": 1.7139240506329114,
+      "no_speech_prob": 0.5463828444480896,
+      "words": [
+        {
+          "word": " to",
+          "start": 83.06,
+          "end": 83.58,
+          "probability": 0.010193628259003162
+        },
+        {
+          "word": " reopen",
+          "start": 83.58,
+          "end": 83.98,
+          "probability": 0.25142908096313477
+        },
+        {
+          "word": " that",
+          "start": 83.98,
+          "end": 84.2,
+          "probability": 0.9831368327140808
+        },
+        {
+          "word": " same",
+          "start": 84.2,
+          "end": 84.34,
+          "probability": 0.9925867915153503
+        },
+        {
+          "word": " morning.",
+          "start": 84.34,
+          "end": 84.62,
+          "probability": 0.9971780776977539
+        },
+        {
+          "word": " I",
+          "start": 84.84,
+          "end": 84.84,
+          "probability": 0.8901789784431458
+        },
+        {
+          "word": " asked",
+          "start": 84.84,
+          "end": 85.0,
+          "probability": 0.977547287940979
+        },
+        {
+          "word": " Graham",
+          "start": 85.0,
+          "end": 85.18,
+          "probability": 0.9243853092193604
+        },
+        {
+          "word": " if",
+          "start": 85.18,
+          "end": 85.28,
+          "probability": 0.986227810382843
+        },
+        {
+          "word": " he'd",
+          "start": 85.28,
+          "end": 85.5,
+          "probability": 0.9832489788532257
+        },
+        {
+          "word": " known.",
+          "start": 85.5,
+          "end": 85.68,
+          "probability": 0.9928668737411499
+        },
+        {
+          "word": " He",
+          "start": 86.0,
+          "end": 86.12,
+          "probability": 0.9794512391090393
+        },
+        {
+          "word": " said,",
+          "start": 86.12,
+          "end": 86.34,
+          "probability": 0.997812032699585
+        }
+      ]
+    },
+    {
+      "id": 30,
+      "seek": 8306,
+      "start": 86.48,
+      "end": 89.84,
+      "text": " Reese wouldn't do that. He did, I said. Graham stared at the binder, then asked,",
+      "tokens": [
+        50520,
+        49474,
+        2759,
+        380,
+        360,
+        300,
+        13,
+        634,
+        630,
+        11,
+        286,
+        848,
+        13,
+        22691,
+        44738,
+        412,
+        264,
+        45630,
+        11,
+        550,
+        2351,
+        11,
+        50696
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.09110139097486224,
+      "compression_ratio": 1.7139240506329114,
+      "no_speech_prob": 0.5463828444480896,
+      "words": [
+        {
+          "word": " Reese",
+          "start": 86.48,
+          "end": 86.56,
+          "probability": 0.440325528383255
+        },
+        {
+          "word": " wouldn't",
+          "start": 86.56,
+          "end": 86.74,
+          "probability": 0.9930772483348846
+        },
+        {
+          "word": " do",
+          "start": 86.74,
+          "end": 86.92,
+          "probability": 0.9983200430870056
+        },
+        {
+          "word": " that.",
+          "start": 86.92,
+          "end": 87.1,
+          "probability": 0.998848557472229
+        },
+        {
+          "word": " He",
+          "start": 87.38,
+          "end": 87.54,
+          "probability": 0.6425570845603943
+        },
+        {
+          "word": " did,",
+          "start": 87.54,
+          "end": 87.78,
+          "probability": 0.9955127835273743
+        },
+        {
+          "word": " I",
+          "start": 87.84,
+          "end": 88.02,
+          "probability": 0.9960514903068542
+        },
+        {
+          "word": " said.",
+          "start": 88.02,
+          "end": 88.28,
+          "probability": 0.9985613226890564
+        },
+        {
+          "word": " Graham",
+          "start": 88.54,
+          "end": 88.72,
+          "probability": 0.8321009874343872
+        },
+        {
+          "word": " stared",
+          "start": 88.72,
+          "end": 88.94,
+          "probability": 0.9965633749961853
+        },
+        {
+          "word": " at",
+          "start": 88.94,
+          "end": 89.06,
+          "probability": 0.9987548589706421
+        },
+        {
+          "word": " the",
+          "start": 89.06,
+          "end": 89.18,
+          "probability": 0.9987351298332214
+        },
+        {
+          "word": " binder,",
+          "start": 89.18,
+          "end": 89.36,
+          "probability": 0.9947080612182617
+        },
+        {
+          "word": " then",
+          "start": 89.48,
+          "end": 89.66,
+          "probability": 0.9921769499778748
+        },
+        {
+          "word": " asked,",
+          "start": 89.66,
+          "end": 89.84,
+          "probability": 0.9921625256538391
+        }
+      ]
+    },
+    {
+      "id": 31,
+      "seek": 8306,
+      "start": 89.88,
+      "end": 91.62,
+      "text": " You've been signing off on that place since the beginning?",
+      "tokens": [
+        50696,
+        509,
+        600,
+        668,
+        13393,
+        766,
+        322,
+        300,
+        1081,
+        1670,
+        264,
+        2863,
+        30,
+        50812
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.09110139097486224,
+      "compression_ratio": 1.7139240506329114,
+      "no_speech_prob": 0.5463828444480896,
+      "words": [
+        {
+          "word": " You've",
+          "start": 89.88,
+          "end": 90.1,
+          "probability": 0.5246522277593613
+        },
+        {
+          "word": " been",
+          "start": 90.1,
+          "end": 90.22,
+          "probability": 0.999100923538208
+        },
+        {
+          "word": " signing",
+          "start": 90.22,
+          "end": 90.42,
+          "probability": 0.9959728121757507
+        },
+        {
+          "word": " off",
+          "start": 90.42,
+          "end": 90.62,
+          "probability": 0.9972184896469116
+        },
+        {
+          "word": " on",
+          "start": 90.62,
+          "end": 90.74,
+          "probability": 0.9983456134796143
+        },
+        {
+          "word": " that",
+          "start": 90.74,
+          "end": 90.92,
+          "probability": 0.9959641695022583
+        },
+        {
+          "word": " place",
+          "start": 90.92,
+          "end": 91.02,
+          "probability": 0.9733675122261047
+        },
+        {
+          "word": " since",
+          "start": 91.02,
+          "end": 91.24,
+          "probability": 0.9906258583068848
+        },
+        {
+          "word": " the",
+          "start": 91.24,
+          "end": 91.4,
+          "probability": 0.9989892840385437
+        },
+        {
+          "word": " beginning?",
+          "start": 91.4,
+          "end": 91.62,
+          "probability": 0.9989219903945923
+        }
+      ]
+    },
+    {
+      "id": 32,
+      "seek": 8306,
+      "start": 92.2,
+      "end": 94.64,
+      "text": " Yes, I said. Why would he forge it instead of just calling you?",
+      "tokens": [
+        50812,
+        1079,
+        11,
+        286,
+        848,
+        13,
+        1545,
+        576,
+        415,
+        38741,
+        309,
+        2602,
+        295,
+        445,
+        5141,
+        291,
+        30,
+        50944
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.09110139097486224,
+      "compression_ratio": 1.7139240506329114,
+      "no_speech_prob": 0.5463828444480896,
+      "words": [
+        {
+          "word": " Yes,",
+          "start": 92.2,
+          "end": 92.46,
+          "probability": 0.8348265886306763
+        },
+        {
+          "word": " I",
+          "start": 92.46,
+          "end": 92.64,
+          "probability": 0.9971617460250854
+        },
+        {
+          "word": " said.",
+          "start": 92.64,
+          "end": 92.84,
+          "probability": 0.9988130331039429
+        },
+        {
+          "word": " Why",
+          "start": 92.94,
+          "end": 93.1,
+          "probability": 0.97088223695755
+        },
+        {
+          "word": " would",
+          "start": 93.1,
+          "end": 93.2,
+          "probability": 0.9989550113677979
+        },
+        {
+          "word": " he",
+          "start": 93.2,
+          "end": 93.4,
+          "probability": 0.9955561757087708
+        },
+        {
+          "word": " forge",
+          "start": 93.4,
+          "end": 93.5,
+          "probability": 0.9802120923995972
+        },
+        {
+          "word": " it",
+          "start": 93.5,
+          "end": 93.64,
+          "probability": 0.9983277916908264
+        },
+        {
+          "word": " instead",
+          "start": 93.64,
+          "end": 93.82,
+          "probability": 0.9548003077507019
+        },
+        {
+          "word": " of",
+          "start": 93.82,
+          "end": 93.9,
+          "probability": 0.999173104763031
+        },
+        {
+          "word": " just",
+          "start": 93.9,
+          "end": 94.14,
+          "probability": 0.9974370002746582
+        },
+        {
+          "word": " calling",
+          "start": 94.14,
+          "end": 94.3,
+          "probability": 0.9980430603027344
+        },
+        {
+          "word": " you?",
+          "start": 94.3,
+          "end": 94.64,
+          "probability": 0.9983261227607727
+        }
+      ]
+    },
+    {
+      "id": 33,
+      "seek": 8306,
+      "start": 94.86,
+      "end": 98.82,
+      "text": " Because he knew I'd say no. A forged engineering stamp is not a family disagreement.",
+      "tokens": [
+        50944,
+        1436,
+        415,
+        2586,
+        286,
+        1116,
+        584,
+        572,
+        13,
+        316,
+        40226,
+        7043,
+        9921,
+        307,
+        406,
+        257,
+        1605,
+        38947,
+        13,
+        51164
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.09110139097486224,
+      "compression_ratio": 1.7139240506329114,
+      "no_speech_prob": 0.5463828444480896,
+      "words": [
+        {
+          "word": " Because",
+          "start": 94.86,
+          "end": 95.14,
+          "probability": 0.9673693180084229
+        },
+        {
+          "word": " he",
+          "start": 95.14,
+          "end": 95.32,
+          "probability": 0.9751600027084351
+        },
+        {
+          "word": " knew",
+          "start": 95.32,
+          "end": 95.46,
+          "probability": 0.9988117218017578
+        },
+        {
+          "word": " I'd",
+          "start": 95.46,
+          "end": 95.68,
+          "probability": 0.9829581379890442
+        },
+        {
+          "word": " say",
+          "start": 95.68,
+          "end": 95.78,
+          "probability": 0.99845290184021
+        },
+        {
+          "word": " no.",
+          "start": 95.78,
+          "end": 96.08,
+          "probability": 0.9418087601661682
+        },
+        {
+          "word": " A",
+          "start": 96.42,
+          "end": 96.6,
+          "probability": 0.9057356119155884
+        },
+        {
+          "word": " forged",
+          "start": 96.6,
+          "end": 96.82,
+          "probability": 0.9903650879859924
+        },
+        {
+          "word": " engineering",
+          "start": 96.82,
+          "end": 97.3,
+          "probability": 0.9867820143699646
+        },
+        {
+          "word": " stamp",
+          "start": 97.3,
+          "end": 97.54,
+          "probability": 0.9981428384780884
+        },
+        {
+          "word": " is",
+          "start": 97.54,
+          "end": 97.8,
+          "probability": 0.9938939213752747
+        },
+        {
+          "word": " not",
+          "start": 97.8,
+          "end": 97.96,
+          "probability": 0.9974159002304077
+        },
+        {
+          "word": " a",
+          "start": 97.96,
+          "end": 98.04,
+          "probability": 0.998607337474823
+        },
+        {
+          "word": " family",
+          "start": 98.04,
+          "end": 98.28,
+          "probability": 0.9982447624206543
+        },
+        {
+          "word": " disagreement.",
+          "start": 98.28,
+          "end": 98.82,
+          "probability": 0.9975268244743347
+        }
+      ]
+    },
+    {
+      "id": 34,
+      "seek": 8306,
+      "start": 99.24,
+      "end": 101.82,
+      "text": " It is a felony filed under my license number, not his.",
+      "tokens": [
+        51164,
+        467,
+        307,
+        257,
+        46255,
+        18789,
+        833,
+        452,
+        10476,
+        1230,
+        11,
+        406,
+        702,
+        13,
+        51308
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.09110139097486224,
+      "compression_ratio": 1.7139240506329114,
+      "no_speech_prob": 0.5463828444480896,
+      "words": [
+        {
+          "word": " It",
+          "start": 99.24,
+          "end": 99.32,
+          "probability": 0.9785928130149841
+        },
+        {
+          "word": " is",
+          "start": 99.32,
+          "end": 99.54,
+          "probability": 0.9975361824035645
+        },
+        {
+          "word": " a",
+          "start": 99.54,
+          "end": 99.64,
+          "probability": 0.9992103576660156
+        },
+        {
+          "word": " felony",
+          "start": 99.64,
+          "end": 99.88,
+          "probability": 0.9994077682495117
+        },
+        {
+          "word": " filed",
+          "start": 99.88,
+          "end": 100.2,
+          "probability": 0.8840194344520569
+        },
+        {
+          "word": " under",
+          "start": 100.2,
+          "end": 100.42,
+          "probability": 0.9988596439361572
+        },
+        {
+          "word": " my",
+          "start": 100.42,
+          "end": 100.6,
+          "probability": 0.9970287680625916
+        },
+        {
+          "word": " license",
+          "start": 100.6,
+          "end": 100.92,
+          "probability": 0.9475984573364258
+        },
+        {
+          "word": " number,",
+          "start": 100.92,
+          "end": 101.24,
+          "probability": 0.9966996312141418
+        },
+        {
+          "word": " not",
+          "start": 101.42,
+          "end": 101.54,
+          "probability": 0.9959942102432251
+        },
+        {
+          "word": " his.",
+          "start": 101.54,
+          "end": 101.82,
+          "probability": 0.9983657002449036
+        }
+      ]
+    },
+    {
+      "id": 35,
+      "seek": 8306,
+      "start": 102.16,
+      "end": 105.66,
+      "text": " I called the county that afternoon and reported the signature myself, before an inspector or",
+      "tokens": [
+        51308,
+        286,
+        1219,
+        264,
+        9928,
+        300,
+        6499,
+        293,
+        7055,
+        264,
+        13397,
+        2059,
+        11,
+        949,
+        364,
+        34564,
+        420,
+        51488
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.09110139097486224,
+      "compression_ratio": 1.7139240506329114,
+      "no_speech_prob": 0.5463828444480896,
+      "words": [
+        {
+          "word": " I",
+          "start": 102.16,
+          "end": 102.28,
+          "probability": 0.9874259233474731
+        },
+        {
+          "word": " called",
+          "start": 102.28,
+          "end": 102.42,
+          "probability": 0.9592939019203186
+        },
+        {
+          "word": " the",
+          "start": 102.42,
+          "end": 102.6,
+          "probability": 0.9656822085380554
+        },
+        {
+          "word": " county",
+          "start": 102.6,
+          "end": 102.76,
+          "probability": 0.9045718908309937
+        },
+        {
+          "word": " that",
+          "start": 102.76,
+          "end": 102.98,
+          "probability": 0.9973741769790649
+        },
+        {
+          "word": " afternoon",
+          "start": 102.98,
+          "end": 103.28,
+          "probability": 0.9993348717689514
+        },
+        {
+          "word": " and",
+          "start": 103.28,
+          "end": 103.46,
+          "probability": 0.9889016151428223
+        },
+        {
+          "word": " reported",
+          "start": 103.46,
+          "end": 103.68,
+          "probability": 0.9956406354904175
+        },
+        {
+          "word": " the",
+          "start": 103.68,
+          "end": 103.9,
+          "probability": 0.9986836314201355
+        },
+        {
+          "word": " signature",
+          "start": 103.9,
+          "end": 104.12,
+          "probability": 0.9975402355194092
+        },
+        {
+          "word": " myself,",
+          "start": 104.12,
+          "end": 104.56,
+          "probability": 0.98842853307724
+        },
+        {
+          "word": " before",
+          "start": 104.62,
+          "end": 104.86,
+          "probability": 0.9894216656684875
+        },
+        {
+          "word": " an",
+          "start": 104.86,
+          "end": 105.08,
+          "probability": 0.9972975850105286
+        },
+        {
+          "word": " inspector",
+          "start": 105.08,
+          "end": 105.44,
+          "probability": 0.9713866114616394
+        },
+        {
+          "word": " or",
+          "start": 105.44,
+          "end": 105.66,
+          "probability": 0.8233453631401062
+        }
+      ]
+    },
+    {
+      "id": 36,
+      "seek": 8306,
+      "start": 105.66,
+      "end": 108.36,
+      "text": " an insurance auditor found at first. The shop closed again within the hour,",
+      "tokens": [
+        51488,
+        364,
+        7214,
+        33970,
+        1352,
+        412,
+        700,
+        13,
+        440,
+        3945,
+        5395,
+        797,
+        1951,
+        264,
+        1773,
+        11,
+        51624
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.09110139097486224,
+      "compression_ratio": 1.7139240506329114,
+      "no_speech_prob": 0.5463828444480896,
+      "words": [
+        {
+          "word": " an",
+          "start": 105.66,
+          "end": 105.86,
+          "probability": 0.9913163185119629
+        },
+        {
+          "word": " insurance",
+          "start": 105.86,
+          "end": 106.14,
+          "probability": 0.9986440539360046
+        },
+        {
+          "word": " auditor",
+          "start": 106.14,
+          "end": 106.42,
+          "probability": 0.9895871877670288
+        },
+        {
+          "word": " found",
+          "start": 106.42,
+          "end": 106.64,
+          "probability": 0.9906547665596008
+        },
+        {
+          "word": " at",
+          "start": 106.64,
+          "end": 106.84,
+          "probability": 0.4997130036354065
+        },
+        {
+          "word": " first.",
+          "start": 106.84,
+          "end": 107.02,
+          "probability": 0.9960896968841553
+        },
+        {
+          "word": " The",
+          "start": 107.1,
+          "end": 107.28,
+          "probability": 0.9864392280578613
+        },
+        {
+          "word": " shop",
+          "start": 107.28,
+          "end": 107.36,
+          "probability": 0.9964444041252136
+        },
+        {
+          "word": " closed",
+          "start": 107.36,
+          "end": 107.58,
+          "probability": 0.9974798560142517
+        },
+        {
+          "word": " again",
+          "start": 107.58,
+          "end": 107.8,
+          "probability": 0.9947479367256165
+        },
+        {
+          "word": " within",
+          "start": 107.8,
+          "end": 107.98,
+          "probability": 0.9745153784751892
+        },
+        {
+          "word": " the",
+          "start": 107.98,
+          "end": 108.18,
+          "probability": 0.9984865188598633
+        },
+        {
+          "word": " hour,",
+          "start": 108.18,
+          "end": 108.36,
+          "probability": 0.9993112087249756
+        }
+      ]
+    },
+    {
+      "id": 37,
+      "seek": 8306,
+      "start": 108.48,
+      "end": 112.14,
+      "text": " this time flagged for fraud instead of a routine violation. Reese has not called since that day.",
+      "tokens": [
+        51624,
+        341,
+        565,
+        7166,
+        3004,
+        337,
+        14560,
+        2602,
+        295,
+        257,
+        9927,
+        22840,
+        13,
+        49474,
+        575,
+        406,
+        1219,
+        1670,
+        300,
+        786,
+        13,
+        51816
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.09110139097486224,
+      "compression_ratio": 1.7139240506329114,
+      "no_speech_prob": 0.5463828444480896,
+      "words": [
+        {
+          "word": " this",
+          "start": 108.48,
+          "end": 108.62,
+          "probability": 0.9814783334732056
+        },
+        {
+          "word": " time",
+          "start": 108.62,
+          "end": 108.78,
+          "probability": 0.9996323585510254
+        },
+        {
+          "word": " flagged",
+          "start": 108.78,
+          "end": 109.02,
+          "probability": 0.9704306125640869
+        },
+        {
+          "word": " for",
+          "start": 109.02,
+          "end": 109.22,
+          "probability": 0.9991042017936707
+        },
+        {
+          "word": " fraud",
+          "start": 109.22,
+          "end": 109.38,
+          "probability": 0.9974192380905151
+        },
+        {
+          "word": " instead",
+          "start": 109.38,
+          "end": 109.68,
+          "probability": 0.8290722966194153
+        },
+        {
+          "word": " of",
+          "start": 109.68,
+          "end": 109.8,
+          "probability": 0.9994454979896545
+        },
+        {
+          "word": " a",
+          "start": 109.8,
+          "end": 109.94,
+          "probability": 0.9985041618347168
+        },
+        {
+          "word": " routine",
+          "start": 109.94,
+          "end": 110.16,
+          "probability": 0.9986949563026428
+        },
+        {
+          "word": " violation.",
+          "start": 110.16,
+          "end": 110.64,
+          "probability": 0.9975858926773071
+        },
+        {
+          "word": " Reese",
+          "start": 110.84,
+          "end": 110.96,
+          "probability": 0.9851690530776978
+        },
+        {
+          "word": " has",
+          "start": 110.96,
+          "end": 111.16,
+          "probability": 0.9951807260513306
+        },
+        {
+          "word": " not",
+          "start": 111.16,
+          "end": 111.3,
+          "probability": 0.9989022016525269
+        },
+        {
+          "word": " called",
+          "start": 111.3,
+          "end": 111.48,
+          "probability": 0.9987573623657227
+        },
+        {
+          "word": " since",
+          "start": 111.48,
+          "end": 111.7,
+          "probability": 0.9981402158737183
+        },
+        {
+          "word": " that",
+          "start": 111.7,
+          "end": 111.9,
+          "probability": 0.9992864727973938
+        },
+        {
+          "word": " day.",
+          "start": 111.9,
+          "end": 112.14,
+          "probability": 0.9993253946304321
+        }
+      ]
+    },
+    {
+      "id": 38,
+      "seek": 11214,
+      "start": 112.14,
+      "end": 114.28,
+      "text": " Graham sleeps on his own side of the bed again, not the couch,",
+      "tokens": [
+        50364,
+        22691,
+        37991,
+        322,
+        702,
+        1065,
+        1252,
+        295,
+        264,
+        2901,
+        797,
+        11,
+        406,
+        264,
+        16511,
+        11,
+        50468
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.1522573040377709,
+      "compression_ratio": 1.2234042553191489,
+      "no_speech_prob": 0.09776510298252106,
+      "words": [
+        {
+          "word": " Graham",
+          "start": 112.14,
+          "end": 112.46,
+          "probability": 0.700943648815155
+        },
+        {
+          "word": " sleeps",
+          "start": 112.46,
+          "end": 112.72,
+          "probability": 0.9874789714813232
+        },
+        {
+          "word": " on",
+          "start": 112.72,
+          "end": 112.84,
+          "probability": 0.9961075186729431
+        },
+        {
+          "word": " his",
+          "start": 112.84,
+          "end": 112.96,
+          "probability": 0.9971632361412048
+        },
+        {
+          "word": " own",
+          "start": 112.96,
+          "end": 113.12,
+          "probability": 0.9950574636459351
+        },
+        {
+          "word": " side",
+          "start": 113.12,
+          "end": 113.24,
+          "probability": 0.9939411878585815
+        },
+        {
+          "word": " of",
+          "start": 113.24,
+          "end": 113.34,
+          "probability": 0.9948703050613403
+        },
+        {
+          "word": " the",
+          "start": 113.34,
+          "end": 113.44,
+          "probability": 0.9952741861343384
+        },
+        {
+          "word": " bed",
+          "start": 113.44,
+          "end": 113.52,
+          "probability": 0.999213457107544
+        },
+        {
+          "word": " again,",
+          "start": 113.52,
+          "end": 113.72,
+          "probability": 0.9881133437156677
+        },
+        {
+          "word": " not",
+          "start": 113.82,
+          "end": 113.96,
+          "probability": 0.9691084027290344
+        },
+        {
+          "word": " the",
+          "start": 113.96,
+          "end": 114.1,
+          "probability": 0.9925370812416077
+        },
+        {
+          "word": " couch,",
+          "start": 114.1,
+          "end": 114.28,
+          "probability": 0.9987216591835022
+        }
+      ]
+    },
+    {
+      "id": 39,
+      "seek": 11214,
+      "start": 114.36,
+      "end": 115.94,
+      "text": " but he has not brought up the workshop since either.",
+      "tokens": [
+        50468,
+        457,
+        415,
+        575,
+        406,
+        3038,
+        493,
+        264,
+        13541,
+        1670,
+        2139,
+        13,
+        50560
+      ],
+      "temperature": 0,
+      "avg_logprob": -0.1522573040377709,
+      "compression_ratio": 1.2234042553191489,
+      "no_speech_prob": 0.09776510298252106,
+      "words": [
+        {
+          "word": " but",
+          "start": 114.36,
+          "end": 114.46,
+          "probability": 0.9949002861976624
+        },
+        {
+          "word": " he",
+          "start": 114.46,
+          "end": 114.6,
+          "probability": 0.9963188171386719
+        },
+        {
+          "word": " has",
+          "start": 114.6,
+          "end": 114.7,
+          "probability": 0.985178530216217
+        },
+        {
+          "word": " not",
+          "start": 114.7,
+          "end": 114.84,
+          "probability": 0.9940676689147949
+        },
+        {
+          "word": " brought",
+          "start": 114.84,
+          "end": 114.94,
+          "probability": 0.996898889541626
+        },
+        {
+          "word": " up",
+          "start": 114.94,
+          "end": 115.08,
+          "probability": 0.9976711869239807
+        },
+        {
+          "word": " the",
+          "start": 115.08,
+          "end": 115.2,
+          "probability": 0.9971043467521667
+        },
+        {
+          "word": " workshop",
+          "start": 115.2,
+          "end": 115.46,
+          "probability": 0.9805318713188171
+        },
+        {
+          "word": " since",
+          "start": 115.46,
+          "end": 115.68,
+          "probability": 0.9919126033782959
+        },
+        {
+          "word": " either.",
+          "start": 115.68,
+          "end": 115.94,
+          "probability": 0.9811661839485168
+        }
+      ]
+    }
+  ],
+  "language": "en"
+}

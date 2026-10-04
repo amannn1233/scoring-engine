@@ -1,0 +1,28 @@
+{
+  "version": "story_scoring_lab_v6",
+  "voice_path": "/kaggle/input/datasets/dangerzone4242/working/85_extracted.wav",
+  "input_score": "/kaggle/working/story_score_v4/story_score_v4_raw.wav",
+  "output_score": "/kaggle/working/story_score_v6/story_score_v6_adaptive_ducked.wav",
+  "voice_music_preview": "/kaggle/working/story_score_v6/story_score_v6_voice_music_preview.wav",
+  "sample_rate": 44100,
+  "duration_sec": 116.09977324263039,
+  "ducking": {
+    "max_duck_db": 8.0,
+    "attack_sec": 0.08,
+    "release_sec": 0.85,
+    "pause_threshold": 0.18,
+    "long_pause_sec": 0.75,
+    "max_step_db": 0.3,
+    "frame_sec": 0.05,
+    "hop_sec": 0.01
+  },
+  "statistics": {
+    "average_voice_activity": 0.9450101256370544,
+    "minimum_gain_db": -7.998804569244385,
+    "maximum_gain_db": 0.0,
+    "average_gain_db": -7.46080207824707,
+    "light_frames_percent": 0.1636520241171404,
+    "medium_frames_percent": 5.710594315245478,
+    "heavy_frames_percent": 94.12575366063739
+  }
+}

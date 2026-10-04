@@ -1,0 +1,38 @@
+[
+  {
+    "story": 1,
+    "file": "71_extracted.wav",
+    "duration_sec": 118.86294784580498,
+    "optimizer_objective": 2.806364825647324,
+    "discovery_db": -21.219884872436523,
+    "revelation_db": -19.084638595581055,
+    "revelation_minus_discovery_db": 2.1352462768554688,
+    "aftermath_db": -27.875534057617188,
+    "max_boundary_jump_db": 5.1529541015625,
+    "average_duck_db": -4.307952404022217
+  },
+  {
+    "story": 2,
+    "file": "72_extracted.wav",
+    "duration_sec": 134.32743764172335,
+    "optimizer_objective": 0.6112574100494385,
+    "discovery_db": -21.579797744750977,
+    "revelation_db": -20.856708526611328,
+    "revelation_minus_discovery_db": 0.7230892181396484,
+    "aftermath_db": -25.914213180541992,
+    "max_boundary_jump_db": 5.897377014160156,
+    "average_duck_db": -4.285566806793213
+  },
+  {
+    "story": 3,
+    "file": "86_audio.mp3",
+    "duration_sec": 118.93260770975057,
+    "optimizer_objective": 0.7196772515773773,
+    "discovery_db": -20.458152770996094,
+    "revelation_db": -20.55870246887207,
+    "revelation_minus_discovery_db": -0.10054969787597656,
+    "aftermath_db": -25.265043258666992,
+    "max_boundary_jump_db": 4.315786361694336,
+    "average_duck_db": -4.291380405426025
+  }
+]

@@ -1,0 +1,40 @@
+{
+  "version": "story_scoring_lab_v8",
+  "voice_path": "/kaggle/input/datasets/dangerzone4242/working/85_extracted.wav",
+  "input_score": "/kaggle/working/story_score_v4/story_score_v4_raw.wav",
+  "output_score": "/kaggle/working/story_score_v8/story_score_v8_adaptive_ducked.wav",
+  "voice_music_preview": "/kaggle/working/story_score_v8/story_score_v8_voice_music_preview.wav",
+  "sample_rate": 44100,
+  "duration_sec": 116.09977324263039,
+  "detector": {
+    "quiet_db": -38.0,
+    "normal_db": -28.0,
+    "strong_db": -18.0,
+    "start_threshold": 0.22,
+    "hold_threshold": 0.13,
+    "pause_db": -38.0,
+    "pause_start_sec": 0.2,
+    "pause_full_sec": 0.7
+  },
+  "ducking": {
+    "max_duck_db": 5.0,
+    "attack_sec": 0.08,
+    "release_sec": 1.0,
+    "max_step_db": 0.2
+  },
+  "statistics": {
+    "p10_voice_db": -52.00932312011719,
+    "p20_voice_db": -33.713294982910156,
+    "p50_voice_db": -21.436796188354492,
+    "p80_voice_db": -16.65989875793457,
+    "p90_voice_db": -15.342933654785156,
+    "speech_percent": 79.65546942291128,
+    "average_activity": 0.8804911375045776,
+    "minimum_gain_db": -4.964461326599121,
+    "maximum_gain_db": 0.0,
+    "average_gain_db": -3.8565514087677,
+    "light_frames_percent": 1.6968130921619293,
+    "medium_frames_percent": 20.94745908699397,
+    "heavy_frames_percent": 77.3557278208441
+  }
+}

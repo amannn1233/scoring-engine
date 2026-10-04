@@ -1,0 +1,575 @@
+{
+  "story_file": "/tmp/smoke2/input/sub/72_extracted.wav",
+  "run_seed": 838368497,
+  "transcript_file": null,
+  "transcript_segments": 0,
+  "detected_mood": "psychological suspense",
+  "motif": {
+    "path": "/tmp/smoke2/out/jobA/story_02_72_extracted/motif_seed_28s.wav",
+    "prompt": "cinematic musical motif for a psychological suspense story, dark modern psychological score, clear memorable three-note descending felt piano motif, motif repeats naturally, warm deep bass, restrained dark pad, subtle rhythmic pulse, emotionally intelligent and understated, instrumental only, no vocals, no speech, no choir, no trailer bombast",
+    "seed": 912067277,
+    "reference_starts_seconds": [
+      12.5,
+      14.5,
+      7.5,
+      0.0
+    ]
+  },
+  "quality_report": [
+    {
+      "layer": "core",
+      "phrase": 1,
+      "attempt": 1,
+      "seed": 1450586546,
+      "reference": 1,
+      "valid": true,
+      "quality": 85.34250974655151,
+      "local_valley_db": 5.8629961013793945,
+      "dropout_fraction": 0.0,
+      "longest_valley_seconds": 0.0,
+      "head_drop_db": -5.010678291320801,
+      "tail_drop_db": 0.5807437896728516,
+      "level_spread_db": 10.920985221862793,
+      "motif_similarity": null,
+      "failures": []
+    },
+    {
+      "layer": "core",
+      "phrase": 2,
+      "attempt": 1,
+      "seed": 1179526187,
+      "reference": 2,
+      "valid": true,
+      "quality": 85.99687337875366,
+      "local_valley_db": 5.601250648498535,
+      "dropout_fraction": 0.0,
+      "longest_valley_seconds": 0.0,
+      "head_drop_db": 1.172410011291504,
+      "tail_drop_db": -4.6160125732421875,
+      "level_spread_db": 10.242850303649902,
+      "motif_similarity": null,
+      "failures": []
+    },
+    {
+      "layer": "core",
+      "phrase": 3,
+      "attempt": 1,
+      "seed": 1003581088,
+      "reference": 3,
+      "valid": true,
+      "quality": 85.31480073928833,
+      "local_valley_db": 5.874079704284668,
+      "dropout_fraction": 0.0,
+      "longest_valley_seconds": 0.0,
+      "head_drop_db": -0.4566793441772461,
+      "tail_drop_db": -4.900165557861328,
+      "level_spread_db": 10.880683898925781,
+      "motif_similarity": null,
+      "failures": []
+    },
+    {
+      "layer": "pressure",
+      "phrase": 1,
+      "attempt": 1,
+      "seed": 225889245,
+      "reference": 2,
+      "valid": true,
+      "quality": 84.78076934814453,
+      "local_valley_db": 6.0876922607421875,
+      "dropout_fraction": 0.0,
+      "longest_valley_seconds": 0.0,
+      "head_drop_db": 1.2385425567626953,
+      "tail_drop_db": -4.86338996887207,
+      "level_spread_db": 11.040361404418945,
+      "motif_similarity": null,
+      "failures": []
+    },
+    {
+      "layer": "pressure",
+      "phrase": 2,
+      "attempt": 1,
+      "seed": 682522536,
+      "reference": 3,
+      "valid": true,
+      "quality": 85.06921291351318,
+      "local_valley_db": 5.972314834594727,
+      "dropout_fraction": 0.0,
+      "longest_valley_seconds": 0.0,
+      "head_drop_db": -0.1765155792236328,
+      "tail_drop_db": -4.882140159606934,
+      "level_spread_db": 10.953784942626953,
+      "motif_similarity": null,
+      "failures": []
+    },
+    {
+      "layer": "pressure",
+      "phrase": 3,
+      "attempt": 1,
+      "seed": 1011786201,
+      "reference": 4,
+      "valid": true,
+      "quality": 86.542227268219,
+      "local_valley_db": 5.383109092712402,
+      "dropout_fraction": 0.0,
+      "longest_valley_seconds": 0.0,
+      "head_drop_db": -3.4582901000976562,
+      "tail_drop_db": -2.977297782897949,
+      "level_spread_db": 10.357269287109375,
+      "motif_similarity": null,
+      "failures": []
+    },
+    {
+      "layer": "climax",
+      "phrase": 1,
+      "attempt": 1,
+      "seed": 1315423033,
+      "reference": 3,
+      "valid": true,
+      "quality": 85.62530517578125,
+      "local_valley_db": 5.7498779296875,
+      "dropout_fraction": 0.0,
+      "longest_valley_seconds": 0.0,
+      "head_drop_db": -0.4723997116088867,
+      "tail_drop_db": -4.888424873352051,
+      "level_spread_db": 10.746874809265137,
+      "motif_similarity": null,
+      "failures": []
+    },
+    {
+      "layer": "climax",
+      "phrase": 2,
+      "attempt": 1,
+      "seed": 1853888058,
+      "reference": 4,
+      "valid": true,
+      "quality": 83.93362760543823,
+      "local_valley_db": 6.426548957824707,
+      "dropout_fraction": 0.0,
+      "longest_valley_seconds": 0.0,
+      "head_drop_db": -3.1505908966064453,
+      "tail_drop_db": -2.3944664001464844,
+      "level_spread_db": 10.523028373718262,
+      "motif_similarity": null,
+      "failures": []
+    },
+    {
+      "layer": "climax",
+      "phrase": 3,
+      "attempt": 1,
+      "seed": 688381376,
+      "reference": 1,
+      "valid": true,
+      "quality": 85.72561025619507,
+      "local_valley_db": 5.709755897521973,
+      "dropout_fraction": 0.0,
+      "longest_valley_seconds": 0.0,
+      "head_drop_db": -5.034424781799316,
+      "tail_drop_db": 0.5710477828979492,
+      "level_spread_db": 10.78076171875,
+      "motif_similarity": null,
+      "failures": []
+    }
+  ],
+  "optimizer_version": "V2_EXACT_WAVEFORM",
+  "pipeline_version": "GENERALIZATION_V2_EXACT_WAVEFORM",
+  "duration_seconds": 44.0,
+  "boundaries": [
+    0.0,
+    3.08,
+    11.440000000000001,
+    17.6,
+    26.4,
+    30.36,
+    38.72,
+    44.0
+  ],
+  "optimizer": {
+    "optimizer_version": "V2_EXACT_WAVEFORM",
+    "orders": {
+      "core": [
+        0,
+        1,
+        2
+      ],
+      "pressure": [
+        1,
+        2,
+        0
+      ],
+      "climax": [
+        0,
+        2,
+        1
+      ]
+    },
+    "phases_seconds": {
+      "core": 7.5,
+      "pressure": 0.0,
+      "climax": 0.5
+    },
+    "objective": 1.4613596189531697,
+    "metrics": {
+      "objective": 1.4613596189531697,
+      "section_db": [
+        -25.18556321753139,
+        -23.710048033407197,
+        -23.58133142189378,
+        -20.993926473913817,
+        -20.978260021932357,
+        -18.823203981233203,
+        -24.18992873188771
+      ],
+      "section_target_db": [
+        -26.0,
+        -24.799999237060547,
+        -23.899999618530273,
+        -22.700000762939453,
+        -22.0,
+        -20.0,
+        -25.299999237060547
+      ],
+      "boundary_jumps_db": [
+        2.327802925892648,
+        -0.5207445022796975,
+        1.3300721592273597,
+        -0.6359023604254332,
+        0.7920389517133977,
+        -0.4427423517914342
+      ],
+      "max_abs_boundary_jump_db": 2.327802925892648,
+      "energy_error": 1.2177996824609747,
+      "boundary_penalty": 0.0,
+      "revelation_penalty": 0.0,
+      "release_penalty": 0.0,
+      "local_penalty": 0.0,
+      "local_valley_depth_db": [
+        2.201365515410501,
+        2.653670222694629,
+        2.242318528245857,
+        5.163880510874513,
+        0.786202131448622,
+        4.106074615611874,
+        4.005862196031625
+      ],
+      "peak_gap_db": 2.1550560406991544,
+      "release_drop_db": -5.366724750654509
+    },
+    "stage1": {
+      "orders": {
+        "core": [
+          0,
+          1,
+          2
+        ],
+        "pressure": [
+          0,
+          2,
+          1
+        ],
+        "climax": [
+          0,
+          2,
+          1
+        ]
+      },
+      "phases_seconds": {
+        "core": 7.0,
+        "pressure": 0.0,
+        "climax": 0.0
+      },
+      "objective": 2.3795910517151313,
+      "metrics": {
+        "objective": 2.3795910517151313,
+        "section_db": [
+          -23.792606678654703,
+          -23.649862105227086,
+          -23.622023154941843,
+          -20.924226378468354,
+          -21.04301814680702,
+          -18.771990472706236,
+          -23.874839646273635
+        ],
+        "section_target_db": [
+          -26.0,
+          -24.799999237060547,
+          -23.899999618530273,
+          -22.700000762939453,
+          -22.0,
+          -20.0,
+          -25.299999237060547
+        ],
+        "boundary_jumps_db": [
+          0.09639731974455756,
+          -1.4103019658700688,
+          1.2400072412638181,
+          -1.9417957051628285,
+          1.0783664468420113,
+          -0.5796610545710337
+        ],
+        "max_abs_boundary_jump_db": 1.9417957051628285,
+        "energy_error": 1.9829925430959428,
+        "boundary_penalty": 0.0,
+        "revelation_penalty": 0.0,
+        "release_penalty": 0.0,
+        "local_penalty": 0.0,
+        "local_valley_depth_db": [
+          4.080553889004907,
+          3.5640384603238893,
+          2.479892191024046,
+          5.036571855094984,
+          0.93041097941326,
+          3.1881256948236683,
+          7.295515874569329
+        ],
+        "peak_gap_db": 2.271027674100786,
+        "release_drop_db": -5.1028491735673995
+      }
+    },
+    "history": [
+      {
+        "stage": 1,
+        "pass": 1,
+        "objective": 2.3795910517151313
+      },
+      {
+        "stage": 1,
+        "pass": 2,
+        "objective": 2.3795910517151313
+      },
+      {
+        "stage": 2,
+        "pass": 1,
+        "objective": 1.4882674304799643
+      },
+      {
+        "stage": 2,
+        "pass": 2,
+        "objective": 1.4613596189531697
+      }
+    ],
+    "evaluations": 624,
+    "seconds": 19.82,
+    "total_samples": 1940400
+  },
+  "final_metrics": {
+    "objective": 1.4613596189531697,
+    "section_db": [
+      -25.18556321753139,
+      -23.710048033407197,
+      -23.58133142189378,
+      -20.993926473913817,
+      -20.978260021932357,
+      -18.823203981233203,
+      -24.18992873188771
+    ],
+    "section_target_db": [
+      -26.0,
+      -24.799999237060547,
+      -23.899999618530273,
+      -22.700000762939453,
+      -22.0,
+      -20.0,
+      -25.299999237060547
+    ],
+    "boundary_jumps_db": [
+      2.327802925892648,
+      -0.5207445022796975,
+      1.3300721592273597,
+      -0.6359023604254332,
+      0.7920389517133977,
+      -0.4427423517914342
+    ],
+    "max_abs_boundary_jump_db": 2.327802925892648,
+    "energy_error": 1.2177996824609747,
+    "boundary_penalty": 0.0,
+    "revelation_penalty": 0.0,
+    "release_penalty": 0.0,
+    "local_penalty": 0.0,
+    "local_valley_depth_db": [
+      2.201365515410501,
+      2.653670222694629,
+      2.242318528245857,
+      5.163880510874513,
+      0.786202131448622,
+      4.106074615611874,
+      4.005862196031625
+    ],
+    "peak_gap_db": 2.1550560406991544,
+    "release_drop_db": -5.366724750654509
+  },
+  "final_file_metrics_pcm16": {
+    "objective": 1.4607026341353524,
+    "section_db": [
+      -25.18583129245203,
+      -23.71031066545119,
+      -23.581596394451104,
+      -20.994191633153974,
+      -20.978524464081776,
+      -18.823468595122026,
+      -24.19019309144947
+    ],
+    "section_target_db": [
+      -26.0,
+      -24.799999237060547,
+      -23.899999618530273,
+      -22.700000762939453,
+      -22.0,
+      -20.0,
+      -25.299999237060547
+    ],
+    "boundary_jumps_db": [
+      2.3278306330205822,
+      -0.5207304845603247,
+      1.3300809160447358,
+      -0.6358975827722091,
+      0.7920398558431714,
+      -0.4427384134608836
+    ],
+    "max_abs_boundary_jump_db": 2.3278306330205822,
+    "energy_error": 1.2172521951127937,
+    "boundary_penalty": 0.0,
+    "revelation_penalty": 0.0,
+    "release_penalty": 0.0,
+    "local_penalty": 0.0,
+    "local_valley_depth_db": [
+      2.2013614683401777,
+      2.6536641141519404,
+      2.2423178478896766,
+      5.163893931903456,
+      0.7861921497282793,
+      4.106072239580609,
+      4.005825417813913
+    ],
+    "peak_gap_db": 2.1550558689597494,
+    "release_drop_db": -5.366724496327443
+  },
+  "alignment": {
+    "optimizer_vs_final_render": {
+      "tolerance_db": 0.01,
+      "max_section_db_diff": 0.0,
+      "max_boundary_jump_db_diff": 0.0,
+      "peak_gap_db_diff": 0.0,
+      "objective_diff": 0.0,
+      "boundary_penalty_diff": 0.0,
+      "worst_db_diff": 0.0,
+      "aligned": true
+    },
+    "optimizer_vs_written_pcm16_file": {
+      "tolerance_db": 0.01,
+      "max_section_db_diff": 0.0002680749206405153,
+      "max_boundary_jump_db_diff": 2.770712793420671e-05,
+      "peak_gap_db_diff": 1.717394049194354e-07,
+      "objective_diff": 0.0006569848178172855,
+      "boundary_penalty_diff": 0.0,
+      "worst_db_diff": 0.0002680749206405153,
+      "aligned": true
+    }
+  },
+  "final_story_energy": [
+    {
+      "section": "HOOK",
+      "start": 0.0,
+      "end": 3.08,
+      "rms_db": -25.18556321753139,
+      "target_db": -26.0,
+      "error_db": 0.8144367824686114
+    },
+    {
+      "section": "SETUP / CONFLICT",
+      "start": 3.08,
+      "end": 11.440000000000001,
+      "rms_db": -23.710048033407197,
+      "target_db": -24.799999237060547,
+      "error_db": 1.0899512036533494
+    },
+    {
+      "section": "CONSEQUENCE",
+      "start": 11.440000000000001,
+      "end": 17.6,
+      "rms_db": -23.58133142189378,
+      "target_db": -23.899999618530273,
+      "error_db": 0.31866819663649437
+    },
+    {
+      "section": "HIDDEN DANGER",
+      "start": 17.6,
+      "end": 26.4,
+      "rms_db": -20.993926473913817,
+      "target_db": -22.700000762939453,
+      "error_db": 1.7060742890256364
+    },
+    {
+      "section": "DISCOVERY",
+      "start": 26.4,
+      "end": 30.36,
+      "rms_db": -20.978260021932357,
+      "target_db": -22.0,
+      "error_db": 1.021739978067643
+    },
+    {
+      "section": "FORGERY REVELATION",
+      "start": 30.36,
+      "end": 38.72,
+      "rms_db": -18.823203981233203,
+      "target_db": -20.0,
+      "error_db": 1.1767960187667974
+    },
+    {
+      "section": "AFTERMATH / RESOLUTION",
+      "start": 38.72,
+      "end": 44.0,
+      "rms_db": -24.18992873188771,
+      "target_db": -25.299999237060547,
+      "error_db": 1.1100705051728355
+    }
+  ],
+  "final_boundary_continuity": [
+    {
+      "boundary": "HOOK -> SETUP / CONFLICT",
+      "time": 3.08,
+      "jump_db": 2.327802925892648
+    },
+    {
+      "boundary": "SETUP / CONFLICT -> CONSEQUENCE",
+      "time": 11.440000000000001,
+      "jump_db": -0.5207445022796975
+    },
+    {
+      "boundary": "CONSEQUENCE -> HIDDEN DANGER",
+      "time": 17.6,
+      "jump_db": 1.3300721592273597
+    },
+    {
+      "boundary": "HIDDEN DANGER -> DISCOVERY",
+      "time": 26.4,
+      "jump_db": -0.6359023604254332
+    },
+    {
+      "boundary": "DISCOVERY -> FORGERY REVELATION",
+      "time": 30.36,
+      "jump_db": 0.7920389517133977
+    },
+    {
+      "boundary": "FORGERY REVELATION -> AFTERMATH / RESOLUTION",
+      "time": 38.72,
+      "jump_db": -0.4427423517914342
+    }
+  ],
+  "ducking": {
+    "max_duck_db": 5.0,
+    "attack_seconds": 0.08,
+    "release_seconds": 1.0,
+    "average_duck_db": -4.077134609222412,
+    "max_actual_duck_db": -4.999959945678711,
+    "voice_p10_db": -119.99131774902344,
+    "voice_p20_db": -52.45745391845703,
+    "voice_p50_db": -22.634897232055664,
+    "voice_p80_db": -15.165135002136228,
+    "voice_p90_db": -14.304935455322266
+  },
+  "files": {
+    "raw": "/tmp/smoke2/out/jobA/story_02_72_extracted/score_raw.wav",
+    "ducked": "/tmp/smoke2/out/jobA/story_02_72_extracted/score_ducked.wav",
+    "preview": "/tmp/smoke2/out/jobA/story_02_72_extracted/voice_music_preview.wav"
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "run_id": "20260919_003208",
+  "voice_path": null,
+  "score_path": "C:\\Users\\amuam\\Desktop\\scoring\\score_lab_runs\\20260919_003208\\outputs\\adaptive_score.wav",
+  "mixed_path": null,
+  "beats": [
+    {
+      "index": 0,
+      "start_sentence": 0,
+      "end_sentence": 12,
+      "text": "Former undercover cops, what is the craziest thing you had to do to not blow your cover? I was working undercover with this biker gang for eight months, the Thunder Wolves, real classy bunch. My name was Jake Thompson and I supposedly fixed motorcycles in Phoenix before moving to their town. I had memorized every detail of this fake life down to what brand of beer fake Jake [music] drank and which shop he bought his first bike from. Everything was going smooth until this one night at Rusty's bar. The gang leader, [music] Rick, had this girlfriend Tanya who always wore too much eyeliner and talked way too loud. She started hitting on me hard that night, like really hard, touching my arm, laughing at everything I said, even though I wasn't being funny at all. I thought she was just [music] drunk and being flirty. Rick was right there playing pool, so I figured he didn't care. But then Rick slammed his pool stick down and walked over. My heart started pounding because I thought he was going to beat the crap out of me. Instead, [music] he shoved me in the shoulder and said something I'll never forget.",
+      "label": "reveal",
+      "emotion": "shock",
+      "energy": 0.36,
+      "tension": 0.35,
+      "density": 0.65,
+      "music_direction": "dark cinematic tension, deep bass pulse, dramatic texture, controlled impact, no vocals, no bright melody"
+    },
+    {
+      "index": 1,
+      "start_sentence": 12,
+      "end_sentence": 24,
+      "text": "\"If you want her, you better take her out on a date tomorrow night. Show me your loyalty to this family.\" What the hell kind of loyalty test was that? If I said no, they'd think I was some kind of cop who was too scared to get involved. If I said yes, [music] God knows where this would go. I had about three seconds to decide. \"Sure thing, Rick. Tomorrow night sounds good.\" The words came out before I could stop them. So, there I was the next night picking up Tanya in my beat-up Honda that I had bought for this operation. She climbed in wearing this short black dress and way too much perfume. The whole gang was watching from the parking lot like it was some kind of show. We went to Murphy's dive bar, which was this gross place with sticky floors and a broken jukebox, perfect for fake Jake Thompson. But Tanya kept asking me all these personal questions.",
+      "label": "tension",
+      "emotion": "anxiety",
+      "energy": 0.29,
+      "tension": 0.44,
+      "density": 0.65,
+      "music_direction": "dark cinematic ambient, low pulse, subtle sub bass, restrained percussion, rising tension, no vocals"
+    },
+    {
+      "index": 2,
+      "start_sentence": 24,
+      "end_sentence": 36,
+      "text": "[music] \"Where exactly in Phoenix did you grow up? What was your first dog's name? How did you get that scar on your knuckle?\" I had to remember every single detail of my fake backstory. >> [music] >> Thank God I'd practiced this stuff a million times. The scar was from fixing a bike chain when I was 17. My first dog was a mutt named Diesel. I grew up on the east side near the airport. Then things got really weird. Tanya reached into her purse and pulled out this little silver pocket knife. She started tracing it along my arm, not cutting, but definitely threatening. Her eyes got all intense and she whispered, \"If you're a cop, I'll cut you right here in this bar.\" I laughed like it was the funniest joke I'd ever heard. \"A cop, Tanya?",
+      "label": "reveal",
+      "emotion": "shock",
+      "energy": 0.45,
+      "tension": 0.57,
+      "density": 0.7,
+      "music_direction": "dark cinematic tension, deep bass pulse, dramatic texture, controlled impact, no vocals, no bright melody"
+    },
+    {
+      "index": 3,
+      "start_sentence": 36,
+      "end_sentence": 48,
+      "text": "Have you seen my rap sheet? I got arrested for bar fights three times in Phoenix.\" That was all part of my fake background that the department had set up. She kept staring at me for like 30 seconds. Then she smiled and put the knife away. But the worst part was when she leaned in to kiss me. Right as her lips were about to touch mine, Rick walked into the bar. I thought I was dead. [music] This was it. Gang leader catches undercover cop kissing his girlfriend. Instead, Rick started laughing his ass off. He walked over and slapped me on the back so hard I almost fell off my stool. He's one of us now, boys.",
+      "label": "reveal",
+      "emotion": "shock",
+      "energy": 0.43,
+      "tension": 0.81,
+      "density": 0.65,
+      "music_direction": "dark cinematic tension, deep bass pulse, dramatic texture, controlled impact, no vocals, no bright melody"
+    },
+    {
+      "index": 4,
+      "start_sentence": 48,
+      "end_sentence": 60,
+      "text": "He's not scared of anything. That's when I realized the whole thing was a test. They wanted to see if I would go through with it. If I would risk pissing off the gang leader for a girl. It was their twisted way of checking if I was really loyal or if I was too much of a rule follower to fit in. The operation went on for 3 more months after that. We finally took down the whole gang for weapons trafficking. They had been selling stolen guns to dealers in five different [music] states. When they arrested everyone, I had to testify in court. The day of Rick's sentencing, Tanya was sitting in the front row. When she saw me in my police uniform, she lost it completely. She started screaming that I was a lying piece of garbage.",
+      "label": "reveal",
+      "emotion": "shock",
+      "energy": 0.55,
+      "tension": 0.97,
+      "density": 0.7,
+      "music_direction": "dark cinematic tension, deep bass pulse, dramatic texture, controlled impact, no vocals, no bright melody"
+    }
+  ],
+  "segment_durations": [
+    27.95275590551181,
+    27.95275590551181,
+    29.070866141732278,
+    27.95275590551181,
+    29.070866141732278
+  ],
+  "music_db": -28.0
+}
