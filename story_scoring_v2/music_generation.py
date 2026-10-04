@@ -40,6 +40,43 @@ from arrangement import plan_grid
 MAX_ATTEMPTS = 2
 MOTIF_TAKES = 3      # story-aware path: motif candidates ranked, best kept
 PHRASE_TAKES = 3     # story-aware path: takes per phrase, all ranked
+# Real Stable Audio 3 Small renders (CPU test, 2026-10-04) treat the
+# requested duration as a whole piece: they open strong and decay or fade
+# to silence by the end (a 12 s "climax" fell from -20 to -74 dB). So the
+# story-aware path asks for OVERHANG_SECONDS more than it needs and keeps
+# the most sustained window, never the model's ending.
+OVERHANG_SECONDS = 6.0
+
+
+def sustain_profile(audio, window_s=0.5):
+    """Level (dB) per half second, the head-to-tail drop and the spread."""
+    mono = to_mono(audio)
+    w = max(1, int(round(window_s * SR)))
+    n = len(mono) // w
+    if n < 2:
+        return {"levels": [], "drop_db": 0.0, "spread_db": 0.0}
+    lv = 10 * np.log10(np.mean(mono[: n * w].reshape(n, w) ** 2, axis=1) + 1e-12)
+    k = max(1, n // 4)
+    return {"levels": lv, "drop_db": float(np.median(lv[:k]) - np.median(lv[-k:])),
+            "spread_db": float(np.percentile(lv, 90) - np.percentile(lv, 10))}
+
+
+def best_sustained_window(audio, seconds, step_s=0.25):
+    """The `seconds`-long window with the least decay and level spread,
+    preferring early windows (before any fade the model wrote)."""
+    audio = f32(audio)
+    need = int(round(seconds * SR))
+    if len(audio) <= need:
+        return fit_length(audio, need), 0.0
+    step = max(1, int(round(step_s * SR)))
+    best = None
+    for start in range(0, len(audio) - need + 1, step):
+        prof = sustain_profile(audio[start:start + need])
+        score = abs(prof["drop_db"]) * 2.0 + prof["spread_db"] + 0.2 * start / SR
+        if best is None or score < best[0]:
+            best = (score, start)
+    start = best[1]
+    return f32(audio[start:start + need]), start / SR
 MOTIF_SECONDS = 28.0
 STEPS = 8
 CFG_SCALE = 1.0
@@ -187,14 +224,19 @@ def rank_motif(motif, cue):
     """Higher is better. Tempo/key match against the cue, how many stable
     12 s reference windows the motif offers, and spectral fullness."""
     info = analyse_music(motif, SR, cue.tempo_bpm, cue.key, cue.mode)
-    reference_samples = int(round(PHRASE_DURATION * SR))
+    reference_samples = int(round((plan_grid(cue).generate_seconds + OVERHANG_SECONDS) * SR))
     step = int(round(1.0 * SR))
     scores = sorted(window_stability(motif[s:s + reference_samples])["score"]
                     for s in range(0, max(1, len(motif) - reference_samples + 1), step))
     stability = max(0.0, 1.0 - float(np.mean(scores[:4])) / 40.0) if scores else 0.0
     info["reference_stability"] = stability
-    info["rank"] = (35.0 * info["tempo_match"] + 25.0 * info["key_match"]
-                    + 25.0 * stability + 15.0 * info["fullness"])
+    # How much of the motif is usable before the model's own ending fades it.
+    prof = sustain_profile(motif)
+    lv = np.asarray(prof["levels"])
+    usable = float(np.mean(lv > np.median(lv[: max(1, len(lv) // 3)]) - 12.0)) if len(lv) else 0.0
+    info["usable_fraction"] = usable
+    info["rank"] = (30.0 * info["tempo_match"] + 20.0 * info["key_match"]
+                    + 20.0 * stability + 10.0 * info["fullness"] + 20.0 * usable)
     return info
 
 
@@ -450,8 +492,13 @@ def rank_phrase(audio, report, cue):
     motif chroma similarity) plus musical fit. Invalid takes keep their
     score but always lose to a valid one."""
     info = analyse_music(audio, SR, cue.tempo_bpm, cue.key, cue.mode)
+    prof = sustain_profile(audio)
+    info["sustain_drop_db"] = prof["drop_db"]
+    info["sustain_spread_db"] = prof["spread_db"]
+    sustain = max(0.0, 1.0 - max(0.0, prof["drop_db"]) / 12.0)
+    info["sustain"] = sustain
     rank = (report["quality"] + 15.0 * info["seam"] + 15.0 * info["tempo_match"]
-            + 10.0 * info["key_match"] + 5.0 * info["fullness"])
+            + 10.0 * info["key_match"] + 5.0 * info["fullness"] + 20.0 * sustain)
     info["rank"] = float(rank if report["valid"] else rank - 1000.0)
     return info
 
@@ -464,6 +511,7 @@ def generate_layer_phrases(story_index, mood, references, motif_profile, story_d
     # one alignment beat) at the cue's tempo, so the arranger can cut on bars.
     phrase_seconds = PHRASE_DURATION if cue is None else plan_grid(cue).generate_seconds
     phrase_samples = int(round(phrase_seconds * SR))
+    model_seconds = phrase_seconds if cue is None else phrase_seconds + OVERHANG_SECONDS
     layer_phrases = {name: [] for name in LAYER_NAMES}
     quality_rows = []
     provider = get_provider()
@@ -480,8 +528,11 @@ def generate_layer_phrases(story_index, mood, references, motif_profile, story_d
                 log(f"  phrase {phrase_index + 1}/{PHRASES_PER_LAYER} "
                     f"attempt {attempt + 1}/{attempts} ref={ref_index + 1}")
                 try:
-                    generated = provider.generate_conditioned(prompts[layer], phrase_seconds, reference,
+                    generated = provider.generate_conditioned(prompts[layer], model_seconds, reference,
                                                                LAYER_NOISE[layer], seed)
+                    window_start = 0.0
+                    if cue is not None:
+                        generated, window_start = best_sustained_window(generated, phrase_seconds)
                     generated = normalize_peak(fit_length(generated, phrase_samples), 0.85)
                     report = phrase_quality(generated, motif_profile)
                     row = {"layer": layer, "phrase": phrase_index + 1,
@@ -491,6 +542,7 @@ def generate_layer_phrases(story_index, mood, references, motif_profile, story_d
                         score = report["quality"]
                     else:
                         fit = rank_phrase(generated, report, cue)
+                        fit["window_start_s"] = window_start
                         row["musical_fit"] = fit
                         score = fit["rank"]
                     quality_rows.append(row)

@@ -166,6 +166,8 @@ def item2_prompts(cues, renders=None):
         km = [r["key_match"] for r in renders["selected"]]
         it.partial(np.mean(tm) / 0.85, 3, f"real renders: selected takes tempo match {np.mean(tm):.2f}")
         it.partial(np.mean(km) / 0.8, 2, f"real renders: selected takes key match {np.mean(km):.2f}")
+        sus = [r.get("sustain", 0.0) for r in renders["selected"]]
+        it.partial(np.mean(sus) / 0.75, 2, f"real renders: selected takes sustain (no model fade-out) {np.mean(sus):.2f}")
     return it
 
 

@@ -584,13 +584,14 @@ NEGATIVE_TAIL = "instrumental only, no vocals, no speech, no lyrics"
 def motif_prompt_from_cue(cue):
     p = cue.palette
     return (f"{cue.style}, memorable three-note motif on {p['lead']}, {p['harmony']}, "
-            f"{p['bass']}, sparse and spacious, {cue.tempo_bpm} BPM, {cue.key_label}, {NEGATIVE_TAIL}")
+            f"{p['bass']}, steady and sustained, {cue.tempo_bpm} BPM, {cue.key_label}, no fade out, "
+            f"{NEGATIVE_TAIL}")
 
 
 def layer_prompts_from_cue(cue):
     p = cue.palette
     d = cue.descriptors
-    tail = f"{cue.tempo_bpm} BPM, {cue.key_label}, continuous, {NEGATIVE_TAIL}"
+    tail = f"{cue.tempo_bpm} BPM, {cue.key_label}, steady sustained loop, no fade out, {NEGATIVE_TAIL}"
     return {
         "core": (f"{d[0]} {d[-1]} cinematic underscore, same three-note motif on {p['lead']}, "
                  f"{p['harmony']}, {p['bass']}, sparse, room for narration, {tail}"),
