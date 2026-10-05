@@ -94,16 +94,28 @@ def chroma(audio, sr, n_fft=8192, hop=4096):
     return out / (np.linalg.norm(out) + 1e-12)
 
 
-def estimate_key(audio, sr):
-    """(tonic, 'major'|'minor', correlation)."""
+def estimate_key(audio, sr, third_margin=0.1):
+    """(tonic, 'major'|'minor', correlation). Krumhansl-Kessler picks the
+    tonic; when the parallel major and minor profiles fit that tonic about
+    equally (drone-heavy underscore: tonic and fifth dominate both), the
+    third decides, since it is the one note that tells them apart."""
     c = chroma(audio, sr)
-    best = (-2.0, "C", "major")
+    best = (-2.0, 0, "major")
+    fits = {}
     for shift in range(12):
         for name, prof in (("major", _MAJOR), ("minor", _MINOR)):
             r = float(np.corrcoef(np.roll(prof, shift), c)[0, 1])
+            fits[(shift, name)] = r
             if r > best[0]:
-                best = (r, _KEYS[shift], name)
-    return best[1], best[2], best[0]
+                best = (r, shift, name)
+    r, t, name = best
+    other = "minor" if name == "major" else "major"
+    if r - fits[(t, other)] < third_margin:
+        minor3, major3 = c[(t + 3) % 12], c[(t + 4) % 12]
+        if max(minor3, major3) > 0 and abs(minor3 - major3) > 0.02:
+            name = "minor" if minor3 > major3 else "major"
+            r = fits[(t, name)]
+    return _KEYS[t], name, r
 
 
 def key_match(est_tonic, est_family, target_tonic, target_mode):
@@ -196,18 +208,49 @@ def strong_onsets(audio, sr, min_gap_s=0.12, top_fraction=0.4):
     return np.sort(np.array([i for _, i in keep])) / sr
 
 
-def grid_lock(audio, sr, bpm, tol_s=0.025):
-    """How tightly the strongest attacks sit on ONE beat grid across the
-    whole file: fraction within +-tol of the best-phase grid, rescaled so a
-    random grid scores 0 and a perfect one 1."""
+def grid_phase(audio, sr, bpm, tol_s=0.025, steps=96):
+    """(phase s, fraction of the strongest attacks within +-tol of that grid)
+    for the best-fitting beat phase; (None, 0) with fewer than 4 attacks."""
     on = strong_onsets(audio, sr)
     if len(on) < 4:
-        return 0.0
+        return None, 0.0
     beat = 60.0 / bpm
-    best = 0.0
-    for k in range(96):
-        ph = k / 96 * beat
+    best = (0.0, None, 1e9)
+    for k in range(steps):
+        ph = k / steps * beat
         d = np.abs(((on - ph + beat / 2) % beat) - beat / 2)
-        best = max(best, float(np.mean(d <= tol_s)))
-    chance = min(1.0, 2 * tol_s / beat)
+        frac = float(np.mean(d <= tol_s))
+        spread = float(np.mean(np.minimum(d, tol_s)))
+        if frac > best[0] or (frac == best[0] and spread < best[2]):
+            best = (frac, ph, spread)
+    return best[1], best[0]
+
+
+def grid_lock(audio, sr, bpm, tol_s=0.025):
+    """How tightly the strongest attacks sit on ONE beat grid across the
+    whole file: fraction within +-tol of the best-phase grid, rescaled so
+    beatless (random) attacks score 0 and a perfect grid 1. The chance level
+    accounts for picking the best phase, which flatters short clips."""
+    on = strong_onsets(audio, sr)
+    _, best = grid_phase(audio, sr, bpm, tol_s)
+    if len(on) < 4:
+        return 0.0
+    chance = _random_best_fraction(len(on), round(tol_s / (60.0 / bpm), 3))
     return float(np.clip((best - chance) / (1 - chance), 0, 1))
+
+
+_CHANCE_CACHE = {}
+
+
+def _random_best_fraction(n, tol_over_beat, trials=400, steps=96):
+    """Expected best-phase on-grid fraction for n RANDOM onsets: the score a
+    beatless file gets just from choosing the best of `steps` phases (with
+    10 onsets that is ~0.3, not the naive 2*tol/beat). Deterministic."""
+    key = (int(n), float(tol_over_beat))
+    if key not in _CHANCE_CACHE:
+        rng = np.random.default_rng(1234 + int(n))
+        ph = np.arange(steps) / steps
+        on = rng.uniform(0.0, 1.0, (trials, int(n)))            # in beats
+        d = np.abs(((on[:, None, :] - ph[None, :, None] + 0.5) % 1.0) - 0.5)
+        _CHANCE_CACHE[key] = float(np.mean((d <= tol_over_beat).mean(axis=2).max(axis=1)))
+    return _CHANCE_CACHE[key]

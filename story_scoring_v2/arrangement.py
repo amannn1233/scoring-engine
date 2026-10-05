@@ -38,6 +38,7 @@ from scoring_engine import (
     measure_score,
 )
 from music_analysis import onset_envelope, estimate_tempo, grid_lock
+from audio_io import read_audio, write_audio
 # </local-imports>
 
 
@@ -717,9 +718,21 @@ def fit_section_trims(prepared, plan, cue, grid, boundaries, voice_seconds, targ
     return best[1], best[2]
 
 
+def _as_saved_pcm16(audio):
+    """Exactly what write_audio + read_audio give back for this take."""
+    import tempfile
+    with tempfile.TemporaryDirectory() as d:
+        path = f"{d}/take.wav"
+        write_audio(path, audio, SR)
+        return read_audio(path)[0]
+
+
 def arrange_story(phrases, cue, base_boundaries, voice_seconds, log=print):
     """Full story-aware scoring stage. Returns (music, report)."""
     grid = plan_grid(cue)
+    # Work from exactly what the saved *_phrase_*.wav files hold (16-bit), so
+    # the arrangement can be reproduced bit-for-bit from the saved takes.
+    phrases = {n: [_as_saved_pcm16(p) for p in phrases[n]] for n in LAYER_NAMES}
     prep_info = {n: [{} for _ in phrases[n]] for n in LAYER_NAMES}
     prepared = {n: [prepare_phrase(p, grid, prep_info[n][i]) for i, p in enumerate(phrases[n])]
                 for n in LAYER_NAMES}

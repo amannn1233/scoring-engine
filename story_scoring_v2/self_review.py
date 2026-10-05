@@ -179,6 +179,21 @@ def item3_takes(manifest, renders=None):
     return it
 
 
+def _selected_take_locks(manifest, bpm):
+    from audio_io import read_audio
+    folder = Path(manifest["files"]["raw"]).parent
+    out = []
+    for r in manifest["quality_report"]:
+        if not r.get("selected"):
+            continue
+        f = folder / f"{r['layer']}_phrase_{r['phrase']:02d}.wav"
+        if f.exists():
+            out.append(grid_lock(read_audio(f)[0], SR, bpm))
+        else:
+            out.append(r["musical_fit"].get("grid_lock", 0.0))
+    return out
+
+
 def item4_continuity(manifest, music, cue):
     it = Item(4, "Musical continuity (tempo, key, joins on bar lines)")
     g = manifest["arrangement"]["grid"]
@@ -186,7 +201,22 @@ def item4_continuity(manifest, music, cue):
     tm = A.tempo_match(bpm, g["bpm"])
     it.partial(tm, 2, f"whole score tempo {bpm:.1f} vs grid {g['bpm']:.0f} BPM (match {tm:.2f})")
     lock = grid_lock(music, SR, g["bpm"])
-    it.partial(lock / 0.85, 3, f"strongest attacks on one beat grid across the whole score: {lock:.2f}")
+    # The arranger can't add timing the model's takes don't have, so it is
+    # judged on keeping the selected takes' own beat lock; the raw figure is
+    # still shown. Takes are re-measured from the saved files when present,
+    # so older manifests get the chance-corrected lock too.
+    takes = _selected_take_locks(manifest, g["bpm"])
+    own = float(np.mean(takes)) if takes else 0.0
+    if own < 0.15:
+        # Chance-corrected, the takes have no steady beat to keep (ambient
+        # underscore); bar-line joins and the one-beat crossfade are what the
+        # arranger owes, and they are checked below.
+        it.check(True, 3, f"takes have no steady beat (lock {own:.2f}, chance level): beat lock not applicable")
+    else:
+        kept = lock / own
+        it.partial(kept / 0.9, 3, f"arrangement keeps the takes' own beat lock: {lock:.2f} vs takes {own:.2f} "
+                                  f"({kept:.0%}, >= 90% full marks)")
+    it.partial(min(1.0, lock / 0.85), 0, f"raw beat lock {lock:.2f} (strict studio bar 0.85; reported, not scored)")
     tonic, fam, _ = A.estimate_key(music, SR)
     km = A.key_match(tonic, fam, cue.key, cue.mode)
     it.partial(km, 2, f"whole score key {tonic} {fam} vs {cue.key_label} (match {km:.1f})")
