@@ -529,7 +529,7 @@ def rank_phrase(audio, report, cue):
     from_grid = music_grid_lock(audio, SR, own) if own > 0 else 0.0
     info["grid_lock"] = from_grid
     rank = (report["quality"] + 15.0 * info["seam"] + 15.0 * info["tempo_match"]
-            + 10.0 * info["key_match"] + 5.0 * info["fullness"] + 20.0 * sustain + 10.0 * from_grid)
+            + 10.0 * info["key_match"] + 5.0 * info["fullness"] + 20.0 * sustain + 20.0 * from_grid)
     info["rank"] = float(rank if report["valid"] else rank - 1000.0)
     return info
 

@@ -243,24 +243,41 @@ def _low_onsets(audio):
     return onset_envelope(low, SR)
 
 
-def beat_offset(audio, grid):
-    """Seconds to trim so the phrase starts on a DOWNBEAT: first the
-    click-train phase that best matches the onset envelope, then which of
-    the four beats carries the most low-end weight (kick / bass on 'one')."""
-    env, fps = onset_envelope(audio, SR)
-    if len(env) < 8 or not env.any():
-        return 0.0
-    beat_frames = grid.beat * fps
+def attack_phase(audio, beat_s, tol_s=0.012, step_s=0.001):
+    """Beat phase (s, 0..beat) that puts the most attack energy on the
+    grid: the rise of a 5 ms RMS envelope (sample-accurate, the same
+    attacks grid_lock scores), squared so strong hits dominate, summed in
+    +-tol windows around every beat. None when there are no attacks."""
+    mono = np.asarray(audio, dtype=np.float64)
+    mono = mono.mean(axis=1) if mono.ndim == 2 else mono
+    w = max(1, int(0.005 * SR))
+    rms = np.sqrt(np.maximum(np.convolve(mono * mono, np.ones(w) / w, mode="same"), 0.0))
+    rise = np.maximum(np.diff(rms, prepend=rms[0]), 0.0) ** 2
+    hop = max(1, int(step_s * SR))
+    frames = rise[: len(rise) // hop * hop].reshape(-1, hop).sum(axis=1)
+    if not frames.any():
+        return None
+    fps = SR / hop
+    half = int(round(tol_s * fps))
+    win = np.convolve(frames, np.ones(2 * half + 1), mode="same")
+    beat_f = beat_s * fps
+    n_beats = int(len(win) / beat_f) + 1
     best = (-1.0, 0.0)
-    for k in range(48):
-        phase = k / 48.0 * grid.beat
-        idx = (phase * fps + beat_frames * np.arange(int(len(env) / beat_frames) + 1)).astype(int)
-        idx = idx[idx < len(env)]
-        # Sum a +-1 frame neighbourhood so frame quantisation doesn't hide a hit.
-        score = sum(env[np.clip(idx + d, 0, len(env) - 1)].sum() for d in (-1, 0, 1))
+    for k in range(int(round(beat_f))):
+        idx = np.round(k + beat_f * np.arange(n_beats)).astype(int)
+        score = win[idx[idx < len(win)]].sum()
         if score > best[0]:
-            best = (score, phase)
-    phase = best[1]
+            best = (score, k / fps)
+    return float(best[1])
+
+
+def beat_offset(audio, grid):
+    """Seconds to trim so the phrase starts on a DOWNBEAT: first the beat
+    phase that puts the most attack energy on the grid, then which of
+    the four beats carries the most low-end weight (kick / bass on 'one')."""
+    phase = attack_phase(audio, grid.beat)
+    if phase is None:
+        return 0.0
     low, lfps = _low_onsets(audio)
     bar_frames = grid.bar * lfps
     weights = []
