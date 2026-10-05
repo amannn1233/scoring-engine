@@ -148,9 +148,14 @@ def item2_prompts(cues, renders=None):
         words = max(len(p.split()) for p in prompts)
         it.check(words <= 60, 1, f"{name}: longest prompt {words} words (<= 60 fits the T5 encoder)")
     if renders:
-        tm = [r["tempo_match"] for r in renders["selected"]]
-        km = [r["key_match"] for r in renders["selected"]]
-        it.partial(np.mean(tm) / 0.85, 3, f"real renders: selected takes tempo match {np.mean(tm):.2f}")
+        # Re-measured from the saved takes with the current analysers. Tempo
+        # only counts for takes with a measurable pulse: a beatless pad has
+        # no tempo to match (its autocorrelation peak is noise).
+        pulsed = [r for r in renders["takes"] if r["tempo_confidence"] >= 0.2]
+        tm = [r["tempo_match"] for r in pulsed] or [1.0]
+        km = [r["key_match"] for r in renders["takes"]]
+        it.partial(np.mean(tm) / 0.85, 3, f"real renders: tempo match {np.mean(tm):.2f} over the {len(pulsed)} "
+                                          f"selected takes with a pulse ({len(renders['takes']) - len(pulsed)} beatless)")
         it.partial(np.mean(km) / 0.8, 2, f"real renders: selected takes key match {np.mean(km):.2f}")
         sus = [r.get("sustain", 0.0) for r in renders["selected"]]
         it.partial(np.mean(sus) / 0.75, 2, f"real renders: selected takes sustain (no model fade-out) {np.mean(sus):.2f}")
@@ -179,6 +184,16 @@ def item3_takes(manifest, renders=None):
     return it
 
 
+def _measure_take(manifest, row, cue):
+    from audio_io import read_audio
+    f = Path(manifest["files"]["raw"]).parent / f"{row['layer']}_phrase_{row['phrase']:02d}.wav"
+    if not f.exists():
+        fit = row["musical_fit"]
+        return {"tempo_match": fit["tempo_match"], "tempo_confidence": fit.get("tempo_confidence", 1.0),
+                "key_match": fit["key_match"]}
+    return A.analyse(read_audio(f)[0], SR, cue.tempo_bpm, cue.key, cue.mode)
+
+
 def _selected_take_locks(manifest, bpm):
     from audio_io import read_audio
     folder = Path(manifest["files"]["raw"]).parent
@@ -197,9 +212,13 @@ def _selected_take_locks(manifest, bpm):
 def item4_continuity(manifest, music, cue):
     it = Item(4, "Musical continuity (tempo, key, joins on bar lines)")
     g = manifest["arrangement"]["grid"]
-    bpm, _ = A.estimate_tempo(music, SR)
+    bpm, conf = A.estimate_tempo(music, SR)
     tm = A.tempo_match(bpm, g["bpm"])
-    it.partial(tm, 2, f"whole score tempo {bpm:.1f} vs grid {g['bpm']:.0f} BPM (match {tm:.2f})")
+    if conf >= 0.2:
+        it.partial(tm, 2, f"whole score tempo {bpm:.1f} vs grid {g['bpm']:g} BPM (match {tm:.2f})")
+    else:
+        it.check(True, 2, f"whole score has no measurable pulse (tempo confidence {conf:.2f}): tempo n/a "
+                          f"(reads {bpm:.1f} vs grid {g['bpm']:g})")
     lock = grid_lock(music, SR, g["bpm"])
     # The arranger can't add timing the model's takes don't have, so it is
     # judged on keeping the selected takes' own beat lock; the raw figure is
@@ -402,7 +421,9 @@ def main(argv=None):
                 cue = C.CueSheet(**{k: v for k, v in m["cue_sheet"].items() if k != "key_label"})
                 runs.append((m, music, m["duration_seconds"], cue))
             renders = {"selected": [r["musical_fit"] for m, *_ in runs for r in m["quality_report"]
-                                    if r.get("selected")]}
+                                    if r.get("selected")],
+                       "takes": [_measure_take(m, r, cue) for m, _, _, cue in runs for r in m["quality_report"]
+                                 if r.get("selected")]}
             caps = {}
         else:
             name = list(stories)[0]

@@ -8,7 +8,7 @@
 #   input  /kaggle/input   (stories 71, 72, 86; WAV preferred; 85 excluded)
 #   output /kaggle/working/story_generalization_v2_exact_waveform/
 #   zip    /kaggle/working/story_generalization_v2_exact_waveform.zip
-# Source digest: 8a9b18dd4880372c
+# Source digest: 97044b1dfd9035d6
 # ============================================================
 
 # ##########  audio_io.py  ##########
@@ -3199,7 +3199,9 @@ def rank_phrase(audio, report, cue):
         own = min((own * k for k in (0.5, 1.0, 2.0)), key=lambda b: abs(np.log(b / cue.tempo_bpm)))
     from_grid = music_grid_lock(audio, SR, own) if own > 0 else 0.0
     info["grid_lock"] = from_grid
-    rank = (report["quality"] + 15.0 * info["seam"] + 15.0 * info["tempo_match"]
+    # A beatless take's tempo reading is noise: neutral, so it can't outvote key.
+    tempo_term = info["tempo_match"] if info["tempo_confidence"] >= 0.2 else 0.5
+    rank = (report["quality"] + 15.0 * info["seam"] + 15.0 * tempo_term
             + 25.0 * info["key_match"] + 5.0 * info["fullness"] + 20.0 * sustain + 20.0 * from_grid)
     info["rank"] = float(rank if report["valid"] else rank - 1000.0)
     return info
