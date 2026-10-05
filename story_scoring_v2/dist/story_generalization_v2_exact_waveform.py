@@ -8,7 +8,7 @@
 #   input  /kaggle/input   (stories 71, 72, 86; WAV preferred; 85 excluded)
 #   output /kaggle/working/story_generalization_v2_exact_waveform/
 #   zip    /kaggle/working/story_generalization_v2_exact_waveform.zip
-# Source digest: 1fc3aa574524a51a
+# Source digest: 97044b1dfd9035d6
 # ============================================================
 
 # ##########  audio_io.py  ##########
@@ -50,10 +50,18 @@ def read_audio(path):
     return np.ascontiguousarray(data, dtype=np.float32), int(sr)
 
 
-def write_audio(path, audio, sr):
-    """Writes 16-bit PCM WAV."""
+def write_audio(path, audio, sr, dither=False):
+    """Writes 16-bit PCM WAV. dither=True adds TPDF dither (+-1 LSB) before
+    quantising, for finished masters (fades and quiet tails stay clean
+    instead of turning into quantisation distortion). Off by default so the
+    validated score_raw files stay bit-identical."""
     path = str(path)
     audio = np.asarray(audio, dtype=np.float32)
+    if dither:
+        rng = np.random.default_rng(0x5EED)
+        lsb = 1.0 / 32768.0
+        tpdf = (rng.random(audio.shape) - rng.random(audio.shape)) * lsb
+        audio = np.clip(audio + tpdf.astype(np.float32), -1.0, 32767.0 / 32768.0)
     if SOUNDFILE_OK:
         _sf.write(path, audio, sr, subtype="PCM_16")
         return
@@ -991,14 +999,1696 @@ def build_story_mood(segments):
         mood.append("psychological suspense")
     return ", ".join(list(dict.fromkeys(mood))[:3])
 
+# ##########  cue_sheet.py  ##########
+
+# ============================================================
+# STORY CUE SHEET — read the story's vibe from its own words and turn it
+# into a music brief: palette, tempo, key/mode, motif, per-section
+# intensity arc and hit points. Free and local: pure Python + numpy.
+#
+# There is no list of moods to pick from. Every segment of the transcript is
+# scored on continuous affect dimensions (valence, arousal, tension) and on
+# open "colour" dimensions (darkness, warmth, wonder, grit, intimacy,
+# urgency, melancholy, triumph, eeriness, playfulness, and setting cues).
+# Those numbers are then composed into a brief:
+#
+#   tempo   <- arousal + urgency           (continuous, rounded to whole BPM)
+#   mode    <- valence x tension x wonder  (aeolian, dorian, phrygian, ...)
+#   key     <- story fingerprint + brightness
+#   palette <- instruments scored against the story's colour vector, one per
+#              orchestral role (lead / harmony / bass / pulse / texture / hits)
+#   style   <- the strongest colour + setting descriptors, worded freshly
+#   arc     <- smoothed per-segment intensity; climax, twist and resolution
+#              located from the curve itself, not from fixed fractions
+#
+# Two stories with different words get different briefs; the same story
+# always gets the same brief (deterministic, so runs are reproducible).
+# ============================================================
+
+import hashlib
+import math
+import re
+from dataclasses import dataclass, field, asdict
+
+import numpy as np
+
+
+
+# ============================================================
+# LEXICON
+#
+# word stem -> (valence, arousal, tension) in [-1, 1], plus colour tags.
+# Hand-built from common narration vocabulary (Reddit-style confessions,
+# revenge / betrayal / workplace / crime / family stories, wholesome
+# stories). Stems match by prefix, so "betray" covers betrayed/betrayal.
+# ============================================================
+
+_AFFECT = {
+    # --- threat, fear, danger
+    "afraid": (-0.7, 0.6, 0.8), "terrif": (-0.9, 0.9, 0.9), "scare": (-0.6, 0.7, 0.7),
+    "fear": (-0.7, 0.6, 0.8), "panic": (-0.8, 0.95, 0.9), "danger": (-0.6, 0.7, 0.9),
+    "threat": (-0.7, 0.7, 0.9), "risk": (-0.4, 0.5, 0.7), "gun": (-0.7, 0.9, 0.95),
+    "knife": (-0.7, 0.8, 0.9), "blood": (-0.8, 0.8, 0.8), "kill": (-0.95, 0.9, 0.95),
+    "murder": (-0.95, 0.85, 0.95), "dead": (-0.9, 0.5, 0.7), "death": (-0.9, 0.5, 0.7),
+    "die": (-0.9, 0.6, 0.7), "fire": (-0.6, 0.85, 0.85), "explo": (-0.7, 0.95, 0.9),
+    "crash": (-0.7, 0.9, 0.8), "scream": (-0.7, 0.95, 0.85), "attack": (-0.8, 0.9, 0.9),
+    "beat": (-0.5, 0.8, 0.7), "punch": (-0.6, 0.9, 0.8), "slam": (-0.4, 0.85, 0.7),
+    "shove": (-0.5, 0.8, 0.7), "pound": (-0.3, 0.8, 0.7), "trap": (-0.6, 0.7, 0.85),
+    "hide": (-0.3, 0.5, 0.75), "hidden": (-0.2, 0.4, 0.7), "chase": (-0.4, 0.9, 0.8),
+    "escape": (-0.1, 0.85, 0.8), "run": (0.0, 0.7, 0.4), "disaster": (-0.8, 0.8, 0.85),
+    "collapse": (-0.7, 0.8, 0.8), "injur": (-0.7, 0.6, 0.7), "hospital": (-0.6, 0.4, 0.6),
+    "police": (-0.3, 0.6, 0.7), "cop": (-0.2, 0.6, 0.6), "arrest": (-0.5, 0.7, 0.8),
+    "undercover": (-0.1, 0.6, 0.85), "gang": (-0.5, 0.7, 0.8), "biker": (-0.2, 0.7, 0.6),
+    "loyal": (0.3, 0.4, 0.5), "test": (-0.1, 0.5, 0.6), "cover": (-0.1, 0.4, 0.6),
+    "secret": (-0.2, 0.4, 0.75), "lie": (-0.6, 0.5, 0.7), "lied": (-0.6, 0.5, 0.7),
+    "fake": (-0.5, 0.4, 0.65), "forg": (-0.6, 0.5, 0.75), "fraud": (-0.7, 0.6, 0.8),
+    "steal": (-0.7, 0.6, 0.7), "stole": (-0.7, 0.6, 0.7), "illegal": (-0.6, 0.5, 0.75),
+    "court": (-0.3, 0.5, 0.7), "lawyer": (-0.2, 0.4, 0.6), "sue": (-0.5, 0.6, 0.7),
+    "inspector": (-0.3, 0.4, 0.6), "marshal": (-0.3, 0.5, 0.65), "shut": (-0.5, 0.6, 0.6),
+    "deadline": (-0.3, 0.6, 0.7), "pending": (-0.2, 0.3, 0.55), "warn": (-0.4, 0.6, 0.7),
+    # --- conflict, anger, betrayal
+    "angry": (-0.7, 0.85, 0.7), "anger": (-0.7, 0.85, 0.7), "furious": (-0.8, 0.95, 0.8),
+    "rage": (-0.85, 0.95, 0.8), "yell": (-0.6, 0.9, 0.7), "shout": (-0.5, 0.9, 0.65),
+    "argu": (-0.5, 0.7, 0.6), "fight": (-0.6, 0.85, 0.7), "fought": (-0.6, 0.85, 0.7),
+    "betray": (-0.9, 0.6, 0.8), "cheat": (-0.85, 0.6, 0.75), "affair": (-0.7, 0.5, 0.7),
+    "revenge": (-0.3, 0.7, 0.75), "petty": (-0.2, 0.5, 0.4), "humiliat": (-0.8, 0.6, 0.6),
+    "embarrass": (-0.5, 0.5, 0.4), "incompetent": (-0.5, 0.4, 0.4), "blame": (-0.6, 0.6, 0.6),
+    "refus": (-0.4, 0.5, 0.5), "demand": (-0.4, 0.6, 0.6), "threaten": (-0.8, 0.8, 0.9),
+    "fired": (-0.7, 0.6, 0.6), "quit": (-0.3, 0.5, 0.4), "divorce": (-0.7, 0.5, 0.6),
+    "entitled": (-0.6, 0.5, 0.4), "karen": (-0.4, 0.6, 0.4), "toxic": (-0.7, 0.5, 0.5),
+    "manipulat": (-0.8, 0.5, 0.7), "abuse": (-0.9, 0.6, 0.75), "control": (-0.3, 0.4, 0.5),
+    # --- sadness, loss
+    "sad": (-0.7, 0.2, 0.2), "cry": (-0.7, 0.5, 0.4), "cried": (-0.7, 0.5, 0.4),
+    "tears": (-0.6, 0.4, 0.3), "grief": (-0.85, 0.3, 0.3), "funeral": (-0.8, 0.2, 0.3),
+    "lonely": (-0.7, 0.1, 0.2), "alone": (-0.5, 0.1, 0.3), "miss": (-0.4, 0.2, 0.2),
+    "lost": (-0.6, 0.3, 0.4), "loss": (-0.7, 0.3, 0.4), "broke": (-0.6, 0.4, 0.4),
+    "regret": (-0.6, 0.3, 0.3), "sorry": (-0.3, 0.3, 0.2), "guilt": (-0.6, 0.4, 0.5),
+    "confess": (-0.2, 0.5, 0.6), "ashamed": (-0.6, 0.3, 0.3), "hurt": (-0.7, 0.5, 0.4),
+    "debt": (-0.6, 0.4, 0.6), "loan": (-0.2, 0.3, 0.4), "poor": (-0.5, 0.2, 0.3),
+    "sick": (-0.6, 0.3, 0.4), "cancer": (-0.85, 0.4, 0.6), "silence": (-0.2, 0.0, 0.4),
+    "quiet": (0.0, -0.4, 0.2), "never knew": (-0.2, 0.4, 0.6),
+    # --- discovery, reveal, twist
+    "found": (0.0, 0.5, 0.5), "discover": (0.0, 0.6, 0.6), "realiz": (0.0, 0.6, 0.6),
+    "notic": (0.0, 0.4, 0.4), "truth": (0.0, 0.6, 0.6), "reveal": (0.0, 0.7, 0.7),
+    "actually": (0.0, 0.4, 0.4), "suddenly": (-0.1, 0.8, 0.6), "turns out": (0.0, 0.6, 0.6),
+    "shock": (-0.3, 0.9, 0.7), "stunn": (-0.1, 0.8, 0.6), "froze": (-0.3, 0.7, 0.8),
+    "pale": (-0.4, 0.5, 0.6), "gasp": (-0.2, 0.8, 0.6), "silent": (-0.2, 0.1, 0.5),
+    # --- warmth, joy, relief, triumph
+    "love": (0.8, 0.4, -0.2), "hug": (0.7, 0.3, -0.3), "kiss": (0.7, 0.5, 0.0),
+    "laugh": (0.7, 0.6, -0.3), "smile": (0.7, 0.3, -0.3), "happy": (0.8, 0.5, -0.3),
+    "joy": (0.85, 0.6, -0.3), "proud": (0.7, 0.5, -0.1), "thank": (0.6, 0.3, -0.3),
+    "grateful": (0.7, 0.3, -0.3), "kind": (0.6, 0.2, -0.3), "gentle": (0.5, -0.2, -0.4),
+    "safe": (0.6, -0.2, -0.5), "relief": (0.6, 0.2, -0.6), "calm": (0.4, -0.5, -0.5),
+    "peace": (0.6, -0.5, -0.6), "home": (0.5, -0.1, -0.2), "family": (0.4, 0.1, 0.1),
+    "wedding": (0.6, 0.5, 0.1), "baby": (0.6, 0.3, 0.0), "friend": (0.5, 0.2, -0.1),
+    "win": (0.8, 0.7, 0.0), "won": (0.8, 0.7, 0.0), "victory": (0.85, 0.8, 0.0),
+    "justice": (0.6, 0.6, 0.2), "karma": (0.4, 0.5, 0.2), "promot": (0.7, 0.5, -0.1),
+    "finally": (0.4, 0.3, -0.3), "free": (0.6, 0.4, -0.3), "hope": (0.6, 0.3, 0.0),
+    "beautiful": (0.8, 0.3, -0.3), "amazing": (0.8, 0.6, -0.2), "magic": (0.7, 0.4, 0.0),
+    "wonder": (0.6, 0.3, 0.0), "dream": (0.5, 0.1, 0.0), "star": (0.5, 0.2, 0.0),
+    "funny": (0.7, 0.6, -0.4), "joke": (0.6, 0.5, -0.4), "classy": (0.2, 0.3, 0.1),
+    "flirt": (0.3, 0.6, 0.3), "date": (0.4, 0.4, 0.2), "drunk": (-0.1, 0.6, 0.3),
+    "bar": (0.0, 0.5, 0.3), "party": (0.5, 0.8, 0.0),
+    # --- work / money / mundane (low arousal, mild tension)
+    "work": (0.0, 0.2, 0.2), "job": (0.0, 0.2, 0.2), "boss": (-0.2, 0.3, 0.4),
+    "office": (-0.1, 0.0, 0.2), "client": (0.0, 0.2, 0.3), "business": (0.0, 0.2, 0.3),
+    "shop": (0.0, 0.2, 0.2), "workshop": (0.0, 0.3, 0.2), "money": (0.0, 0.4, 0.4),
+    "contract": (-0.1, 0.3, 0.4), "engineer": (0.1, 0.2, 0.1), "licens": (0.0, 0.2, 0.3),
+    "signature": (0.0, 0.3, 0.4), "sign": (0.0, 0.2, 0.3),
+    # --- added after the first self-review pass (missed plot words)
+    "felon": (-0.8, 0.6, 0.8), "weapon": (-0.7, 0.7, 0.85), "traffick": (-0.8, 0.6, 0.8),
+    "smuggl": (-0.6, 0.6, 0.8), "testif": (-0.2, 0.6, 0.7), "sentenc": (-0.4, 0.6, 0.7),
+    "confront": (-0.5, 0.8, 0.8), "accus": (-0.6, 0.7, 0.7), "suspicio": (-0.4, 0.5, 0.75),
+    "caught": (-0.3, 0.7, 0.7), "report": (-0.1, 0.4, 0.5), "stare": (-0.2, 0.5, 0.6),
+    "staring": (-0.2, 0.5, 0.6), "whisper": (-0.1, 0.3, 0.6), "penalt": (-0.5, 0.5, 0.6),
+    "flagged": (-0.5, 0.5, 0.65), "insurance": (-0.1, 0.3, 0.4), "garbage": (-0.6, 0.6, 0.4),
+    "operation": (-0.1, 0.5, 0.6), "evict": (-0.7, 0.6, 0.7), "ruin": (-0.8, 0.6, 0.7),
+    "not mine": (-0.4, 0.6, 0.8), "blow your cover": (-0.3, 0.7, 0.85), "took down": (0.2, 0.8, 0.6),
+}
+
+# Colour dimensions: what the story FEELS like beyond affect. Prefix stems.
+_COLOUR = {
+    "darkness": ["dark", "night", "shadow", "blood", "kill", "murder", "dead", "death", "grave",
+                 "crime", "gang", "gun", "threat", "cold", "basement", "abuse", "secret"],
+    "warmth": ["love", "hug", "family", "home", "mother", "mom", "dad", "father", "grandm",
+               "grandp", "child", "kid", "baby", "kind", "gentle", "thank", "smile", "wedding"],
+    "wonder": ["magic", "wonder", "star", "sky", "dream", "miracle", "beautiful", "amazing",
+               "discover", "ancient", "space", "light"],
+    "grit": ["biker", "motorcycle", "gang", "bar", "beer", "whiskey", "truck", "garage",
+             "workshop", "street", "fight", "punch", "rusty", "dust", "desert", "phoenix"],
+    "intimacy": ["i felt", "my heart", "alone", "quiet", "whisper", "letter", "diary",
+                 "remember", "memory", "confess", "never told", "nobody knew"],
+    "urgency": ["suddenly", "run", "ran", "chase", "seconds", "minutes", "deadline", "rush",
+                "now", "immediately", "hurry", "pounding", "racing", "three seconds"],
+    "melancholy": ["miss", "lost", "loss", "regret", "funeral", "grief", "lonely", "used to",
+                   "years ago", "anymore", "goodbye", "cried", "tears", "empty"],
+    "triumph": ["win", "won", "victory", "justice", "karma", "finally", "promot", "proved",
+                "fired him", "fired her", "got what", "applause", "cheer"],
+    "eeriness": ["strange", "weird", "creepy", "noise", "footstep", "ghost", "haunt",
+                 "watching", "stare", "staring", "basement", "attic", "woods", "missing"],
+    "playfulness": ["funny", "laugh", "joke", "silly", "prank", "ridiculous", "classy",
+                    "lol", "petty", "karen", "entitled"],
+    "deceit": ["undercover", "fake", "lie", "lied", "forg", "fraud", "pretend", "cover",
+               "disguise", "secret", "double", "spy", "scam", "forged", "signature that"],
+    "pressure": ["deadline", "inspector", "marshal", "court", "loan", "debt", "boss",
+                 "recertif", "audit", "pending", "shut down", "evict", "fired"],
+}
+
+# Setting cues add style words (not instruments forced on the story).
+_SETTING = {
+    "urban night": ["city", "street", "night", "club", "bar", "alley", "apartment", "subway"],
+    "small-town americana": ["town", "truck", "diner", "farm", "county", "highway", "phoenix",
+                             "texas", "biker", "motorcycle", "rusty"],
+    "corporate": ["office", "boss", "meeting", "company", "corporate", "hr ", "manager", "email"],
+    "domestic": ["house", "kitchen", "bedroom", "home", "husband", "wife", "married", "mom",
+                 "dad", "brother", "sister"],
+    "industrial": ["workshop", "factory", "warehouse", "rigging", "wiring", "mezzanine",
+                   "engineer", "structural", "machine", "lacquer"],
+    "legal / institutional": ["court", "lawyer", "judge", "police", "inspector", "marshal",
+                              "license", "licens", "permit", "county"],
+    "nature": ["forest", "woods", "lake", "ocean", "mountain", "river", "rain", "snow", "field"],
+    "medical": ["hospital", "doctor", "nurse", "surgery", "diagnos", "er ", "icu"],
+}
+
+_NEGATORS = {"not", "never", "no", "didn't", "don't", "wasn't", "isn't", "couldn't", "won't",
+             "nobody", "nothing", "without"}
+_INTENSIFIERS = {"very": 1.3, "really": 1.25, "so": 1.2, "extremely": 1.5, "totally": 1.3,
+                 "completely": 1.3, "absolutely": 1.4, "whole": 1.15, "hard": 1.2}
+_REVEAL_CUES = ("never knew", "turns out", "truth", "actually", "realized", "found out",
+                "the reason", "secret", "had been", "all along", "that's when", "was not mine",
+                "wasn't mine", "the whole thing was", "it was him", "it was her", "already filed",
+                "what i didn't know", "little did")
+_RESOLUTION_CUES = ("now", "since then", "finally", "these days", "to this day", "ever since",
+                    "in the end", "ended up", "lesson", "today", "anymore", "moved on")
+
+_WORD = re.compile(r"[a-z']+")
+
+
+def _tokens(text):
+    return _WORD.findall(text.lower())
+
+
+_SUFFIXES = ("", "s", "es", "ed", "d", "ing", "er", "ers", "y", "ly", "al", "ion", "ions",
+             "ation", "ment", "ful", "ous", "ened", "en", "ence", "ent", "ies", "ied", "ery",
+             "ive", "ity", "ness", "ure", "ures", "ured", "ated", "ating", "ate", "ish", "ic")
+
+
+def _stem_ok(token, stem):
+    """Prefix match that only accepts real inflections, so 'die' does not
+    match 'diesel', 'star' does not match 'start', 'con' does not match
+    'confirmed'. Stems of 6+ letters match any continuation."""
+    if not token.startswith(stem):
+        return False
+    rest = token[len(stem):]
+    if len(stem) >= 6:
+        return True
+    if rest in _SUFFIXES:
+        return True
+    # doubled final consonant: stop -> stopped, run -> running
+    return len(rest) > 1 and rest[0] == stem[-1] and rest[1:] in _SUFFIXES
+
+
+def _match_stem(token, stems):
+    return [s for s in stems if " " not in s and _stem_ok(token, s)]
+
+
+def _phrase_hits(text, phrases):
+    return sum(1 for p in phrases if " " in p and p in text)
+
+
+# ============================================================
+# PER-SEGMENT FEATURES
+# ============================================================
+
+COLOUR_NAMES = tuple(_COLOUR.keys())
+
+
+def segment_features(text):
+    """Affect + colour vector for one transcript segment."""
+    low = " " + text.lower() + " "
+    toks = _tokens(text)
+    v = a = t = 0.0
+    hits = 0
+    for i, tok in enumerate(toks):
+        stems = _match_stem(tok, _AFFECT)
+        if not stems:
+            continue
+        stem = max(stems, key=len)
+        val, aro, ten = _AFFECT[stem]
+        scale = 1.0
+        window = toks[max(0, i - 3):i]
+        if any(w in _NEGATORS for w in window):
+            val, ten = -0.5 * val, 0.8 * ten          # "not safe" is tense, not happy
+        for w in window:
+            scale *= _INTENSIFIERS.get(w, 1.0)
+        v += val * scale
+        a += aro * scale
+        t += ten * scale
+        hits += 1
+    for phrase in (p for p in _AFFECT if " " in p):
+        if phrase in low:
+            val, aro, ten = _AFFECT[phrase]
+            v, a, t, hits = v + val, a + aro, t + ten, hits + 1
+    norm = max(1.0, math.sqrt(hits))
+    punct = text.count("!") * 0.15 + text.count("?") * 0.08 + text.count('"') * 0.03
+    words = max(1, len(toks))
+    terse = 0.15 if words <= 7 else 0.0               # short, punchy lines read as tension
+    colour = {}
+    for name, stems in _COLOUR.items():
+        c = sum(1 for tok in toks if _match_stem(tok, stems)) + _phrase_hits(low, stems)
+        colour[name] = c / math.sqrt(words)
+    setting = {}
+    for name, stems in _SETTING.items():
+        setting[name] = sum(1 for tok in toks if _match_stem(tok, [s.strip() for s in stems]))
+    return {
+        "valence": float(np.tanh(v / norm)),
+        "arousal": float(np.tanh(a / norm + punct)),
+        "tension": float(np.tanh(t / norm + terse + punct * 0.5)),
+        "affect_hits": hits,
+        "colour": colour,
+        "setting": setting,
+        "reveal_cue": sum(1 for c in _REVEAL_CUES if c in low),
+        "resolution_cue": sum(1 for c in _RESOLUTION_CUES if c in low),
+        "words": words,
+    }
+
+
+# ============================================================
+# MUSICAL VOCABULARY — composed from the story vector, not picked by mood
+# ============================================================
+
+# Instrument -> (role, colour affinities, affect affinities, prompt wording).
+# Affinity is a dot product with the story's colour/affect vector, so a new
+# combination of colours gives a new ensemble.
+_INSTRUMENTS = [
+    # lead voices
+    ("muted prepared piano ostinato", "lead", {"pressure": 1.0, "deceit": 0.4, "urgency": 0.3}, {"tension": 0.3}),
+    ("felt piano", "lead", {"intimacy": 1.0, "melancholy": 0.8, "warmth": 0.4}, {"arousal": -0.5}),
+    ("solo cello", "lead", {"melancholy": 1.0, "intimacy": 0.6, "darkness": 0.4}, {"valence": -0.4}),
+    ("clean electric guitar with tremolo", "lead", {"grit": 0.9, "deceit": 0.5, "darkness": 0.3}, {"tension": 0.3}),
+    ("baritone guitar", "lead", {"grit": 1.0, "darkness": 0.5}, {"tension": 0.4}),
+    ("muted trumpet", "lead", {"deceit": 0.6, "darkness": 0.3, "playfulness": 0.3}, {"arousal": -0.2}),
+    ("pizzicato strings", "lead", {"playfulness": 1.0, "deceit": 0.3}, {"valence": 0.3}),
+    ("music box", "lead", {"wonder": 0.6, "eeriness": 0.8, "intimacy": 0.4}, {}),
+    ("upright piano", "lead", {"warmth": 0.8, "intimacy": 0.5}, {"valence": 0.4}),
+    ("acoustic guitar fingerpicking", "lead", {"warmth": 0.9, "intimacy": 0.4}, {"valence": 0.5}),
+    ("analog synth lead", "lead", {"urgency": 0.6, "deceit": 0.4}, {"arousal": 0.5}),
+    ("french horn", "lead", {"triumph": 1.0, "wonder": 0.5}, {"valence": 0.4}),
+    # harmony beds
+    ("warm string ensemble", "harmony", {"warmth": 0.8, "melancholy": 0.6, "triumph": 0.5}, {}),
+    ("dark analog pad", "harmony", {"darkness": 0.9, "deceit": 0.6, "eeriness": 0.4}, {"valence": -0.3}),
+    ("low brass chords", "harmony", {"darkness": 0.5, "triumph": 0.6, "pressure": 0.5}, {"tension": 0.4}),
+    ("hammond organ", "harmony", {"grit": 0.7, "warmth": 0.3}, {}),
+    ("glassy granular pad", "harmony", {"eeriness": 0.9, "wonder": 0.6}, {}),
+    ("soft choir pad without words", "harmony", {"wonder": 0.7, "melancholy": 0.5}, {"valence": 0.2}),
+    ("rhodes electric piano", "harmony", {"intimacy": 0.6, "warmth": 0.5, "deceit": 0.2}, {"arousal": -0.3}),
+    # bass
+    ("deep sub bass", "bass", {"darkness": 0.8, "pressure": 0.6, "urgency": 0.3}, {"tension": 0.4}),
+    ("upright bass", "bass", {"deceit": 0.6, "warmth": 0.5, "playfulness": 0.4}, {}),
+    ("overdriven bass guitar", "bass", {"grit": 1.0, "urgency": 0.4}, {"arousal": 0.4}),
+    ("low cello and contrabass", "bass", {"melancholy": 0.6, "darkness": 0.5, "triumph": 0.3}, {}),
+    ("pulsing analog bass", "bass", {"urgency": 0.8, "pressure": 0.7, "deceit": 0.3}, {"arousal": 0.4}),
+    # pulse / rhythm
+    ("ticking clock-like percussion", "pulse", {"pressure": 1.0, "urgency": 0.6}, {"tension": 0.5}),
+    ("brushed snare", "pulse", {"deceit": 0.6, "warmth": 0.4, "playfulness": 0.3}, {}),
+    ("low tom ostinato", "pulse", {"urgency": 0.7, "darkness": 0.5, "triumph": 0.4}, {"arousal": 0.5}),
+    ("stomping kick and handclap groove", "pulse", {"grit": 0.8, "triumph": 0.4}, {"arousal": 0.5}),
+    ("staccato string ostinato", "pulse", {"urgency": 0.9, "pressure": 0.6}, {"tension": 0.5}),
+    ("soft heartbeat pulse", "pulse", {"intimacy": 0.6, "eeriness": 0.4, "pressure": 0.4}, {"arousal": -0.2}),
+    ("light shaker groove", "pulse", {"warmth": 0.6, "playfulness": 0.6}, {"valence": 0.4}),
+    # texture / colour
+    ("vinyl crackle and tape hiss", "texture", {"melancholy": 0.6, "intimacy": 0.6, "grit": 0.3}, {}),
+    ("bowed metal and reversed swells", "texture", {"eeriness": 1.0, "darkness": 0.5}, {}),
+    ("distant guitar feedback", "texture", {"grit": 0.8, "darkness": 0.3}, {}),
+    ("shimmering celesta", "texture", {"wonder": 1.0, "warmth": 0.3}, {"valence": 0.3}),
+    ("airy wind textures", "texture", {"melancholy": 0.5, "eeriness": 0.4}, {"arousal": -0.4}),
+    ("low drones", "texture", {"darkness": 0.7, "pressure": 0.5}, {"tension": 0.3}),
+    # hits (climax colour)
+    ("big cinematic drum hits", "hits", {"triumph": 0.7, "urgency": 0.6, "darkness": 0.3}, {"arousal": 0.6}),
+    ("taiko and low brass stabs", "hits", {"darkness": 0.6, "pressure": 0.6, "urgency": 0.5}, {"tension": 0.5}),
+    ("driving rock drums", "hits", {"grit": 0.9, "urgency": 0.5}, {"arousal": 0.5}),
+    ("string swells and cymbal rolls", "hits", {"melancholy": 0.5, "wonder": 0.5, "triumph": 0.5}, {}),
+    ("orchestral hits with timpani", "hits", {"triumph": 0.8, "pressure": 0.3}, {"valence": 0.2}),
+]
+ROLES = ("lead", "harmony", "bass", "pulse", "texture", "hits")
+
+# Colour -> adjectives used to word the style line freshly.
+_COLOUR_WORDS = {
+    "darkness": ("brooding", "shadowed", "nocturnal"),
+    "warmth": ("tender", "warm", "heartfelt"),
+    "wonder": ("luminous", "awe-struck", "glowing"),
+    "grit": ("gritty", "dusty", "raw"),
+    "intimacy": ("intimate", "close", "confessional"),
+    "urgency": ("driving", "restless", "propulsive"),
+    "melancholy": ("bittersweet", "wistful", "aching"),
+    "triumph": ("rising", "defiant", "victorious"),
+    "eeriness": ("uneasy", "eerie", "haunted"),
+    "playfulness": ("wry", "playful", "cheeky"),
+    "deceit": ("noir", "double-edged", "sly"),
+    "pressure": ("tense", "taut", "tightening"),
+}
+_SETTING_WORDS = {
+    "urban night": "neo-noir city-at-night atmosphere",
+    "small-town americana": "dusty americana edge",
+    "corporate": "sleek modern minimal sheen",
+    "domestic": "close, human, living-room scale",
+    "industrial": "mechanical, metallic undertone",
+    "legal / institutional": "procedural, measured restraint",
+    "nature": "open, organic air",
+    "medical": "clinical, sterile stillness",
+}
+
+_KEYS = ("C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B")
+# Low-register keys read darker on most instruments; bright ones lift.
+_DARK_KEYS = ("C", "D", "Eb", "F", "G", "Bb")
+_BRIGHT_KEYS = ("D", "E", "F#", "A", "B", "G")
+
+
+# ============================================================
+# CUE SHEET
+# ============================================================
+
+@dataclass
+class CueSheet:
+    style: str
+    tempo_bpm: int
+    key: str
+    mode: str
+    palette: dict                 # role -> instrument wording
+    motif: str
+    descriptors: list             # leading adjectives, strongest first
+    affect: dict                  # story-level valence/arousal/tension
+    colour: dict                  # story-level colour vector (normalised)
+    settings: list
+    arc: list                     # per-section intensity 0..1 (7 values)
+    section_moods: list           # per-section descriptor words
+    hit_points: dict              # name -> seconds
+    segment_intensity: list = field(default_factory=list)
+    # What the text asked for, kept when the grid adopts the motif's own
+    # tempo/key (adopt_motif_tempo_key); None until then.
+    story_tempo_bpm: float = None
+    story_key_label: str = None
+
+    @property
+    def key_label(self):
+        return f"{self.key} {self.mode}"
+
+    def to_dict(self):
+        d = asdict(self)
+        d["key_label"] = self.key_label
+        return d
+
+
+def fold_tempo(bpm, hint, lo=60.0, hi=130.0):
+    """The octave (x0.5, x1, x2, x4) of bpm nearest the hint, inside lo..hi."""
+    cands = [bpm * k for k in (0.25, 0.5, 1.0, 2.0, 4.0) if lo <= bpm * k <= hi]
+    if not cands:
+        return float(hint)
+    return float(min(cands, key=lambda b: abs(np.log(b / hint))))
+
+
+def adopt_motif_tempo_key(cue, tempo_bpm, confidence, tonic, family, min_confidence=0.08):
+    """The composer keeps the theme's key and pulse. The model follows the
+    BPM/key words loosely, but every layer is conditioned on the motif, so
+    the bar grid and the layer prompts take the motif's measured tempo and
+    key; the story still decides the mode colour (dorian stays dorian when
+    the motif reads minor-family) and everything else. Returns a new cue."""
+    from dataclasses import replace
+    # Bundled Kaggle file: music_analysis is inlined after this module.
+    mode_family = globals().get("MODE_FAMILY") or __import__("music_analysis").MODE_FAMILY
+    new = replace(cue, story_tempo_bpm=cue.tempo_bpm, story_key_label=cue.key_label)
+    if tempo_bpm > 0 and confidence >= min_confidence:
+        folded = fold_tempo(tempo_bpm, cue.tempo_bpm)
+        # Within 1 % is estimator noise: the motif already sits on the grid.
+        if abs(np.log(folded / cue.tempo_bpm)) > np.log(1.01):
+            new.tempo_bpm = round(folded, 1)
+    fam, _ = mode_family.get(cue.mode, ("minor", 0))
+    new.key = tonic
+    if family != fam:
+        new.mode = "major" if family == "major" else "aeolian"
+    return new
+
+
+def _smooth(values, width):
+    if len(values) == 0:
+        return np.zeros(0)
+    width = max(1, int(width))
+    kernel = np.hanning(2 * width + 3)[1:-1]
+    kernel /= kernel.sum()
+    padded = np.pad(values, (width, width), mode="edge")
+    return np.convolve(padded, kernel, mode="valid")[: len(values)]
+
+
+def _fingerprint(text):
+    return int.from_bytes(hashlib.blake2b(text.encode("utf-8"), digest_size=8).digest(), "big")
+
+
+def _choose_mode(valence, tension, colour):
+    # Continuous rules, documented so a musician can audit them.
+    if colour.get("eeriness", 0) > 0.6 and valence < 0:
+        return "phrygian"
+    if valence < -0.25 and tension > 0.55:
+        return "harmonic minor" if colour.get("darkness", 0) > colour.get("deceit", 0) else "aeolian"
+    if valence < -0.1:
+        return "dorian" if colour.get("grit", 0) + colour.get("deceit", 0) > 0.8 else "aeolian"
+    if colour.get("wonder", 0) > 0.6:
+        return "lydian"
+    if valence < 0.25:
+        return "mixolydian" if colour.get("grit", 0) > 0.5 else "dorian"
+    return "major"
+
+
+def _motif_shape(valence, tension, colour):
+    if colour.get("triumph", 0) > 0.6:
+        contour = "rising perfect fourth then a step up, resolving upward"
+    elif tension > 0.6 and valence < 0:
+        contour = "falling minor second then a tritone drop, unresolved"
+    elif valence < -0.2:
+        contour = "descending minor third then a step down"
+    elif colour.get("wonder", 0) > 0.5:
+        contour = "rising major sixth then falling back a step"
+    else:
+        contour = "rising major second then a falling fourth"
+    return contour
+
+
+def _score_instrument(entry, colour, affect):
+    _, _, caff, aaff = entry
+    s = sum(colour.get(k, 0.0) * w for k, w in caff.items())
+    s += sum(affect.get(k, 0.0) * w for k, w in aaff.items()) * 0.5
+    return s
+
+
+def _section_ranges(boundaries, segments):
+    out = []
+    for i in range(len(boundaries) - 1):
+        lo, hi = boundaries[i], boundaries[i + 1]
+        idx = [j for j, s in enumerate(segments) if lo <= 0.5 * (s["start"] + s["end"]) < hi]
+        out.append(idx)
+    return out
+
+
+def build_cue_sheet(segments, duration, boundaries=None):
+    """segments: [{"text","start","end"}...] (story_analysis.normalize_text).
+    boundaries: the 8 story-section boundaries (seconds), optional."""
+    segments = [s for s in segments if str(s.get("text", "")).strip()]
+    full_text = " ".join(s["text"] for s in segments)
+    feats = [segment_features(s["text"]) for s in segments] or [segment_features("")]
+    n = len(feats)
+    weights = np.array([max(1, f["words"]) for f in feats], dtype=np.float64)
+
+    def wmean(key):
+        return float(np.average([f[key] for f in feats], weights=weights))
+
+    affect = {"valence": wmean("valence"), "arousal": wmean("arousal"), "tension": wmean("tension")}
+    colour_raw = {c: float(np.average([f["colour"][c] for f in feats], weights=weights)) for c in COLOUR_NAMES}
+    top = max(colour_raw.values()) or 1.0
+    colour = {c: v / top for c, v in colour_raw.items()}          # strongest colour = 1.0
+    setting_tot = {k: sum(f["setting"][k] for f in feats) for k in _SETTING}
+    settings = [k for k, v in sorted(setting_tot.items(), key=lambda kv: -kv[1]) if v >= 2][:1]
+
+    # Intensity curve: arousal + tension + local reveal cues, smoothed.
+    raw = np.array([0.45 * f["arousal"] + 0.45 * f["tension"] + 0.1 * min(1, f["reveal_cue"])
+                    for f in feats])
+    curve = _smooth(raw, max(1, n // 12))
+    lo, hi = float(curve.min()), float(curve.max())
+    curve = (curve - lo) / (hi - lo) if hi - lo > 1e-6 else np.full(n, 0.5)
+
+    starts = [s["start"] for s in segments] or [0.0]
+    pos = (np.arange(n) + 0.5) / max(n, 1)
+    # Climax: intensity weighted by where stories usually pay off (a soft
+    # prior peaking around 75 %, never the first 45 % or last 8 %).
+    prior = np.exp(-0.5 * ((pos - 0.75) / 0.15) ** 2)
+    allowed = (pos >= 0.45) & (pos <= 0.92)
+    climax_score = np.where(allowed, curve + 0.35 * prior, -np.inf)
+    climax_i = int(np.argmax(climax_score)) if n > 2 else n - 1
+    # Twist: where the story turns: strongest reveal cue or the steepest rise
+    # in intensity, before the climax and after 35 %.
+    rise = np.diff(curve, prepend=curve[0])
+    # Novelty: deceit/darkness colour appearing where the story had little
+    # of it so far is what a turn usually sounds like ("a signature that
+    # was not mine", "it was a test").
+    turn_col = np.array([f["colour"]["deceit"] + f["colour"]["darkness"] + f["colour"]["eeriness"]
+                         for f in feats])
+    seen = np.concatenate([[0.0], np.cumsum(turn_col)[:-1]]) / np.maximum(np.arange(n), 1)
+    novelty = np.maximum(turn_col - seen, 0.0)
+    twist_score = np.array([feats[i]["reveal_cue"] * 0.3 + rise[i] * 2.0 + feats[i]["tension"] * 0.2
+                            + novelty[i] * 0.8 for i in range(n)])
+    twist_ok = (pos >= 0.35) & (np.arange(n) < climax_i)
+    twist_i = int(np.argmax(np.where(twist_ok, twist_score, -np.inf))) if twist_ok.any() else max(0, climax_i - 1)
+    # Resolution: first resolution cue after the climax, else halfway from
+    # the climax to the end.
+    res_cues = [i for i in range(climax_i + 1, n) if feats[i]["resolution_cue"] > 0]
+    end_t = float(duration)
+    climax_t = float(starts[climax_i])
+    resolution_t = float(starts[res_cues[0]]) if res_cues else climax_t + 0.5 * (end_t - climax_t)
+    hit_points = {
+        "twist": float(starts[twist_i]),
+        "climax": climax_t,
+        "resolution": max(resolution_t, climax_t + 0.04 * end_t) if resolution_t < end_t else resolution_t,
+        "end": end_t,
+    }
+
+    # Tempo: calm 62 -> frantic 118 BPM, nudged by urgency; whole BPM.
+    # Narration lexica skew positive on arousal, so 0.1 is "calm" and 0.7
+    # "frantic"; urgency colour adds drive.
+    base = float(np.clip((affect["arousal"] - 0.1) / 0.6, 0, 1))
+    energy = 0.75 * base + 0.25 * float(colour["urgency"])
+    tempo = int(round(62 + 56 * energy))
+
+    mode = _choose_mode(affect["valence"], affect["tension"], colour)
+    fp = _fingerprint(full_text)
+    dark = mode in ("aeolian", "harmonic minor", "phrygian", "dorian")
+    pool = _DARK_KEYS if dark else _BRIGHT_KEYS
+    key = pool[fp % len(pool)]
+
+    # Palette: best instrument per role against this story's vector.
+    palette = {}
+    for role in ROLES:
+        cands = [e for e in _INSTRUMENTS if e[1] == role]
+        ranked = sorted(cands, key=lambda e: (-_score_instrument(e, colour, affect), e[0]))
+        palette[role] = ranked[0][0]
+
+    order = sorted(COLOUR_NAMES, key=lambda c: -colour[c])
+    descriptors = []
+    for c in order[:3]:
+        words = _COLOUR_WORDS[c]
+        descriptors.append(words[(fp >> (3 * len(descriptors))) % len(words)])
+    style_bits = [", ".join(descriptors), "cinematic underscore"]
+    style_bits += [_SETTING_WORDS[s] for s in settings]
+    style = ", ".join(style_bits)
+
+    # Per-section arc and moods.
+    if boundaries is None:
+        boundaries = list(GENERIC_BOUNDARY_FRACTIONS * duration)
+    seg_for = _section_ranges(boundaries, segments)
+    arc, section_moods = [], []
+    for idx in seg_for:
+        if idx:
+            arc.append(float(np.mean(curve[idx])))
+            sec_col = {c: float(np.mean([feats[j]["colour"][c] for j in idx])) for c in COLOUR_NAMES}
+            best = max(sec_col, key=lambda c: (sec_col[c], colour[c]))
+            sec_val = float(np.mean([feats[j]["valence"] for j in idx]))
+            mood_word = _COLOUR_WORDS[best][0] if sec_col[best] > 0 else ("hopeful" if sec_val > 0.2 else "restrained")
+            section_moods.append(mood_word)
+        else:
+            arc.append(arc[-1] if arc else 0.3)
+            section_moods.append(section_moods[-1] if section_moods else "restrained")
+
+    return CueSheet(
+        style=style, tempo_bpm=tempo, key=key, mode=mode, palette=palette,
+        motif=_motif_shape(affect["valence"], affect["tension"], colour),
+        descriptors=descriptors, affect=affect, colour=colour, settings=settings,
+        arc=arc, section_moods=section_moods, hit_points=hit_points,
+        segment_intensity=[float(x) for x in curve],
+    )
+
+
+# ============================================================
+# PROMPTS (Stable Audio 3 Small Music — text-conditioned, T5 encoder)
+#
+# Stable Audio responds best to comma-separated tags: genre/style, then
+# instruments, then mood, then BPM and key. Every prompt for one story
+# carries the SAME tempo and key so phrases line up when they're joined.
+# ============================================================
+
+NEGATIVE_TAIL = "instrumental only, no vocals, no speech, no lyrics"
+
+
+# Real Stable Audio renders (2026-10-04) of a sparse palette came out as
+# isolated stabs separated by seconds of silence, and the low-noise
+# conditioned phrases copied the gaps. Under narration the bed must never
+# stop, so every prompt states a sustained harmony bed explicitly.
+BED = "legato, continuous sustained bed, no gaps, no silence"
+
+
+def motif_prompt_from_cue(cue):
+    p = cue.palette
+    return (f"{cue.style}, memorable three-note motif on {p['lead']} over sustained {p['harmony']}, "
+            f"{p['bass']}, {BED}, {cue.tempo_bpm:g} BPM, {cue.key_label}, no fade out, {NEGATIVE_TAIL}")
+
+
+def layer_prompts_from_cue(cue):
+    p = cue.palette
+    d = cue.descriptors
+    tail = f"{BED}, {cue.tempo_bpm:g} BPM, {cue.key_label}, steady loop, no fade out, {NEGATIVE_TAIL}"
+    return {
+        "core": (f"{d[0]} {d[-1]} cinematic underscore, same motif on {p['lead']}, sustained "
+                 f"{p['harmony']}, {p['bass']}, understated, room for narration, {tail}"),
+        "pressure": (f"{d[min(1, len(d) - 1)]} rising tension, same motif, {p['pulse']}, sustained "
+                     f"{p['harmony']}, {p['bass']}, {p['texture']}, {tail}"),
+        "climax": (f"{d[0]} cinematic climax, same motif on {p['lead']}, {p['hits']}, "
+                   f"{p['pulse']}, full sustained {p['harmony']}, powerful but controlled, {tail}"),
+    }
+
+
+def describe(cue):
+    """Short human-readable lines for logs/manifests."""
+    return [
+        f"Style: {cue.style}",
+        f"Tempo/key: {cue.tempo_bpm:g} BPM, {cue.key_label}",
+        "Palette: " + "; ".join(f"{r}={cue.palette[r]}" for r in ROLES),
+        f"Motif: {cue.motif}",
+        "Arc: " + " ".join(f"{x:.2f}" for x in cue.arc),
+        "Hit points: " + ", ".join(f"{k} {v:.1f}s" for k, v in cue.hit_points.items()),
+    ]
+
+# ##########  music_analysis.py  ##########
+
+# ============================================================
+# MUSIC ANALYSIS — tempo, key, loop seams, spectral fullness.
+# Pure numpy (no librosa needed) so take ranking works anywhere and the
+# same checks can be run on real Kaggle renders afterwards.
+# ============================================================
+
+import math
+
+import numpy as np
+
+
+_KEYS = ("C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B")
+_ENHARMONIC = {"Db": "C#", "D#": "Eb", "Gb": "F#", "G#": "Ab", "A#": "Bb"}
+# Krumhansl-Kessler key profiles.
+_MAJOR = np.array([6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88])
+_MINOR = np.array([6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17])
+# Modes that read as major- or minor-family for key matching, and the
+# semitone offset of their relative major/minor tonic.
+MODE_FAMILY = {
+    "major": ("major", 0), "lydian": ("major", 0), "mixolydian": ("major", 0),
+    "aeolian": ("minor", 0), "harmonic minor": ("minor", 0), "dorian": ("minor", 0),
+    "phrygian": ("minor", 0), "minor": ("minor", 0),
+}
+
+
+def _mono(audio):
+    audio = np.asarray(audio, dtype=np.float64)
+    return audio.mean(axis=1) if audio.ndim == 2 else audio
+
+
+def _stft_mag(mono, n_fft=2048, hop=512):
+    if len(mono) < n_fft:
+        mono = np.pad(mono, (0, n_fft - len(mono)))
+    frames = 1 + (len(mono) - n_fft) // hop
+    idx = np.arange(n_fft)[None, :] + hop * np.arange(frames)[:, None]
+    win = np.hanning(n_fft)
+    return np.abs(np.fft.rfft(mono[idx] * win, axis=1))
+
+
+def onset_envelope(audio, sr, hop=512):
+    mag = _stft_mag(_mono(audio), 2048, hop)
+    logmag = np.log1p(100.0 * mag)
+    flux = np.maximum(np.diff(logmag, axis=0), 0.0).sum(axis=1)
+    flux = flux - np.convolve(flux, np.ones(16) / 16, mode="same")   # local mean removal
+    return np.maximum(flux, 0.0), sr / hop
+
+
+def estimate_tempo(audio, sr, lo_bpm=50.0, hi_bpm=190.0):
+    """(bpm, confidence 0..1) from the onset-envelope autocorrelation,
+    weighted toward 70-130 BPM the way a listener taps along."""
+    env, fps = onset_envelope(audio, sr)
+    if len(env) < 16 or not env.any():
+        return 0.0, 0.0
+    env = env - env.mean()
+    ac = np.correlate(env, env, mode="full")[len(env) - 1:]
+    ac /= ac[0] + 1e-12
+    lags = np.arange(len(ac))
+    bpm = np.where(lags > 0, 60.0 * fps / np.maximum(lags, 1), 0)
+    sel = (bpm >= lo_bpm) & (bpm <= hi_bpm)
+    if not sel.any():
+        return 0.0, 0.0
+    weight = np.exp(-0.5 * (np.log2(np.maximum(bpm, 1) / 100.0) / 0.9) ** 2)
+    score = np.where(sel, ac * weight, -np.inf)
+    best = int(np.argmax(score))
+    # Parabolic refinement for sub-lag precision.
+    if 1 <= best < len(ac) - 1:
+        a, b, c = ac[best - 1], ac[best], ac[best + 1]
+        denom = a - 2 * b + c
+        shift = 0.5 * (a - c) / denom if abs(denom) > 1e-12 else 0.0
+        lag = best + float(np.clip(shift, -0.5, 0.5))
+    else:
+        lag = float(best)
+    return float(60.0 * fps / lag), float(np.clip(ac[best], 0.0, 1.0))
+
+
+def tempo_match(estimated_bpm, target_bpm):
+    """1.0 for a perfect match, octave errors (half/double time) accepted
+    as matches, falling to 0 at ~6 % off."""
+    if estimated_bpm <= 0 or target_bpm <= 0:
+        return 0.0
+    ratios = [estimated_bpm / (target_bpm * k) for k in (0.5, 1.0, 2.0, 2.0 / 3.0, 1.5)]
+    err = min(abs(math.log2(r)) for r in ratios)
+    return float(max(0.0, 1.0 - err / 0.085))
+
+
+def chroma(audio, sr, n_fft=8192, hop=4096):
+    mag = _stft_mag(_mono(audio), n_fft, hop) ** 2
+    freqs = np.fft.rfftfreq(n_fft, 1.0 / sr)
+    sel = (freqs >= 55.0) & (freqs <= 4200.0)
+    pitch = np.round(12 * np.log2(freqs[sel] / 440.0) + 69).astype(int) % 12
+    out = np.zeros(12)
+    np.add.at(out, pitch, mag[:, sel].sum(axis=0))
+    # MIDI 60 is C, so pitch class 0 == C.
+    return out / (np.linalg.norm(out) + 1e-12)
+
+
+def estimate_key(audio, sr, third_margin=0.1):
+    """(tonic, 'major'|'minor', correlation). Krumhansl-Kessler picks the
+    tonic; when the parallel major and minor profiles fit that tonic about
+    equally (drone-heavy underscore: tonic and fifth dominate both), the
+    third decides, since it is the one note that tells them apart."""
+    c = chroma(audio, sr)
+    best = (-2.0, 0, "major")
+    fits = {}
+    for shift in range(12):
+        for name, prof in (("major", _MAJOR), ("minor", _MINOR)):
+            r = float(np.corrcoef(np.roll(prof, shift), c)[0, 1])
+            fits[(shift, name)] = r
+            if r > best[0]:
+                best = (r, shift, name)
+    r, t, name = best
+    other = "minor" if name == "major" else "major"
+    if r - fits[(t, other)] < third_margin:
+        minor3, major3 = c[(t + 3) % 12], c[(t + 4) % 12]
+        if max(minor3, major3) > 0 and abs(minor3 - major3) > 0.02:
+            name = "minor" if minor3 > major3 else "major"
+            r = fits[(t, name)]
+    return _KEYS[t], name, r
+
+
+def key_match(est_tonic, est_family, target_tonic, target_mode):
+    """1.0 same key; 0.8 relative major/minor (same notes); 0.5 dominant or
+    subdominant neighbour; else 0."""
+    target_tonic = _ENHARMONIC.get(target_tonic, target_tonic)
+    est_tonic = _ENHARMONIC.get(est_tonic, est_tonic)
+    fam, _ = MODE_FAMILY.get(target_mode, ("minor", 0))
+    t = _KEYS.index(target_tonic)
+    e = _KEYS.index(est_tonic)
+    if fam == est_family and t == e:
+        return 1.0
+    # relative: minor tonic = major tonic - 3 semitones
+    if fam == "minor" and est_family == "major" and (t + 3) % 12 == e:
+        return 0.8
+    if fam == "major" and est_family == "minor" and (t - 3) % 12 == e:
+        return 0.8
+    if fam == est_family and (e - t) % 12 in (5, 7):
+        return 0.5
+    return 0.0
+
+
+def _band_db(segment, sr, edges=(60, 150, 400, 1000, 2500, 6000, 12000)):
+    mag = _stft_mag(_mono(segment), 2048, 1024) ** 2
+    freqs = np.fft.rfftfreq(2048, 1.0 / sr)
+    spec = mag.mean(axis=0)
+    out = []
+    for lo, hi in zip(edges[:-1], edges[1:]):
+        sel = (freqs >= lo) & (freqs < hi)
+        out.append(10 * np.log10(spec[sel].sum() + 1e-12))
+    return np.array(out)
+
+
+def seam_score(audio, sr, seconds=1.25):
+    """How well the phrase's tail joins its own head (the crossfade the
+    renderer makes). 1.0 = indistinguishable level and tone, 0 = obvious
+    jump. Uses level difference and band-energy (timbre) distance."""
+    n = int(round(seconds * sr))
+    mono = _mono(audio)
+    if len(mono) < 3 * n:
+        return 0.0
+    head, tail = mono[:n], mono[-n:]
+    lvl = abs(10 * np.log10((np.mean(head ** 2) + 1e-12) / (np.mean(tail ** 2) + 1e-12)))
+    timbre = float(np.sqrt(np.mean((_band_db(head, sr) - _band_db(tail, sr)) ** 2)))
+    return float(max(0.0, 1.0 - lvl / 8.0 - timbre / 16.0))
+
+
+def fullness(audio, sr):
+    """Fraction of 7 bands within 30 dB of the loudest band (thin vs full)."""
+    bands = _band_db(audio, sr)
+    return float(np.mean(bands > bands.max() - 30.0))
+
+
+def analyse(audio, sr, target_bpm=None, target_key=None, target_mode=None):
+    bpm, conf = estimate_tempo(audio, sr)
+    tonic, family, kr = estimate_key(audio, sr)
+    out = {"tempo_bpm": bpm, "tempo_confidence": conf, "key": f"{tonic} {family}",
+           "key_correlation": kr, "seam": seam_score(audio, sr), "fullness": fullness(audio, sr)}
+    if target_bpm:
+        out["tempo_match"] = tempo_match(bpm, target_bpm)
+    if target_key and target_mode:
+        out["key_match"] = key_match(tonic, family, target_key, target_mode)
+    return out
+
+
+def strong_onsets(audio, sr, min_gap_s=0.12, top_fraction=0.4):
+    """Sample-accurate times (s) of the strongest attacks: peaks of the rise
+    of a 5 ms RMS envelope, at least min_gap_s apart, top fraction kept."""
+    mono = _mono(audio)
+    w = max(1, int(0.005 * sr))
+    rms = np.sqrt(np.maximum(np.convolve(mono * mono, np.ones(w) / w, mode="same"), 0.0))
+    rise = np.maximum(np.diff(rms, prepend=rms[0]), 0.0)
+    rise = np.convolve(rise, np.ones(w) / w, mode="same")
+    gap = int(min_gap_s * sr)
+    peaks = []
+    order = np.argsort(rise)[::-1]
+    taken = np.zeros(len(rise), dtype=bool)
+    limit = max(1, int(len(rise) / gap))
+    for i in order[: limit * 50]:
+        if rise[i] <= 0 or taken[max(0, i - gap):i + gap].any():
+            continue
+        taken[i] = True
+        peaks.append((rise[i], i))
+        if len(peaks) >= limit:
+            break
+    if not peaks:
+        return np.zeros(0)
+    peaks.sort(reverse=True)
+    keep = peaks[: max(1, int(len(peaks) * top_fraction))]
+    return np.sort(np.array([i for _, i in keep])) / sr
+
+
+def grid_phase(audio, sr, bpm, tol_s=0.025, steps=96):
+    """(phase s, fraction of the strongest attacks within +-tol of that grid)
+    for the best-fitting beat phase; (None, 0) with fewer than 4 attacks."""
+    on = strong_onsets(audio, sr)
+    if len(on) < 4:
+        return None, 0.0
+    beat = 60.0 / bpm
+    best = (0.0, None, 1e9)
+    for k in range(steps):
+        ph = k / steps * beat
+        d = np.abs(((on - ph + beat / 2) % beat) - beat / 2)
+        frac = float(np.mean(d <= tol_s))
+        spread = float(np.mean(np.minimum(d, tol_s)))
+        if frac > best[0] or (frac == best[0] and spread < best[2]):
+            best = (frac, ph, spread)
+    return best[1], best[0]
+
+
+def grid_lock(audio, sr, bpm, tol_s=0.025):
+    """How tightly the strongest attacks sit on ONE beat grid across the
+    whole file: fraction within +-tol of the best-phase grid, rescaled so
+    beatless (random) attacks score 0 and a perfect grid 1. The chance level
+    accounts for picking the best phase, which flatters short clips."""
+    on = strong_onsets(audio, sr)
+    _, best = grid_phase(audio, sr, bpm, tol_s)
+    if len(on) < 4:
+        return 0.0
+    chance = _random_best_fraction(len(on), round(tol_s / (60.0 / bpm), 3))
+    return float(np.clip((best - chance) / (1 - chance), 0, 1))
+
+
+_CHANCE_CACHE = {}
+
+
+def _random_best_fraction(n, tol_over_beat, trials=400, steps=96):
+    """Expected best-phase on-grid fraction for n RANDOM onsets: the score a
+    beatless file gets just from choosing the best of `steps` phases (with
+    10 onsets that is ~0.3, not the naive 2*tol/beat). Deterministic."""
+    key = (int(n), float(tol_over_beat))
+    if key not in _CHANCE_CACHE:
+        rng = np.random.default_rng(1234 + int(n))
+        ph = np.arange(steps) / steps
+        on = rng.uniform(0.0, 1.0, (trials, int(n)))            # in beats
+        d = np.abs(((on[:, None, :] - ph[None, :, None] + 0.5) % 1.0) - 0.5)
+        _CHANCE_CACHE[key] = float(np.mean((d <= tol_over_beat).mean(axis=2).max(axis=1)))
+    return _CHANCE_CACHE[key]
+
+# ##########  arrangement.py  ##########
+
+# ============================================================
+# ARRANGEMENT — the story-aware scoring stage.
+#
+# The legacy renderer (scoring_engine.render_score) loops 12 s phrases with
+# 1.25 s / 2.25 s crossfades, so the beat grid slips at every join and the
+# section automation moves at arbitrary times. This stage arranges the same
+# kind of material the way a music editor cuts a score to picture:
+#
+#   - a tempo grid from the cue sheet: phrases are generated to a whole
+#     number of bars (+ crossfade beat + spare bar), conformed to the exact
+#     grid tempo (pitch-preserving WSOLA, only when the model drifted a
+#     little), cut to start on their downbeat, and
+#     joined with a crossfade exactly one beat long, so every join lands on
+#     a bar line and the groove never slips;
+#   - story sections snapped to bar lines, with the twist / climax /
+#     resolution taken from the cue sheet's hit points;
+#   - layer automation derived from the story's own intensity arc (not a
+#     fixed table), every move ramping into a bar line;
+#   - story hits: a two-beat "breath" (the bed drops out) right before the
+#     twist lands, a reversed swell plus a two-bar build into the climax
+#     and a low cinematic impact on its downbeat;
+#   - a real outro: the score keeps playing past the last word and fades
+#     over two bars to end on a downbeat, instead of being cut off.
+#
+# Measurement reuses scoring_engine.measure_score (the validated measurer),
+# with per-story section targets from the arc. Pure numpy.
+# ============================================================
+
+import math
+from dataclasses import dataclass, asdict
+from itertools import permutations
+
+import numpy as np
+
+
+
+# ============================================================
+# TEMPO GRID
+# ============================================================
+
+@dataclass(frozen=True)
+class Grid:
+    bpm: float
+    beats_per_bar: int
+    phrase_bars: int
+    xfade_beats: int
+
+    @property
+    def beat(self):
+        return 60.0 / self.bpm
+
+    @property
+    def bar(self):
+        return self.beat * self.beats_per_bar
+
+    @property
+    def phrase_seconds(self):
+        return self.phrase_bars * self.bar
+
+    @property
+    def xfade_seconds(self):
+        return self.xfade_beats * self.beat
+
+    @property
+    def generate_seconds(self):
+        # Phrase + crossfade tail + one spare bar: room to find the downbeat
+        # and to conform a slightly-off tempo without running out of audio.
+        return self.phrase_seconds + self.xfade_seconds + self.bar
+
+    def to_dict(self):
+        d = asdict(self)
+        d.update(beat=self.beat, bar=self.bar, phrase_seconds=self.phrase_seconds,
+                 xfade_seconds=self.xfade_seconds, generate_seconds=self.generate_seconds)
+        return d
+
+
+def plan_grid(cue, target_phrase_seconds=10.5, max_generate_seconds=20.0):
+    """Bars per phrase: the even count (2, 4, 6, 8) closest to ~10 s, so
+    loops are musically square, within what the model generates well."""
+    bpm = float(cue.tempo_bpm)
+    bar = 4 * 60.0 / bpm
+    best = None
+    for bars in (2, 4, 6, 8):
+        grid = Grid(bpm, 4, bars, 1)
+        if grid.generate_seconds > max_generate_seconds and bars > 2:
+            continue
+        err = abs(grid.phrase_seconds - target_phrase_seconds)
+        if best is None or err < best[0]:
+            best = (err, grid)
+    return best[1]
+
+
+def snap(grid, t, how="nearest"):
+    bars = t / grid.bar
+    k = {"nearest": round, "floor": math.floor, "ceil": math.ceil}[how](bars)
+    return k * grid.bar
+
+
+# ============================================================
+# PHRASE PREPARATION (beat alignment)
+# ============================================================
+
+def wsola_stretch(audio, rate, win_s=0.046, tol_s=0.012):
+    """Time-stretch without changing pitch (WSOLA). rate > 1 = longer.
+    Each output frame takes the input segment, within +-tol of its nominal
+    position, that best continues the previous frame's waveform, so
+    transients and pitch survive small tempo corrections intact."""
+    audio = np.asarray(audio, dtype=np.float64)
+    if abs(rate - 1.0) < 1e-6:
+        return audio.copy()
+    win = int(round(win_s * SR)) // 2 * 2
+    hop_out = win // 2
+    hop_in = hop_out / rate
+    tol = int(round(tol_s * SR))
+    window = np.hanning(win)
+    mono = audio.mean(axis=1)
+    n_out = int(len(audio) * rate)
+    frames = n_out // hop_out
+    out = np.zeros((frames * hop_out + win, audio.shape[1]))
+    norm = np.zeros(frames * hop_out + win)
+    prev = 0
+    for k in range(frames):
+        nominal = int(round(k * hop_in))
+        if k == 0:
+            pos = 0
+        else:
+            target = prev + hop_out           # natural continuation of the last frame
+            lo, hi = max(0, nominal - tol), min(len(audio) - win, nominal + tol)
+            if hi <= lo or target + win > len(audio):
+                pos = min(max(lo, nominal), max(0, len(audio) - win))
+            else:
+                ref = mono[target:target + win]
+                cand = mono[lo:hi + win]
+                corr = np.correlate(cand, ref, mode="valid")
+                pos = lo + int(np.argmax(corr))
+        if pos + win > len(audio):
+            break
+        out[k * hop_out:k * hop_out + win] += audio[pos:pos + win] * window[:, None]
+        norm[k * hop_out:k * hop_out + win] += window
+        prev = pos
+    out /= np.maximum(norm, 1e-3)[:, None]
+    return out[:n_out]
+
+
+def _beat_phase(env, fps, beat_s):
+    beat_frames = beat_s * fps
+    best = (-1.0, 0.0)
+    for k in range(64):
+        phase = k / 64.0 * beat_s
+        idx = (phase * fps + beat_frames * np.arange(int(len(env) / beat_frames) + 1)).astype(int)
+        idx = idx[idx < len(env)]
+        score = sum(env[np.clip(idx + d, 0, len(env) - 1)].sum() for d in (-1, 0, 1))
+        if score > best[0]:
+            best = (score, phase)
+    return best[1]
+
+
+def beat_slice_conform(audio, src_bpm, dst_bpm, keep_s=0.045, snap_s=0.03, xf_s=0.004):
+    """Tempo-conform the way a music editor does (REX-style beat slicing):
+    find every beat in the source, keep each beat's first `keep_s` (the
+    transient) untouched, and WSOLA-stretch only the rest of the beat so it
+    fills exactly one destination beat. Transients land exactly on the new
+    grid and are never smeared or doubled."""
+    audio = np.asarray(audio, dtype=np.float64)
+    env, fps = onset_envelope(audio, SR)
+    src_beat, dst_beat = 60.0 / src_bpm, 60.0 / dst_bpm
+    phase = _beat_phase(env, fps, src_beat)
+    # Sample-accurate onset strength: rise of a 5 ms RMS envelope.
+    mono = audio.mean(axis=1)
+    w = max(1, int(0.005 * SR))
+    rms = np.sqrt(np.maximum(np.convolve(mono * mono, np.ones(w) / w, mode="same"), 0.0))
+    rise = np.maximum(np.diff(rms, prepend=rms[0]), 0.0)
+    rise = np.convolve(rise, np.ones(w) / w, mode="same")
+    snap = int(round(snap_s * SR))
+    # The onset envelope's frames lag the audio by about one analysis window.
+    lag = 1536.0 / SR
+    starts = []
+    t = phase + lag
+    while t * SR < len(audio):
+        c = int(round(t * SR))
+        lo, hi = max(0, c - snap), min(len(rise), c + snap + 1)
+        if hi > lo and rise[lo:hi].max() > 0:
+            c = lo + int(np.argmax(rise[lo:hi]))       # snap to the actual onset
+        starts.append(max(0, c - int(0.002 * SR)))    # 2 ms pre-roll keeps the attack whole
+        t += src_beat
+    starts = sorted(set(starts))
+    keep = int(round(keep_s * SR))
+    dst = int(round(dst_beat * SR))
+    xf = max(1, int(round(xf_s * SR)))
+    ramp = np.linspace(0.0, 1.0, xf)
+    out = [audio[:starts[0]]] if starts and starts[0] > 0 else []
+    for i, a in enumerate(starts):
+        b = starts[i + 1] if i + 1 < len(starts) else min(len(audio), a + int(round(src_beat * SR)))
+        seg = audio[a:b]
+        if len(seg) <= keep + xf * 2:
+            piece = np.pad(seg, ((0, max(0, dst + xf - len(seg))), (0, 0)))[:dst + xf]
+        else:
+            body = seg[keep:]
+            rate = (dst - keep + 2 * xf) / len(body)
+            stretched = wsola_stretch(body, rate, win_s=0.02, tol_s=0.006) if abs(rate - 1) > 1e-4 else body
+            # dst - keep + 2*xf: one xf is eaten by the keep/body joint, one by
+            # the crossfade into the next slice, so each slice spans exactly dst.
+            need = dst - keep + 2 * xf
+            stretched = np.pad(stretched, ((0, max(0, need - len(stretched))), (0, 0)))[:need]
+            joint = seg[keep - xf:keep] * (1 - ramp)[:, None] + stretched[:xf] * ramp[:, None]
+            piece = np.concatenate([seg[:keep - xf], joint, stretched[xf:]])
+        if out and xf < len(piece):
+            prev = out[-1]
+            if len(prev) >= xf:
+                tail = prev[-xf:] * (1 - ramp)[:, None] + piece[:xf] * ramp[:, None]
+                out[-1] = prev[:-xf]
+                piece = np.concatenate([tail, piece[xf:]])
+        out.append(piece)
+    return np.concatenate(out) if out else audio.copy()
+
+
+def conform_tempo(audio, grid, max_correction=0.06):
+    """Bring a phrase to exactly the grid tempo when the model drifted a
+    little (half/double-time readings are folded first), by beat slicing.
+    Returns (audio, measured_bpm, stretch_rate)."""
+    bpm, conf = estimate_tempo(audio, SR)
+    if bpm <= 0 or conf < 0.2:
+        return audio, bpm, 1.0
+    folded = min((bpm * k for k in (0.5, 1.0, 2.0)), key=lambda b: abs(math.log(b / grid.bpm)))
+    rate = folded / grid.bpm                 # 87 BPM -> 86 BPM grid: 1.0116x longer
+    if abs(rate - 1.0) < 0.002 or abs(rate - 1.0) > max_correction:
+        return audio, bpm, 1.0
+    if grid_lock(audio, SR, folded) < 0.4:
+        return audio, bpm, 1.0             # no steady pulse (pads, rubato): nothing to slice
+    return f32(beat_slice_conform(audio, folded, grid.bpm)), bpm, rate
+
+
+def _low_onsets(audio):
+    from scipy.signal import butter, sosfilt
+    low = sosfilt(butter(2, 200.0, fs=SR, output="sos"), np.asarray(audio, dtype=np.float64), axis=0)
+    return onset_envelope(low, SR)
+
+
+def attack_phase(audio, beat_s, tol_s=0.012, step_s=0.001):
+    """Beat phase (s, 0..beat) that puts the most attack energy on the
+    grid: the rise of a 5 ms RMS envelope (sample-accurate, the same
+    attacks grid_lock scores), squared so strong hits dominate, summed in
+    +-tol windows around every beat. None when there are no attacks."""
+    mono = np.asarray(audio, dtype=np.float64)
+    mono = mono.mean(axis=1) if mono.ndim == 2 else mono
+    w = max(1, int(0.005 * SR))
+    rms = np.sqrt(np.maximum(np.convolve(mono * mono, np.ones(w) / w, mode="same"), 0.0))
+    rise = np.maximum(np.diff(rms, prepend=rms[0]), 0.0) ** 2
+    hop = max(1, int(step_s * SR))
+    frames = rise[: len(rise) // hop * hop].reshape(-1, hop).sum(axis=1)
+    if not frames.any():
+        return None
+    fps = SR / hop
+    half = int(round(tol_s * fps))
+    win = np.convolve(frames, np.ones(2 * half + 1), mode="same")
+    beat_f = beat_s * fps
+    n_beats = int(len(win) / beat_f) + 1
+    best = (-1.0, 0.0)
+    for k in range(int(round(beat_f))):
+        idx = np.round(k + beat_f * np.arange(n_beats)).astype(int)
+        score = win[idx[idx < len(win)]].sum()
+        if score > best[0]:
+            best = (score, k / fps)
+    return float(best[1])
+
+
+def beat_offset(audio, grid):
+    """Seconds to trim so the phrase starts on a DOWNBEAT: first the beat
+    phase that puts the most attack energy on the grid, then which of
+    the four beats carries the most low-end weight (kick / bass on 'one')."""
+    phase = attack_phase(audio, grid.beat)
+    if phase is None:
+        return 0.0
+    low, lfps = _low_onsets(audio)
+    bar_frames = grid.bar * lfps
+    weights = []
+    for j in range(grid.beats_per_bar):
+        start = (phase + j * grid.beat) * lfps
+        idx = (start + bar_frames * np.arange(int(len(low) / bar_frames) + 1)).astype(int)
+        idx = idx[idx < len(low)]
+        weights.append(sum(low[np.clip(idx + d, 0, len(low) - 1)].sum() for d in (-1, 0, 1)))
+    j = int(np.argmax(weights)) if max(weights) > 0 else 0
+    return float(phase + j * grid.beat)
+
+
+def prepare_phrase(audio, grid, info=None):
+    """Conform tempo, align to the downbeat, then cut to phrase + crossfade
+    tail (exact samples). info (dict) receives what was done."""
+    audio, bpm, rate = conform_tempo(f32(audio), grid)
+    off_s = beat_offset(audio, grid)
+    off = int(round(off_s * SR))
+    need = int(round((grid.phrase_seconds + grid.xfade_seconds) * SR))
+    out = audio[off:off + need]
+    short = need - len(out)
+    if short > 0:
+        out = np.pad(out, ((0, short), (0, 0)))
+    if info is not None:
+        info.update(measured_bpm=float(bpm), stretch_rate=float(rate), downbeat_offset_s=off_s,
+                    padded_samples=int(max(short, 0)))
+    return f32(out)
+
+
+# ============================================================
+# BEDS (one layer laid on the grid)
+# ============================================================
+
+def build_bed(phrases, order, grid, total, offset_bars=0):
+    """Phrases placed every `phrase_bars` bars in `order`, cycling. Each
+    new phrase enters ON its bar line (10 ms de-click, so its downbeat is
+    intact) while the previous phrase rings out under it for one beat on a
+    cosine fade: the way an editor cuts music on the downbeat.
+    offset_bars shifts which bar of the cycle sits at t = 0."""
+    period = int(round(grid.phrase_seconds * SR))
+    xf = int(round(grid.xfade_seconds * SR))
+    declick = max(1, int(round(0.010 * SR)))
+    fin = 0.5 - 0.5 * np.cos(np.pi * (np.arange(declick) + 0.5) / declick)
+    fout = np.cos(0.5 * np.pi * (np.arange(xf) + 0.5) / max(xf, 1)) ** 2
+    out = np.zeros((total, 2), dtype=np.float64)
+    shift = int(round(offset_bars * grid.bar * SR))
+    k = 0
+    while True:
+        s0 = k * period - shift
+        if s0 >= total:
+            break
+        p = np.asarray(phrases[order[k % len(order)]], dtype=np.float64)
+        seg = p[: period + xf].copy()
+        if len(seg) < period + xf:
+            seg = np.pad(seg, ((0, period + xf - len(seg)), (0, 0)))
+        seg[:declick] *= fin[:, None]
+        seg[period:] *= fout[:, None]
+        lo, hi = max(0, s0), min(total, s0 + period + xf)
+        if hi > lo:
+            out[lo:hi] += seg[lo - s0:hi - s0]
+        k += 1
+    return out
+
+
+# ============================================================
+# STORY SECTIONS, TARGETS AND AUTOMATION
+# ============================================================
+
+def story_boundaries(cue, base_boundaries, grid, duration):
+    """8 bar-snapped boundaries. The first half keeps story_analysis's
+    keyword sections; the turn comes from the cue sheet:
+      b5 (revelation) = the twist: the moment the story turns,
+      b6 (aftermath)  = the resolution, at least 2 bars after the climax
+                        and 4 bars after the twist,
+      b4 (discovery)  = the build: up to 8 bars before the twist.
+    Sections stay at least one bar long."""
+    b = [float(x) for x in base_boundaries]
+    hp = cue.hit_points
+    bar = grid.bar
+    end = snap(grid, duration, "floor")
+    b5 = snap(grid, hp["twist"])
+    b6 = max(snap(grid, hp["resolution"]), snap(grid, hp["climax"]) + 2 * bar, b5 + 4 * bar)
+    b6 = min(b6, end - 2 * bar)
+    b4 = b5 - min(8 * bar, max(2 * bar, snap(grid, 0.5 * (b5 - b[3]), "floor")))
+    raw = [0.0, snap(grid, b[1]), snap(grid, b[2]), snap(grid, b[3]), b4, b5, b6]
+    out = [0.0]
+    for i in range(1, 7):
+        out.append(max(raw[i], out[-1] + bar))
+    out.append(max(duration, out[-1] + bar))
+    # If enforcing gaps pushed sections past the end, compress from the back.
+    for i in range(6, 0, -1):
+        if out[i] > out[i + 1] - bar:
+            out[i] = max(out[i - 1] + 0.5 * bar, out[i + 1] - bar)
+    # Keep b1..b3 before the build if the keyword sections ran late.
+    for i in (3, 2, 1):
+        if out[i] > out[i + 1] - bar:
+            out[i] = max(out[i - 1] + 0.5 * bar, out[i + 1] - bar)
+    return out
+
+
+def section_intensity(cue):
+    """Per-section 0..1 intensity, reshaped so the story turns: the
+    revelation (climax section) is the peak and the aftermath releases."""
+    a = np.clip(np.asarray(cue.arc, dtype=np.float64), 0.0, 1.0)
+    a = 0.15 + 0.7 * (a - a.min()) / max(1e-6, a.max() - a.min())
+    # A score under narration opens present but modest (the hook is told,
+    # not scored at full tilt) and moves in steps a mixer would ride, not
+    # jumps: at most 0.22 (~2 dB of target) between neighbouring sections
+    # until the turn, which is allowed to hit.
+    a[0] = float(np.clip(a[0], 0.3, 0.55))
+    for i in range(1, 5):
+        a[i] = float(np.clip(a[i], a[i - 1] - 0.22, a[i - 1] + 0.22))
+    a[4] = max(a[4], a[3])
+    a[5] = max(a[5], a[:5].max() + 0.12, 0.9)
+    a[4] = min(a[4], a[5] - 0.08)
+    a[6] = float(np.clip(a[6], a[5] - 0.5, a[5] - 0.35))
+    return np.clip(a, 0.05, 1.0)
+
+
+def section_targets(intensity):
+    """Relative dB targets: 9 dB of story arc between quietest and peak,
+    with the scoring engine's revelation lift / release drop honoured."""
+    t = -28.0 + 9.0 * np.asarray(intensity)
+    t[5] = max(t[5], t[4] + 1.5)
+    t[6] = min(t[6], t[5] - 3.0)
+    return t
+
+
+def _layer_levels(intensity):
+    core = -2.0 + 2.0 * np.minimum(intensity / 0.6, 1.0)          # always present
+    pressure = -22.0 + 21.0 * np.clip((intensity - 0.2) / 0.7, 0, 1) ** 1.3
+    climax = np.full(7, -40.0)
+    climax[5] = -1.0
+    climax[4] = -40.0 + 20.0 * np.clip((intensity[4] - 0.5) / 0.4, 0, 1)
+    return {"core": core, "pressure": pressure, "climax": climax}
+
+
+def layer_gains(cue, boundaries, grid, total, music_end, section_trim_db=None):
+    """Per-sample linear gains. Each section holds its level; changes ride
+    over two bars, from the bar line before the section boundary to the bar
+    line after it, like a mixer pushing a fader through the downbeat. The
+    climax layer instead builds over the two bars INTO the turn, so the turn
+    hits at full weight. section_trim_db: per-section level trims applied to
+    every layer (the arc fader ride solved by fit_section_trims)."""
+    levels = _layer_levels(section_intensity(cue))
+    if section_trim_db is not None:
+        levels = {k: v + np.asarray(section_trim_db) for k, v in levels.items()}
+    t = np.arange(total) / SR
+    gains = {}
+    for name in LAYER_NAMES:
+        db = np.full(total, levels[name][0])
+        for i in range(1, 7):
+            if i == 5 and name == "climax":
+                ramp, end = 2.0 * grid.bar, boundaries[i]
+            else:
+                ramp, end = 2.0 * grid.bar, boundaries[i] + grid.bar
+            start = end - ramp
+            frac = np.clip((t - start) / ramp, 0.0, 1.0)
+            frac = 0.5 - 0.5 * np.cos(np.pi * frac)               # S-curve
+            db = np.where(t >= start, db + (levels[name][i] - levels[name][i - 1]) * frac, db)
+        gains[name] = 10.0 ** (db / 20.0)
+    # Outro: pressure/climax out over the last 4 bars, everything fades over
+    # the last 2 bars to silence exactly on the final bar line.
+    fade_all = np.clip((music_end - t) / (2.0 * grid.bar), 0.0, 1.0)
+    fade_hi = np.clip((music_end - 2.0 * grid.bar - t) / (2.0 * grid.bar), 0.0, 1.0)
+    for name in LAYER_NAMES:
+        g = gains[name] * np.sin(fade_all * np.pi / 2.0)
+        if name != "core":
+            g = g * np.sin(fade_hi * np.pi / 2.0)
+        gains[name] = g
+    return gains
+
+
+# ============================================================
+# STORY HITS
+# ============================================================
+
+def _breath_curve(grid, twist_t, total, depth_db=-14.0):
+    """Bed ducks out over the two beats before the twist's bar line and
+    snaps back (30 ms) on it: the classic pre-line 'drop'."""
+    t = np.arange(total) / SR
+    start = twist_t - 2.0 * grid.beat
+    down = np.clip((t - start) / grid.beat, 0.0, 1.0)
+    back = np.clip((t - (twist_t - 0.03)) / 0.03, 0.0, 1.0)
+    amount = np.where(t < twist_t - 0.03, down, 1.0 - back)
+    return 10.0 ** (depth_db * amount / 20.0)
+
+
+def _impact(grid, level_rms, seed=0):
+    """Low cinematic impact: sub sweep 58 -> 36 Hz + soft filtered noise
+    thump, ~1.5 bars of decay. Level set relative to the bed."""
+    n = int(round(min(4.0, 1.5 * grid.bar) * SR))
+    t = np.arange(n) / SR
+    f = 36.0 + 22.0 * np.exp(-t / 0.18)
+    phase = 2 * np.pi * np.cumsum(f) / SR
+    boom = np.sin(phase) * np.exp(-t / (0.45 * grid.bar)) * (1 - np.exp(-t / 0.004))
+    rng = np.random.default_rng(seed)
+    noise = rng.standard_normal(n)
+    a = math.exp(-2 * math.pi * 900.0 / SR)
+    from scipy.signal import lfilter
+    noise = lfilter([1 - a], [1, -a], noise) * np.exp(-t / 0.09)
+    x = boom + 0.35 * noise / (np.max(np.abs(noise)) + 1e-9)
+    # Felt more than heard: ~bed level, mostly sub energy under the narration.
+    x *= level_rms * 10 ** (-2.0 / 20.0) / (np.sqrt(np.mean(x[: int(0.3 * SR)] ** 2)) + 1e-12)
+    return np.stack([x, x], axis=1)
+
+
+def _reverse_swell(music, grid, climax_t):
+    """The climax's first bar, reversed, swelling in over the bar before
+    it (reverse-reverb style riser built from the score itself)."""
+    bar = int(round(grid.bar * SR))
+    c = int(round(climax_t * SR))
+    if c - bar < 0 or c + bar > len(music):
+        return None, 0
+    src = music[c:c + bar][::-1].copy()
+    env = (np.arange(bar) / bar) ** 2.5
+    return src * env[:, None] * 10 ** (-3.0 / 20.0), c - bar
+
+
+# ============================================================
+# DEAD-AIR GUARD
+# ============================================================
+
+def dead_air_regions(mix, min_s=0.4, below_db=18.0, frame_s=0.05):
+    """(start_s, end_s) runs where the score falls more than below_db under
+    its own median level for at least min_s."""
+    mono = np.asarray(mix, dtype=np.float64).mean(axis=1)
+    f = int(round(frame_s * SR))
+    n = len(mono) // f
+    if n < 4:
+        return []
+    lv = 10 * np.log10(np.mean(mono[: n * f].reshape(n, f) ** 2, axis=1) + 1e-12)
+    low = lv < np.median(lv) - below_db
+    out, i = [], 0
+    while i < n:
+        if low[i]:
+            j = i
+            while j < n and low[j]:
+                j += 1
+            if (j - i) * frame_s >= min_s:
+                out.append((i * frame_s, j * frame_s))
+            i = j
+        else:
+            i += 1
+    return out
+
+
+def _freeze(source, seconds, seed):
+    """Spectral freeze: the source's average magnitude spectrum, random
+    phase, overlap-added. Same harmony and timbre as the music around the
+    gap, with no attacks: it reads as the chord ringing on."""
+    n_fft, hop = 4096, 1024
+    rng = np.random.default_rng(seed)
+    win = np.hanning(n_fft)
+    mono_frames = []
+    for ch in range(source.shape[1]):
+        x = source[:, ch]
+        if len(x) < n_fft:
+            x = np.pad(x, (0, n_fft - len(x)))
+        frames = np.lib.stride_tricks.sliding_window_view(x, n_fft)[::hop] * win
+        mono_frames.append(np.abs(np.fft.rfft(frames, axis=1)).mean(axis=0))
+    total = int(round(seconds * SR)) + n_fft
+    out = np.zeros((total, source.shape[1]))
+    norm = np.zeros(total)
+    for start in range(0, total - n_fft + 1, hop):
+        phase = np.exp(2j * np.pi * rng.random(len(mono_frames[0])))
+        for ch, mag in enumerate(mono_frames):
+            out[start:start + n_fft, ch] += np.fft.irfft(mag * phase, n_fft) * win
+        norm[start:start + n_fft] += win ** 2
+    out /= np.maximum(norm, 1e-3)[:, None]
+    return out[: int(round(seconds * SR))]
+
+
+def fill_dead_air(mix, protect=(), level_db=-4.0, fade_s=0.25):
+    """Fill any stretch where the bed dropped out (real model outputs can
+    contain silences) with a spectral freeze of the second before it, so
+    the narration never sits on dead air. `protect` lists (start, end)
+    regions that are silent on purpose (the breath, the outro)."""
+    out = np.array(mix, dtype=np.float64, copy=True)
+    filled = []
+    for k, (a, b) in enumerate(dead_air_regions(mix)):
+        if any(a < pe and b > ps for ps, pe in protect):
+            continue
+        src0 = max(0, int(round((a - 1.0) * SR)))
+        src = out[src0:int(round(a * SR))]
+        if len(src) < int(0.25 * SR) or not np.any(src):
+            continue
+        g0, g1 = max(0.0, a - fade_s), min(len(out) / SR, b + fade_s)
+        length = g1 - g0
+        fz = _freeze(src, length, seed=k)
+        rms_src = np.sqrt(np.mean(src ** 2) + 1e-12)
+        fz *= rms_src * 10 ** (level_db / 20) / (np.sqrt(np.mean(fz ** 2)) + 1e-12)
+        nfade = int(round(fade_s * SR))
+        env = np.ones(len(fz))
+        env[:nfade] = np.sin(0.5 * np.pi * np.arange(nfade) / nfade) ** 2
+        env[-nfade:] = env[:nfade][::-1]
+        i0 = int(round(g0 * SR))
+        out[i0:i0 + len(fz)] += fz[: len(out) - i0] * env[: len(out) - i0, None]
+        filled.append((a, b))
+    return out, filled
+
+
+# ============================================================
+# RENDER + MEASURE + OPTIMISE
+# ============================================================
+
+@dataclass
+class ArrangementPlan:
+    orders: dict
+    offsets_bars: dict
+
+    def to_dict(self):
+        return {"orders": {k: list(v) for k, v in self.orders.items()},
+                "offsets_bars": dict(self.offsets_bars)}
+
+
+def music_length(grid, voice_seconds):
+    """End on the first bar line at least one bar after the last word."""
+    return snap(grid, voice_seconds + grid.bar, "ceil")
+
+
+def _beds(phrases, grid, total, max_cached=8):
+    """All (layer, order, offset) beds, RMS-normalised per layer/order.
+    float32 and a small LRU: a long story's full candidate set (3 layers x
+    6 orders x offsets x minutes of stereo) does not fit in RAM."""
+    from collections import OrderedDict
+    cache = OrderedDict()
+
+    def get(name, order, offset):
+        key = (name, tuple(order), int(offset))
+        if key in cache:
+            cache.move_to_end(key)
+            return cache[key]
+        bed = build_bed(phrases[name], order, grid, total, offset)
+        cache[key] = np.asarray(set_rms_db(bed, LAYER_RMS_DB), dtype=np.float32)
+        while len(cache) > max_cached:
+            cache.popitem(last=False)
+        return cache[key]
+    return get
+
+
+def render_arrangement(phrases, plan, cue, grid, boundaries, voice_seconds, hits=True, bed_cache=None,
+                       section_trim_db=None):
+    """THE story-aware renderer (used by the optimiser and the export)."""
+    end_t = music_length(grid, voice_seconds)
+    total = int(round(end_t * SR))
+    get = bed_cache or _beds(phrases, grid, total)
+    gains = layer_gains(cue, boundaries, grid, total, end_t, section_trim_db)
+    mix = np.zeros((total, 2), dtype=np.float64)
+    for name in LAYER_NAMES:
+        mix += get(name, plan.orders[name], plan.offsets_bars[name]) * gains[name][:, None]
+    protect = [(boundaries[5] - 2.0 * grid.beat, boundaries[5] + 0.05), (end_t - 2.0 * grid.bar, end_t)]
+    mix, _ = fill_dead_air(mix, protect)
+    if hits:
+        mix = apply_hits(mix, cue, grid, boundaries)
+    return normalize_peak(f32(mix), MIX_PEAK)
+
+
+def apply_hits(mix, cue, grid, boundaries):
+    """The turn is the revelation boundary (b5): breath before it, reversed
+    swell into it, impact on its downbeat."""
+    total = len(mix)
+    turn_t = boundaries[5]
+    out = mix.copy()
+    swell, at = _reverse_swell(mix, grid, turn_t)
+    if swell is not None:
+        out[at:at + len(swell)] += swell
+    # The swell rises, then everything is sucked out for the last beat: the
+    # silence makes the turn's downbeat land.
+    out *= _breath_curve(grid, turn_t, total)[:, None]
+    c = int(round(turn_t * SR))
+    bed_rms = float(np.sqrt(np.mean(mix[max(0, c - int(grid.bar * SR)):c] ** 2) + 1e-12))
+    boom = _impact(grid, bed_rms)
+    hi = min(total, c + len(boom))
+    if hi > c:
+        out[c:hi] += boom[: hi - c]
+    return out
+
+
+def measure_arrangement(music, boundaries, targets):
+    """measure_score with the story's own targets, offset-invariant (the
+    arc's SHAPE matters, not its absolute level, which mastering sets)."""
+    first = measure_score(music, boundaries, targets)
+    offset = float(np.mean(np.asarray(first["section_db"]) - np.asarray(targets)))
+    return measure_score(music, boundaries, np.asarray(targets) + offset)
+
+
+def optimise_arrangement(phrases, cue, grid, boundaries, voice_seconds, log=print, passes=2):
+    """Coordinate search over phrase order (all permutations) and start
+    offset (whole bars within one cycle) per layer, every candidate measured
+    on the exact render (hits off while searching, on for the final)."""
+    end_t = music_length(grid, voice_seconds)
+    total = int(round(end_t * SR))
+    get = _beds(phrases, grid, total)
+    targets = section_targets(section_intensity(cue))
+    n_phr = len(phrases[LAYER_NAMES[0]])
+    orders = list(permutations(range(n_phr)))
+    cycle_bars = grid.phrase_bars * n_phr
+    offsets = list(range(0, cycle_bars, max(1, grid.phrase_bars // 2)))
+    plan = ArrangementPlan({n: orders[0] for n in LAYER_NAMES}, {n: 0 for n in LAYER_NAMES})
+    gains = layer_gains(cue, boundaries, grid, total, end_t)
+    evals = 0
+    best_metrics = None
+    for _ in range(passes):
+        for name in LAYER_NAMES:
+            fixed = sum(get(o, plan.orders[o], plan.offsets_bars[o]) * gains[o][:, None]
+                        for o in LAYER_NAMES if o != name)
+            best = None
+            for order in orders:
+                for off in offsets:
+                    mix = fixed + get(name, order, off) * gains[name][:, None]
+                    m = measure_arrangement(normalize_peak(f32(mix), MIX_PEAK), boundaries, targets)
+                    evals += 1
+                    if best is None or m["objective"] < best[0]:
+                        best = (m["objective"], order, off, m)
+            plan.orders[name], plan.offsets_bars[name] = best[1], best[2]
+            best_metrics = best[3]
+    log(f"Arrangement search: {evals} exact renders, objective {best_metrics['objective']:.4f}")
+    return plan, best_metrics, targets, get
+
+
+def fit_section_trims(prepared, plan, cue, grid, boundaries, voice_seconds, targets, get,
+                      rounds=4, limit_db=4.0):
+    """After the phrase search, ride the per-section level toward the arc's
+    targets (offset-invariant), damped and clamped, keeping the trim that
+    measured best. This is the mixer's fader pass over the arrangement."""
+    trims = np.zeros(7)
+    best = None
+    for _ in range(rounds + 1):
+        music = render_arrangement(prepared, plan, cue, grid, boundaries, voice_seconds, hits=False,
+                                   bed_cache=get, section_trim_db=trims)
+        m = measure_arrangement(music, boundaries, targets)
+        if best is None or m["objective"] < best[0]:
+            best = (m["objective"], trims.copy(), m)
+        err = np.asarray(m["section_db"]) - np.asarray(m["section_target_db"])
+        trims = np.clip(trims - 0.7 * err, -limit_db, limit_db)
+    return best[1], best[2]
+
+
+def _as_saved_pcm16(audio):
+    """Exactly what write_audio + read_audio give back for this take."""
+    import tempfile
+    with tempfile.TemporaryDirectory() as d:
+        path = f"{d}/take.wav"
+        write_audio(path, audio, SR)
+        return read_audio(path)[0]
+
+
+def arrange_story(phrases, cue, base_boundaries, voice_seconds, log=print):
+    """Full story-aware scoring stage. Returns (music, report)."""
+    grid = plan_grid(cue)
+    # Work from exactly what the saved *_phrase_*.wav files hold (16-bit), so
+    # the arrangement can be reproduced bit-for-bit from the saved takes.
+    phrases = {n: [_as_saved_pcm16(p) for p in phrases[n]] for n in LAYER_NAMES}
+    prep_info = {n: [{} for _ in phrases[n]] for n in LAYER_NAMES}
+    prepared = {n: [prepare_phrase(p, grid, prep_info[n][i]) for i, p in enumerate(phrases[n])]
+                for n in LAYER_NAMES}
+    boundaries = story_boundaries(cue, base_boundaries, grid, voice_seconds)
+    plan, search_metrics, targets, get = optimise_arrangement(
+        prepared, cue, grid, boundaries, voice_seconds, log=log)
+    trims, search_metrics = fit_section_trims(prepared, plan, cue, grid, boundaries, voice_seconds, targets, get)
+    log(f"Section fader ride (dB): {' '.join(f'{x:+.1f}' for x in trims)}, "
+        f"objective {search_metrics['objective']:.4f}")
+    music = render_arrangement(prepared, plan, cue, grid, boundaries, voice_seconds, bed_cache=get,
+                               section_trim_db=trims)
+    final = measure_arrangement(music, boundaries, targets)
+    unhit = render_arrangement(prepared, plan, cue, grid, boundaries, voice_seconds, hits=False, bed_cache=get,
+                               section_trim_db=trims)
+    search_check = measure_arrangement(unhit, boundaries, targets)
+    report = {
+        "grid": grid.to_dict(),
+        "phrase_preparation": prep_info,
+        "boundaries": boundaries,
+        "plan": plan.to_dict(),
+        "section_trim_db": [float(x) for x in trims],
+        "section_intensity": [float(x) for x in section_intensity(cue)],
+        "section_targets_db": [float(x) for x in targets],
+        "search_objective": search_metrics["objective"],
+        "search_metrics": search_metrics,
+        "final_without_hits_objective": search_check["objective"],
+        "search_vs_final_aligned": abs(search_metrics["objective"] - search_check["objective"]) < 1e-6,
+        "final_metrics": final,
+        "music_seconds": len(music) / SR,
+        "hit_points_on_grid": {"build": boundaries[4], "turn": boundaries[5],
+                               "aftermath": boundaries[6], "end": len(music) / SR},
+    }
+    return music, report, prepared
+
 # ##########  music_generation.py  ##########
 
 # ============================================================
 # MUSIC GENERATION — Stable Audio 3 Small Music, motif, references,
 # phrase generation and quality gates.
 #
-# Prompts, noise levels, durations and gates are UNCHANGED from
-# Generalization V1/V2 (handover: do not redesign generation).
+# Two prompt paths:
+#   cue=None  -> the original V1/V2 prompts and first-valid-attempt logic,
+#                byte-for-byte (kept for the validated benchmark).
+#   cue=Cue   -> story-aware: prompts composed from the story's cue sheet
+#                (cue_sheet.py: palette, tempo, key, descriptors), several
+#                takes per motif/phrase, and the best take kept by a ranking
+#                that adds tempo match, key match, loop-seam smoothness and
+#                spectral fullness (music_analysis.py) to the quality gates.
 # torch / stable_audio_3 / librosa are imported lazily so the scoring engine
 # and the offline replay never need them.
 #
@@ -1013,14 +2703,65 @@ import sys
 
 import numpy as np
 
+analyse_music = analyse
+music_chroma = chroma
+music_key = estimate_key
+music_tempo = estimate_tempo
+music_grid_lock = grid_lock
 
 
 MAX_ATTEMPTS = 2
+MOTIF_TAKES = 3      # story-aware path: motif candidates ranked, best kept
+PHRASE_TAKES = 5     # story-aware path: takes per phrase, all ranked (more choice of key and pulse)
+# Real Stable Audio 3 Small renders (CPU test, 2026-10-04) treat the
+# requested duration as a whole piece: they open strong and decay or fade
+# to silence by the end (a 12 s "climax" fell from -20 to -74 dB). So the
+# story-aware path asks for OVERHANG_SECONDS more than it needs and keeps
+# the most sustained window, never the model's ending.
+OVERHANG_SECONDS = 6.0
+
+
+def sustain_profile(audio, window_s=0.5):
+    """Level (dB) per half second, the head-to-tail drop and the spread."""
+    mono = to_mono(audio)
+    w = max(1, int(round(window_s * SR)))
+    n = len(mono) // w
+    if n < 2:
+        return {"levels": [], "drop_db": 0.0, "spread_db": 0.0}
+    lv = 10 * np.log10(np.mean(mono[: n * w].reshape(n, w) ** 2, axis=1) + 1e-12)
+    k = max(1, n // 4)
+    return {"levels": lv, "drop_db": float(np.median(lv[:k]) - np.median(lv[-k:])),
+            "spread_db": float(np.percentile(lv, 90) - np.percentile(lv, 10))}
+
+
+def best_sustained_window(audio, seconds, step_s=0.25):
+    """The `seconds`-long window with the least decay and level spread,
+    preferring early windows (before any fade the model wrote)."""
+    audio = f32(audio)
+    need = int(round(seconds * SR))
+    if len(audio) <= need:
+        return fit_length(audio, need), 0.0
+    step = max(1, int(round(step_s * SR)))
+    best = None
+    for start in range(0, len(audio) - need + 1, step):
+        prof = sustain_profile(audio[start:start + need])
+        lv = np.asarray(prof["levels"])
+        dead = float(np.mean(lv < np.median(lv) - 20.0)) if len(lv) else 1.0
+        score = abs(prof["drop_db"]) * 2.0 + prof["spread_db"] + 40.0 * dead + 0.2 * start / SR
+        if best is None or score < best[0]:
+            best = (score, start)
+    start = best[1]
+    return f32(audio[start:start + need]), start / SR
 MOTIF_SECONDS = 28.0
 STEPS = 8
 CFG_SCALE = 1.0
 
 LAYER_NOISE = {"core": 0.10, "pressure": 0.13, "climax": 0.16}
+# Story-aware path: the legacy 0.10-0.16 makes phrases near-copies of the
+# motif window (real renders copied its silent gaps and ignored the layer
+# prompt). More freedom lets each layer play its own part around the motif.
+STORY_LAYER_NOISE = {"core": 0.30, "pressure": 0.40, "climax": 0.50}
+MAX_EXTRA_MOTIF_TAKES = 3     # retry while every motif take has dead air
 LAYER_REFERENCE_OFFSET = {"core": 0, "pressure": 1, "climax": 2}
 
 
@@ -1152,13 +2893,74 @@ def motif_prompt(mood):
     )
 
 
-def generate_motif(story_index, mood, output_dir, run_seed):
-    prompt = motif_prompt(mood)
-    seed = derive_seed(run_seed, "motif", story_index)
-    motif = get_provider().generate_fresh(prompt, MOTIF_SECONDS, seed)
+def _motif_seed(run_seed, story_index, take):
+    # Take 0 keeps the original seed so the legacy path is unchanged.
+    if take == 0:
+        return derive_seed(run_seed, "motif", story_index)
+    return derive_seed(run_seed, "motif", story_index, "take", take)
+
+
+def rank_motif(motif, cue):
+    """Higher is better. Tempo/key match against the cue, how many stable
+    12 s reference windows the motif offers, and spectral fullness."""
+    info = analyse_music(motif, SR, cue.tempo_bpm, cue.key, cue.mode)
+    reference_samples = int(round((plan_grid(cue).generate_seconds + OVERHANG_SECONDS) * SR))
+    step = int(round(1.0 * SR))
+    scores = sorted(window_stability(motif[s:s + reference_samples])["score"]
+                    for s in range(0, max(1, len(motif) - reference_samples + 1), step))
+    stability = max(0.0, 1.0 - float(np.mean(scores[:4])) / 40.0) if scores else 0.0
+    info["reference_stability"] = stability
+    # How much of the motif is usable before the model's own ending fades it.
+    prof = sustain_profile(motif)
+    lv = np.asarray(prof["levels"])
+    usable = float(np.mean(lv > np.median(lv[: max(1, len(lv) // 3)]) - 12.0)) if len(lv) else 0.0
+    info["usable_fraction"] = usable
+    # Dead air: share of half-seconds more than 20 dB under the motif's
+    # typical level (stabs separated by silence are useless as a bed).
+    dead = float(np.mean(lv < np.median(lv) - 20.0)) if len(lv) else 1.0
+    info["dead_air_fraction"] = dead
+    # The grid adopts the motif's own tempo/key afterwards, so what matters
+    # is a clear pulse and the story's mode family (minor vs major), not
+    # whether the model obeyed the BPM/key words.
+    fam, _ = MODE_FAMILY.get(cue.mode, ("minor", 0))
+    info["mode_family_match"] = float(info["key"].split()[-1] == fam)
+    info["pulse_clarity"] = float(min(1.0, info["tempo_confidence"] / 0.5))
+    info["rank"] = (30.0 * info["pulse_clarity"] + 20.0 * info["mode_family_match"]
+                    + 20.0 * stability + 10.0 * info["fullness"] + 20.0 * usable - 60.0 * dead)
+    return info
+
+
+def generate_motif(story_index, mood, output_dir, run_seed, cue=None, takes=None,
+                   return_report=False, log=print):
+    if cue is None:
+        prompt = motif_prompt(mood)
+        takes = 1
+    else:
+        prompt = motif_prompt_from_cue(cue)
+        takes = MOTIF_TAKES if takes is None else int(takes)
+    provider = get_provider()
+    best, rows = None, []
+    take = 0
+    while take < takes or (cue is not None and best is not None
+                           and best[2].get("dead_air_fraction", 0.0) > 0.05
+                           and take < takes + MAX_EXTRA_MOTIF_TAKES):
+        seed = _motif_seed(run_seed, story_index, take)
+        motif = f32(provider.generate_fresh(prompt, MOTIF_SECONDS, seed))
+        row = {"take": take + 1, "seed": seed}
+        if cue is not None:
+            row.update(rank_motif(motif, cue))
+            log(f"  motif take {take + 1}: rank={row['rank']:.1f} dead_air={row['dead_air_fraction']:.2f} "
+                f"tempo={row['tempo_bpm']:.1f} key={row['key']} seam={row['seam']:.2f}")
+        rows.append(row)
+        if best is None or row.get("rank", 0.0) > best[2].get("rank", 0.0):
+            best = (motif, seed, row)
+        take += 1
+    motif, seed, _ = best
     path = output_dir / "motif_seed_28s.wav"
     write_audio(path, motif, SR)
-    return f32(motif), str(path), prompt, seed
+    if return_report:
+        return motif, str(path), prompt, seed, rows
+    return motif, str(path), prompt, seed
 
 
 # ============================================================
@@ -1205,8 +3007,10 @@ def repair_reference(audio):
     return normalize_peak(audio * gain[:, None], 0.85)
 
 
-def choose_references(motif):
-    reference_samples = int(round(PHRASE_DURATION * SR))
+def choose_references(motif, seconds=None):
+    """seconds: reference length (story-aware path generates whole-bar
+    phrases, so its references match that length). Default: PHRASE_DURATION."""
+    reference_samples = int(round((PHRASE_DURATION if seconds is None else seconds) * SR))
     step = int(round(0.50 * SR))
     candidates = []
     for start in range(0, max(1, len(motif) - reference_samples + 1), step):
@@ -1239,11 +3043,16 @@ def choose_references(motif):
 # CHROMA + PHRASE QUALITY GATES
 # ============================================================
 
-def chroma_profile(audio):
+def chroma_profile(audio, numpy_fallback=False):
+    """librosa chroma (legacy behaviour: None when librosa is missing).
+    numpy_fallback=True (story-aware path) uses music_analysis.chroma so the
+    motif-similarity gate works on any machine."""
     try:
         import librosa
     except Exception:
-        return None
+        if not numpy_fallback:
+            return None
+        return f32(music_chroma(audio, SR))
     mono = to_mono(audio)
     if len(mono) < SR * 2:
         mono = np.pad(mono, (0, int(SR * 2) - len(mono)))
@@ -1279,7 +3088,7 @@ def phrase_quality(audio, motif_profile):
 
     similarity = None
     if motif_profile is not None:
-        candidate_profile = chroma_profile(audio)
+        candidate_profile = chroma_profile(audio, numpy_fallback=True)
         if candidate_profile is not None:
             similarity = float(np.dot(motif_profile, candidate_profile))
 
@@ -1372,9 +3181,41 @@ def _fmt_similarity(value):
     return "n/a" if value is None else f"{value:.3f}"
 
 
-def generate_layer_phrases(story_index, mood, references, motif_profile, story_dir, run_seed, log=print):
-    prompts = layer_prompts(mood)
-    phrase_samples = int(round(PHRASE_DURATION * SR))
+def rank_phrase(audio, report, cue):
+    """Story-aware take score: the original quality score (gates, valleys,
+    motif chroma similarity) plus musical fit. Invalid takes keep their
+    score but always lose to a valid one."""
+    info = analyse_music(audio, SR, cue.tempo_bpm, cue.key, cue.mode)
+    prof = sustain_profile(audio)
+    info["sustain_drop_db"] = prof["drop_db"]
+    info["sustain_spread_db"] = prof["spread_db"]
+    sustain = max(0.0, 1.0 - max(0.0, prof["drop_db"]) / 12.0)
+    info["sustain"] = sustain
+    # Pulse steadiness at the take's own tempo (folded toward the cue), so a
+    # take that's 2 % fast but rock steady still scores: the arranger
+    # conforms it to the grid by beat slicing.
+    own = info["tempo_bpm"]
+    if own > 0:
+        own = min((own * k for k in (0.5, 1.0, 2.0)), key=lambda b: abs(np.log(b / cue.tempo_bpm)))
+    from_grid = music_grid_lock(audio, SR, own) if own > 0 else 0.0
+    info["grid_lock"] = from_grid
+    # A beatless take's tempo reading is noise: neutral, so it can't outvote key.
+    tempo_term = info["tempo_match"] if info["tempo_confidence"] >= 0.2 else 0.5
+    rank = (report["quality"] + 15.0 * info["seam"] + 15.0 * tempo_term
+            + 25.0 * info["key_match"] + 5.0 * info["fullness"] + 20.0 * sustain + 20.0 * from_grid)
+    info["rank"] = float(rank if report["valid"] else rank - 1000.0)
+    return info
+
+
+def generate_layer_phrases(story_index, mood, references, motif_profile, story_dir, run_seed, log=print,
+                           cue=None, takes=None):
+    prompts = layer_prompts(mood) if cue is None else layer_prompts_from_cue(cue)
+    attempts = MAX_ATTEMPTS if cue is None else (PHRASE_TAKES if takes is None else int(takes))
+    # Story-aware phrases are a whole number of bars (+ crossfade beat and
+    # one alignment beat) at the cue's tempo, so the arranger can cut on bars.
+    phrase_seconds = PHRASE_DURATION if cue is None else plan_grid(cue).generate_seconds
+    phrase_samples = int(round(phrase_seconds * SR))
+    model_seconds = phrase_seconds if cue is None else phrase_seconds + OVERHANG_SECONDS
     layer_phrases = {name: [] for name in LAYER_NAMES}
     quality_rows = []
     provider = get_provider()
@@ -1382,30 +3223,46 @@ def generate_layer_phrases(story_index, mood, references, motif_profile, story_d
     for layer in LAYER_NAMES:
         log(f"\nGenerating {layer}...")
         for phrase_index in range(PHRASES_PER_LAYER):
-            best_audio, best_report, accepted = None, None, False
+            best_audio, best_score, best_row, accepted = None, None, None, False
             ref_index = (phrase_index + LAYER_REFERENCE_OFFSET[layer]) % len(references)
             reference = references[ref_index]
 
-            for attempt in range(MAX_ATTEMPTS):
+            for attempt in range(attempts):
                 seed = derive_seed(run_seed, "layer", layer, story_index, phrase_index, attempt)
                 log(f"  phrase {phrase_index + 1}/{PHRASES_PER_LAYER} "
-                    f"attempt {attempt + 1}/{MAX_ATTEMPTS} ref={ref_index + 1}")
+                    f"attempt {attempt + 1}/{attempts} ref={ref_index + 1}")
                 try:
-                    generated = provider.generate_conditioned(prompts[layer], PHRASE_DURATION, reference,
-                                                               LAYER_NOISE[layer], seed)
+                    noise = LAYER_NOISE[layer] if cue is None else STORY_LAYER_NOISE[layer]
+                    generated = provider.generate_conditioned(prompts[layer], model_seconds, reference,
+                                                               noise, seed)
+                    window_start = 0.0
+                    if cue is not None:
+                        generated, window_start = best_sustained_window(generated, phrase_seconds)
                     generated = normalize_peak(fit_length(generated, phrase_samples), 0.85)
                     report = phrase_quality(generated, motif_profile)
-                    quality_rows.append({"layer": layer, "phrase": phrase_index + 1,
-                                         "attempt": attempt + 1, "seed": seed,
-                                         "reference": ref_index + 1, **report})
+                    row = {"layer": layer, "phrase": phrase_index + 1,
+                           "attempt": attempt + 1, "seed": seed,
+                           "reference": ref_index + 1, **report}
+                    if cue is None:
+                        score = report["quality"]
+                    else:
+                        fit = rank_phrase(generated, report, cue)
+                        fit["window_start_s"] = window_start
+                        row["musical_fit"] = fit
+                        score = fit["rank"]
+                    quality_rows.append(row)
                     log(f"    quality={report['quality']:.1f} "
                         f"valley={report.get('local_valley_db', float('nan')):.1f}dB "
-                        f"motif={_fmt_similarity(report.get('motif_similarity'))}")
-                    if best_report is None or report["quality"] > best_report["quality"]:
-                        best_audio, best_report = generated, report
+                        f"motif={_fmt_similarity(report.get('motif_similarity'))}"
+                        + ("" if cue is None else
+                           f" tempo={row['musical_fit']['tempo_bpm']:.1f} seam={row['musical_fit']['seam']:.2f}"))
+                    row["selected"] = False
+                    if best_score is None or score > best_score:
+                        best_audio, best_score, best_row = generated, score, row
                     if report["valid"]:
                         accepted = True
-                        break
+                        if cue is None:
+                            break          # legacy: first valid attempt wins
                 except Exception as exc:
                     log(f"    generation error: {exc!r}")
 
@@ -1413,6 +3270,7 @@ def generate_layer_phrases(story_index, mood, references, motif_profile, story_d
                 raise RuntimeError(f"No candidate for {layer} phrase {phrase_index + 1}")
             if not accepted:
                 log("    fallback to best candidate")
+            best_row["selected"] = True
 
             write_audio(story_dir / f"{layer}_phrase_{phrase_index + 1:02d}.wav", best_audio, SR)
             layer_phrases[layer].append(best_audio)
@@ -1439,13 +3297,19 @@ def generate_layer_phrases(story_index, mood, references, motif_profile, story_d
 #
 #   Processing (the dialogue mix + master bus):
 #     - subsonic high-pass on music, rumble high-pass on voice
+#     - stem gain staging: narration to a fixed dialogue anchor, music bed
+#       trimmed relative to it, so the balance never depends on how hot the
+#       TTS or the generator happened to render
+#     - dialogue leveling: a slow phrase rider (evens out loud/quiet lines)
+#       followed by a gentle 3:1 compressor on the narration
 #     - dialogue-to-music-ratio ducking with lookahead (the music moves
 #       BEFORE the line starts, the way a mixer rides the fader), hold
 #       between words so it doesn't pump
 #     - speech-band "carve": a dynamic presence dip in the music only while
 #       the narrator is talking, so less broadband ducking is needed
 #     - loudness normalization to a delivery spec + true-peak lookahead
-#       limiter at the spec's ceiling
+#       limiter at the spec's ceiling (gain solved against ONE limiter pass,
+#       never a stack of limiters)
 #
 # This module is ADDITIVE. scoring_engine.render_score()/measure_score()
 # (the validated optimizer path) and the legacy score_ducked /
@@ -1503,8 +3367,26 @@ class MixSettings:
     # Filtering.
     music_highpass_hz: float = 30.0
     voice_highpass_hz: float = 70.0
+    # Gain staging. The narration is normalised to a speech-gated anchor and
+    # the score is trimmed so its integrated loudness sits this far under it
+    # BEFORE ducking: between lines the music opens up to anchor - offset,
+    # under lines the ducker takes it the rest of the way to target_dmr_lu.
+    dialogue_anchor_lufs: float = -20.0
+    music_open_lu_below_dialogue: float = 6.0
+    max_music_trim_db: float = 30.0
+    # Dialogue leveling: phrase rider (slow) then compressor (fast).
+    level_window_s: float = 1.0
+    level_max_ride_db: float = 9.0
+    level_smooth_s: float = 0.4
+    comp_threshold_over_speech_db: float = 3.0   # vs median active-frame RMS
+    comp_ratio: float = 3.0
+    comp_knee_db: float = 6.0
+    comp_attack_s: float = 0.005
+    comp_release_s: float = 0.12
+    voice_peak_over_rms_db: float = 11.0          # dialogue peak limiter ceiling (crest)
     # Limiter.
     limiter_window_s: float = 0.015    # +-15 ms lookahead, ~30 ms ramps
+    limiter_release_s: float = 0.08    # recovery after the ramp (no 30 Hz flutter)
 
 
 # QC thresholds. Each one is a widely used engineering rule of thumb,
@@ -1794,17 +3676,146 @@ def dialogue_duck_curve(voice_mono, music, sr, settings=MixSettings()):
 
 
 # ============================================================
+# STEM GAIN STAGING + DIALOGUE LEVELING
+# ============================================================
+
+def speech_gated_lufs(voice_mono, sr):
+    """Narration loudness as it sits in a stereo mix (dual mono), gated."""
+    weighted = k_weight(as_stereo(voice_mono), sr)
+    power, _ = _block_power(weighted, sr, 0.4, 0.1)
+    return _gated_integrated(power)
+
+
+def _compress(voice, sr, settings, active, times):
+    """Feed-forward soft-knee compressor on 5 ms RMS. The threshold sits
+    comp_threshold_over_speech_db above the narration's own RMS over speech
+    (power average, so pauses inside words don't drag it down), which makes
+    it work on the loud syllables only, the way a dialogue compressor is set.
+    Control signal runs at 1 ms."""
+    hop = max(1, int(round(0.001 * sr)))
+    env = np.sqrt(np.maximum(uniform_filter1d(voice * voice, size=max(1, int(0.005 * sr)), mode="nearest")[::hop], 0.0))
+    level = 20.0 * np.log10(np.maximum(env, 1e-9))
+    ctl_t = np.arange(len(level)) * hop / sr
+    speech = np.interp(ctl_t, times, active.astype(np.float64)) > 0.5
+    if not speech.any():
+        return voice, 0.0
+    speech_rms_db = 10.0 * np.log10(np.mean(env[speech] ** 2) + 1e-18)
+    threshold = speech_rms_db + settings.comp_threshold_over_speech_db
+    over = level - threshold
+    knee = settings.comp_knee_db
+    slope = 1.0 - 1.0 / settings.comp_ratio
+    gr = np.where(over <= -knee / 2, 0.0,
+                  np.where(over >= knee / 2, slope * over,
+                           slope * (over + knee / 2) ** 2 / (2 * knee)))
+    smooth = -_smooth_asymmetric(-gr, hop / sr, settings.comp_attack_s, settings.comp_release_s)
+    gain_db = np.interp(np.arange(len(voice)) / sr, ctl_t, -smooth)
+    return voice * 10.0 ** (gain_db / 20.0), float(np.max(smooth))
+
+
+def _voice_peak_limit(voice, sr, settings, active, times):
+    """Dialogue peak limiter: true peaks held to speech RMS + crest ceiling,
+    so plosives and shouts are caught on the voice stem instead of making
+    the master limiter pump the whole mix."""
+    frame = int(round((times[1] - times[0]) * sr)) if len(times) > 1 else len(voice)
+    n = min(len(active), len(voice) // max(frame, 1))
+    if n == 0 or not active[:n].any():
+        return voice, 0.0
+    power = np.mean(voice[: n * frame].reshape(n, frame) ** 2, axis=1)
+    rms_db = 10.0 * np.log10(np.mean(power[active[:n]]) + 1e-18)
+    ceiling = rms_db + settings.voice_peak_over_rms_db
+    out, gr = true_peak_limit(voice[:, None], sr, ceiling, 0.003, 0.05)
+    return out[:, 0], gr
+
+
+def level_dialogue(voice_mono, sr, settings=MixSettings()):
+    """Ride each phrase toward the anchor (like a vocal rider), compress the
+    peaks, then normalise the narration to settings.dialogue_anchor_lufs."""
+    voice = np.asarray(voice_mono, dtype=np.float64)
+    frame_s = 0.02
+    active, times, _ = speech_activity(voice, sr, frame_s)
+    stats = {"rider_range_db": [0.0, 0.0], "compressor_max_gr_db": 0.0}
+    if not active.any():
+        return voice, stats
+
+    # Phrase rider: speech-only K-weighted level over ~1 s, gaps don't count.
+    weighted = k_weight(voice, sr)[:, 0]
+    frame = int(round(frame_s * sr))
+    nf = len(active)
+    power = np.mean(weighted[: nf * frame].reshape(nf, frame) ** 2, axis=1) * active
+    win = max(1, int(round(settings.level_window_s / frame_s)))
+    num = uniform_filter1d(power, win, mode="nearest")
+    den = uniform_filter1d(active.astype(np.float64), win, mode="nearest")
+    local = _db(num / np.maximum(den, 1e-6))
+    target = float(np.median(local[active]))
+    ride = np.clip(target - local, -settings.level_max_ride_db, settings.level_max_ride_db)
+    # Hold the ride through pauses (no gain moves on breaths / room tone).
+    idx = np.where(active, np.arange(nf), 0)
+    np.maximum.accumulate(idx, out=idx)
+    ride = ride[idx]
+    first = int(np.argmax(active))
+    ride[:first] = ride[first]
+    alpha = math.exp(-frame_s / settings.level_smooth_s)
+    ride = lfilter([1 - alpha], [1, -alpha], ride, zi=[ride[0] * alpha])[0]
+    voice = voice * 10.0 ** (np.interp(np.arange(len(voice)) / sr, times, ride) / 20.0)
+    stats["rider_range_db"] = [float(ride.min()), float(ride.max())]
+
+    voice, comp_gr = _compress(voice, sr, settings, active, times)
+    stats["compressor_max_gr_db"] = comp_gr
+    voice, peak_gr = _voice_peak_limit(voice, sr, settings, active, times)
+    stats["voice_peak_limiter_max_gr_db"] = peak_gr
+    lufs = speech_gated_lufs(voice, sr)
+    if lufs > SILENCE_LUFS:
+        voice = voice * 10.0 ** ((settings.dialogue_anchor_lufs - lufs) / 20.0)
+    return voice, stats
+
+
+def gain_stage_music(music, sr, settings=MixSettings()):
+    """Static trim so the score's integrated loudness sits
+    music_open_lu_below_dialogue under the dialogue anchor. Static, so the
+    score's own arc (the optimizer's section energy) is preserved exactly."""
+    current = integrated_loudness(music, sr)
+    if current <= SILENCE_LUFS:
+        return music, 0.0
+    trim = settings.dialogue_anchor_lufs - settings.music_open_lu_below_dialogue - current
+    trim = float(np.clip(trim, -settings.max_music_trim_db, settings.max_music_trim_db))
+    return music * 10.0 ** (trim / 20.0), trim
+
+
+# ============================================================
 # LIMITER (true-peak aware, lookahead, zero overshoot by construction)
 # ============================================================
 
-def true_peak_limit(audio, sr, ceiling_dbtp, window_s=0.015):
+def _release_hold(gain, sr, release_s, block=64):
+    """Slow the limiter's recovery without ever raising the gain above its
+    input: per block, r = min(block_min(gain), r_prev recovering toward 1).
+    Expanded back as a step per block, so r <= gain at every sample."""
+    if release_s <= 0:
+        return gain
+    n = len(gain)
+    nb = -(-n // block)
+    padded = np.concatenate([gain, np.full(nb * block - n, gain[-1])])
+    blocks = padded.reshape(nb, block).min(axis=1)
+    if blocks.min() >= 1.0:
+        return gain
+    coeff = math.exp(-block / (release_s * sr))
+    out = np.empty(nb)
+    current = 1.0
+    for i, value in enumerate(blocks):
+        current = 1.0 - (1.0 - current) * coeff     # recover toward unity
+        if value < current:
+            current = value
+        out[i] = current
+    return np.repeat(out, block)[:n]
+
+
+def true_peak_limit(audio, sr, ceiling_dbtp, window_s=0.015, release_s=0.08):
     """Lookahead brick-wall limiter driven by the true-peak envelope.
 
-    gain = moving_average_{+-w}( min_{+-w}(required) ). Every value in the
-    average window around a peak is a minimum over a window that contains
-    that peak, so gain <= required there: the ceiling holds by construction,
-    with smooth ~2w ramps in and out (no per-sample gain ripple, which is
-    what makes cheap limiters distort bass)."""
+    gain = moving_average_{+-w}( release( min_{+-w}(required) ) ). Every value
+    in the average window around a peak is <= a minimum over a window that
+    contains that peak, so gain <= required there: the ceiling holds by
+    construction, with smooth ~2w attack ramps and an exponential release
+    (no per-sample gain ripple, no fast flutter on sustained material)."""
     audio = _f64(audio)
     ceiling = 10.0 ** (ceiling_dbtp / 20.0)
     required = np.minimum(1.0, ceiling / np.maximum(true_peak_envelope(audio, sr), 1e-12))
@@ -1812,6 +3823,7 @@ def true_peak_limit(audio, sr, ceiling_dbtp, window_s=0.015):
         return audio.copy(), 0.0
     size = 2 * max(1, int(round(window_s * sr))) + 1
     gain = minimum_filter1d(required, size=size, mode="nearest")
+    gain = _release_hold(gain, sr, release_s)
     gain = uniform_filter1d(gain, size=size, mode="nearest")
     out = audio * gain[:, None]
     # Resampler ringing can leave a few hundredths of a dB; trim it.
@@ -1821,23 +3833,37 @@ def true_peak_limit(audio, sr, ceiling_dbtp, window_s=0.015):
     return out, float(-20.0 * np.log10(max(gain.min(), 1e-12)))
 
 
-def master_to_spec(audio, sr, spec, settings=MixSettings()):
-    """Loudness-normalise to spec.integrated_lufs, then true-peak limit.
-    Two passes because limiting lowers integrated loudness slightly."""
+def master_to_spec(audio, sr, spec, settings=MixSettings(), max_iter=8, tol_lu=0.05):
+    """Find the ONE input gain g such that integrated(limit(g * x)) hits the
+    spec, with the limiter always run on the original mix (re-limiting an
+    already limited file stacks distortion and undershoots on peaky
+    narration). Loudness after limiting is monotonic in g, so a secant search
+    on dB converges in a few passes."""
     audio = _f64(audio)
-    max_gr = 0.0
-    out = audio
-    for _ in range(3):
-        current = integrated_loudness(out, sr)
-        if current <= SILENCE_LUFS:
+    start = integrated_loudness(audio, sr)
+    if start <= SILENCE_LUFS:
+        return audio.copy(), 0.0
+
+    def run(gain_db):
+        out, gr = true_peak_limit(audio * 10.0 ** (gain_db / 20.0), sr, spec.true_peak_dbtp,
+                                  settings.limiter_window_s, settings.limiter_release_s)
+        return out, gr, integrated_loudness(out, sr) - spec.integrated_lufs
+
+    g0 = spec.integrated_lufs - start
+    out, gr, err0 = run(g0)
+    best = (abs(err0), out, gr)
+    g1 = g0 - err0
+    for _ in range(max_iter - 1):
+        if best[0] < tol_lu:
             break
-        gain_db = spec.integrated_lufs - current
-        out = out * 10.0 ** (gain_db / 20.0)
-        out, gr = true_peak_limit(out, sr, spec.true_peak_dbtp, settings.limiter_window_s)
-        max_gr = max(max_gr, gr)
-        if abs(integrated_loudness(out, sr) - spec.integrated_lufs) < 0.1:
-            break
-    return out, max_gr
+        out, gr, err1 = run(g1)
+        if abs(err1) < best[0]:
+            best = (abs(err1), out, gr)
+        slope = (err1 - err0) / (g1 - g0) if abs(g1 - g0) > 1e-9 else 1.0
+        slope = min(max(slope, 0.05), 1.0)          # limiter only ever eats gain
+        g0, err0 = g1, err1
+        g1 = g1 - err1 / slope
+    return best[1], best[2]
 
 
 # ============================================================
@@ -1990,13 +4016,17 @@ def mix_and_master(voice_mono, music, sr, delivery=DEFAULT_DELIVERY, settings=Mi
 
     Returns (master float32 (n, 2), report dict)."""
     spec = DELIVERY_SPECS[delivery] if isinstance(delivery, str) else delivery
-    n = len(voice_mono)
-    music = as_stereo(music)[:n]
-    if len(music) < n:
-        music = np.pad(music, ((0, n - len(music)), (0, 0)))
+    # The score may run past the narration (an outro); never cut it off.
+    music = as_stereo(music)
+    n = max(len(voice_mono), len(music))
+    voice_mono = np.pad(np.asarray(voice_mono, dtype=np.float64), (0, n - len(voice_mono)))
+    music = np.pad(music, ((0, n - len(music)), (0, 0)))
 
     voice = highpass(np.asarray(voice_mono, dtype=np.float64), sr, settings.voice_highpass_hz)[:, 0]
     music = highpass(music, sr, settings.music_highpass_hz)
+    raw_voice_lufs = speech_gated_lufs(voice, sr)
+    voice, level_stats = level_dialogue(voice, sr, settings)
+    music, music_trim_db = gain_stage_music(music, sr, settings)
 
     duck_db, speech_weight, duck_stats = dialogue_duck_curve(voice, music, sr, settings)
     carve_db = -settings.carve_depth_db * speech_weight
@@ -2014,6 +4044,8 @@ def mix_and_master(voice_mono, music, sr, delivery=DEFAULT_DELIVERY, settings=Mi
     bed_under_speech = np.interp(times[active], bed_times, bed_st) if active.any() else np.array([np.nan])
     duck_stats["achieved_dmr_lu_median"] = float(duck_stats["voice_speech_lufs"] - np.nanmedian(bed_under_speech))
     duck_stats["target_dmr_lu"] = settings.target_dmr_lu
+    duck_stats["gain_staging"] = {"raw_voice_speech_lufs": float(raw_voice_lufs),
+                                  "music_trim_db": music_trim_db, **level_stats}
     duck_stats["carve"] = {"center_hz": settings.carve_center_hz, "q": settings.carve_q,
                            "depth_db": settings.carve_depth_db}
     duck_stats["limiter_max_gain_reduction_db"] = limiter_gr
@@ -2047,8 +4079,9 @@ def format_qc(report):
 # ============================================================
 # STORY SCORING LAB — GENERALIZATION V2 PIPELINE
 #
-# narration -> transcript -> mood -> 7 story sections -> fresh motif ->
-# reference windows -> core/pressure/climax phrases (quality gated) ->
+# narration -> transcript -> story cue sheet (vibe, palette, tempo, key,
+# arc, hit points) -> 7 story sections -> fresh motif (best of N takes) ->
+# reference windows -> core/pressure/climax phrases (best of N takes) ->
 # V2 exact-waveform optimizer -> exact render -> adaptive ducking ->
 # score_raw / score_ducked / voice_music_preview / manifest.json
 #
@@ -2064,6 +4097,9 @@ from pathlib import Path
 
 import numpy as np
 
+describe_cue = describe
+music_key = estimate_key
+music_tempo = estimate_tempo
 
 
 PIPELINE_VERSION = "GENERALIZATION_V2_EXACT_WAVEFORM"
@@ -2217,11 +4253,66 @@ def score_story(layer_phrases, boundaries, voice_mono, story_dir, manifest_base,
     return manifest
 
 
+def score_story_arranged(layer_phrases, cue, boundaries, voice_mono, story_dir, manifest_base, log=print,
+                         delivery=DEFAULT_DELIVERY):
+    """Story-aware scoring: bar-grid arrangement driven by the cue sheet
+    (arrangement.py), then the engineered dialogue mix + master. The score
+    runs past the narration and ends on a bar line, so the narration is
+    padded with silence to the music's length for the mix."""
+    story_dir = Path(story_dir)
+    story_dir.mkdir(parents=True, exist_ok=True)
+    voice_mono = f32(voice_mono)
+    voice_seconds = len(voice_mono) / SR
+
+    log("\nArranging the score on the story's tempo grid...")
+    music, arrangement, _ = arrange_story(layer_phrases, cue, boundaries, voice_seconds, log=log)
+    again, _, _ = arrange_story(layer_phrases, cue, boundaries, voice_seconds, log=lambda *_: None)
+    deterministic = bool(np.array_equal(music, again))
+    del again
+
+    raw_path = story_dir / "score_raw.wav"
+    write_audio(raw_path, music, SR)
+    voice_padded = fit_length(voice_mono, len(music))
+
+    master, mix_report = mix_and_master(voice_padded, music, SR, delivery)
+    master_path = story_dir / "voice_music_master.wav"
+    write_audio(master_path, master, SR, dither=True)
+    mix_report["score_raw_qc"] = qc_report(music, SR, label="score_raw")
+
+    g = arrangement["grid"]
+    manifest = dict(manifest_base)
+    manifest.update({
+        "pipeline_version": PIPELINE_VERSION + "+STORY_ARRANGEMENT",
+        "duration_seconds": voice_seconds,
+        "music_seconds": arrangement["music_seconds"],
+        "arrangement": arrangement,
+        "arrangement_deterministic": deterministic,
+        "mix_master": mix_report,
+        "files": {"raw": str(raw_path), "master": str(master_path)},
+    })
+    save_json(story_dir / "manifest.json", manifest)
+
+    log("\nFINAL STORY RESULT (story-aware)")
+    log(f"Grid: {g['bpm']:.0f} BPM, {g['phrase_bars']}-bar phrases, bar {g['bar']:.3f}s")
+    hp = arrangement["hit_points_on_grid"]
+    log(f"Hits on bar lines: build {hp['build']:.2f}s, turn {hp['turn']:.2f}s, "
+        f"aftermath {hp['aftermath']:.2f}s, end {hp['end']:.2f}s")
+    fm = arrangement["final_metrics"]
+    log(f"Arc objective {fm['objective']:.4f}, peak gap {fm['peak_gap_db']:+.2f} dB, "
+        f"release {fm['release_drop_db']:+.2f} dB, deterministic render: {deterministic}")
+    dm = mix_report["dialogue_mix"]
+    log(f"Dialogue mix: DMR {dm['achieved_dmr_lu_median']:.1f} LU (target {dm['target_dmr_lu']:.0f}), "
+        f"limiter {dm['limiter_max_gain_reduction_db']:.1f} dB")
+    for line in format_qc(mix_report["master_qc"]):
+        log(line)
+    return manifest
+
+
 # ============================================================
 # FULL STORY (Stable Audio generation + scoring)
 # ============================================================
 
-def process_story(story_index, story_path, out_root, run_seed, log=print):
+def process_story(story_index, story_path, out_root, run_seed, log=print, story_aware=True):
     """run_seed: the ONE seed for this whole production job (all stories in
     the job share it). Every motif/phrase seed is derived from it, so this
     job's material differs from any other job's, while re-running this exact
@@ -2254,14 +4345,31 @@ def process_story(story_index, story_path, out_root, run_seed, log=print):
     for i, label in enumerate(STORY_LABELS):
         log(f"  {label:<28}{boundaries[i]:7.2f}s -> {boundaries[i + 1]:7.2f}s")
 
-    motif, motif_path, prompt, motif_seed = generate_motif(story_index, mood, story_dir, run_seed)
-    references, reference_starts = choose_references(motif)
+    cue = build_cue_sheet(segments, duration, list(boundaries)) if story_aware else None
+    if cue is not None:
+        log("Story cue sheet:")
+        for line in describe_cue(cue):
+            log(f"  {line}")
+
+    motif, motif_path, prompt, motif_seed, motif_takes = generate_motif(
+        story_index, mood, story_dir, run_seed, cue=cue, return_report=True, log=log)
+    if cue is not None:
+        # Every layer is conditioned on the motif, so the grid and layer
+        # prompts follow the motif's measured pulse and key.
+        bpm, conf = music_tempo(motif, SR)
+        tonic, family, _ = music_key(motif, SR)
+        cue = adopt_motif_tempo_key(cue, bpm, conf, tonic, family)
+        log(f"Motif reads {bpm:.1f} BPM (confidence {conf:.2f}), {tonic} {family}: "
+            f"grid {cue.tempo_bpm:g} BPM, {cue.key_label} (story asked {cue.story_tempo_bpm:g} BPM, "
+            f"{cue.story_key_label})")
+    references, reference_starts = choose_references(
+        motif, None if cue is None else plan_grid(cue).generate_seconds + OVERHANG_SECONDS)
     for i, reference in enumerate(references, start=1):
         write_audio(story_dir / f"reference_{i:02d}.wav", reference, SR)
-    motif_profile = chroma_profile(motif)
+    motif_profile = chroma_profile(motif, numpy_fallback=cue is not None)
 
     layer_phrases, quality_rows = generate_layer_phrases(
-        story_index, mood, references, motif_profile, story_dir, run_seed, log=log
+        story_index, mood, references, motif_profile, story_dir, run_seed, log=log, cue=cue
     )
 
     manifest_base = {
@@ -2270,14 +4378,20 @@ def process_story(story_index, story_path, out_root, run_seed, log=print):
         "transcript_file": transcript_path,
         "transcript_segments": len(segments),
         "detected_mood": mood,
+        "story_aware": story_aware,
+        "cue_sheet": cue.to_dict() if cue is not None else None,
         "motif": {
             "path": motif_path,
             "prompt": prompt,
             "seed": motif_seed,
+            "takes": motif_takes,
             "reference_starts_seconds": [float(x / SR) for x in reference_starts],
         },
         "quality_report": quality_rows,
     }
+    if cue is not None:
+        return score_story_arranged(layer_phrases, cue, boundaries, voice_mono, story_dir,
+                                    manifest_base, log=log)
     return score_story(layer_phrases, boundaries, voice_mono, story_dir, manifest_base, log=log)
 
 
@@ -2285,9 +4399,47 @@ def process_story(story_index, story_path, out_root, run_seed, log=print):
 # SUMMARY
 # ============================================================
 
+def _summarize_arranged(index, m):
+    a = m["arrangement"]
+    final = a["final_metrics"]
+    qc = m["mix_master"]["master_qc"]
+    takes = [r for r in m.get("quality_report", []) if r.get("selected")]
+    fits = [r["musical_fit"] for r in takes if "musical_fit" in r]
+    return {
+        "story": index,
+        "file": os.path.basename(m["story_file"]),
+        "story_aware": True,
+        "duration_sec": m["duration_seconds"],
+        "music_sec": m["music_seconds"],
+        "style": m["cue_sheet"]["style"],
+        "tempo_bpm": m["cue_sheet"]["tempo_bpm"],
+        "key": m["cue_sheet"]["key_label"],
+        "palette": m["cue_sheet"]["palette"],
+        "final_objective": final["objective"],
+        "section_db": final["section_db"],
+        "revelation_minus_discovery_db": final["peak_gap_db"],
+        "release_drop_db": final["release_drop_db"],
+        "max_boundary_jump_db": final["max_abs_boundary_jump_db"],
+        "hit_points_on_grid": a["hit_points_on_grid"],
+        "deterministic": m["arrangement_deterministic"],
+        "selected_tempo_match_mean": float(np.mean([f["tempo_match"] for f in fits])) if fits else None,
+        "selected_key_match_mean": float(np.mean([f["key_match"] for f in fits])) if fits else None,
+        "selected_seam_mean": float(np.mean([f["seam"] for f in fits])) if fits else None,
+        "master_integrated_lufs": qc["integrated_lufs"],
+        "master_true_peak_dbtp": qc["true_peak_dbtp"],
+        "master_lra_lu": qc["loudness_range_lu"],
+        "dialogue_to_music_lu": m["mix_master"]["dialogue_mix"]["achieved_dmr_lu_median"],
+        "speech_band_margin_db": qc.get("speech_band_masking_margin_db"),
+        "master_warnings": qc["warnings"],
+    }
+
+
 def summarize(manifests):
     rows = []
     for index, m in enumerate(manifests, start=1):
+        if "arrangement" in m:
+            rows.append(_summarize_arranged(index, m))
+            continue
         final = m["final_metrics"]
         opt = m["optimizer"]["metrics"]
         sims = [r.get("motif_similarity") for r in m.get("quality_report", [])
@@ -2335,6 +4487,13 @@ def print_summary(rows, log=print):
     log("=" * 80)
     for row in rows:
         log(f"\nStory {row['story']}: {row['file']}")
+        if row.get("story_aware"):
+            log(f"  {row['style']}")
+            log(f"  {row['tempo_bpm']} BPM, {row['key']}; arc objective {row['final_objective']:.4f}, "
+                f"peak gap {row['revelation_minus_discovery_db']:+.2f} dB")
+            log(f"  Master {row['master_integrated_lufs']:.1f} LUFS, TP {row['master_true_peak_dbtp']:+.2f} dBTP, "
+                f"DMR {row['dialogue_to_music_lu']:.1f} LU, warnings: {row['master_warnings'] or 'none'}")
+            continue
         log(f"  Objective (optimizer / final): {row['optimizer_objective']:.4f} / {row['final_objective']:.4f}")
         log(f"  Discovery: {row['discovery_db']:.2f} dB   Revelation: {row['revelation_db']:.2f} dB")
         log(f"  Revelation - Discovery (optimizer / final): "
@@ -2372,6 +4531,9 @@ def main(argv=None):
                         help="Seed for this whole job (all stories in it). Omit for a fresh "
                              "production job (default); pass an explicit value to reproduce "
                              "a previous job's exact motif/phrases.")
+    parser.add_argument("--legacy-prompts", action="store_true",
+                        help="Use the original fixed V1/V2 prompts and first-valid-take logic "
+                             "instead of the story cue sheet (reproduces the validated benchmark).")
     # parse_known_args: Kaggle/Jupyter pass their own -f argument.
     args, _ = parser.parse_known_args(argv)
 
@@ -2389,7 +4551,8 @@ def main(argv=None):
     for i, path in enumerate(story_files, start=1):
         print(f"{i}. {os.path.basename(path)}")
 
-    manifests = [process_story(i, path, out_root, run_seed) for i, path in enumerate(story_files, start=1)]
+    manifests = [process_story(i, path, out_root, run_seed, story_aware=not args.legacy_prompts)
+                 for i, path in enumerate(story_files, start=1)]
 
     rows = summarize(manifests)
     for row, m in zip(rows, manifests):

@@ -16,13 +16,19 @@
 #
 #   Processing (the dialogue mix + master bus):
 #     - subsonic high-pass on music, rumble high-pass on voice
+#     - stem gain staging: narration to a fixed dialogue anchor, music bed
+#       trimmed relative to it, so the balance never depends on how hot the
+#       TTS or the generator happened to render
+#     - dialogue leveling: a slow phrase rider (evens out loud/quiet lines)
+#       followed by a gentle 3:1 compressor on the narration
 #     - dialogue-to-music-ratio ducking with lookahead (the music moves
 #       BEFORE the line starts, the way a mixer rides the fader), hold
 #       between words so it doesn't pump
 #     - speech-band "carve": a dynamic presence dip in the music only while
 #       the narrator is talking, so less broadband ducking is needed
 #     - loudness normalization to a delivery spec + true-peak lookahead
-#       limiter at the spec's ceiling
+#       limiter at the spec's ceiling (gain solved against ONE limiter pass,
+#       never a stack of limiters)
 #
 # This module is ADDITIVE. scoring_engine.render_score()/measure_score()
 # (the validated optimizer path) and the legacy score_ducked /
@@ -80,8 +86,26 @@ class MixSettings:
     # Filtering.
     music_highpass_hz: float = 30.0
     voice_highpass_hz: float = 70.0
+    # Gain staging. The narration is normalised to a speech-gated anchor and
+    # the score is trimmed so its integrated loudness sits this far under it
+    # BEFORE ducking: between lines the music opens up to anchor - offset,
+    # under lines the ducker takes it the rest of the way to target_dmr_lu.
+    dialogue_anchor_lufs: float = -20.0
+    music_open_lu_below_dialogue: float = 6.0
+    max_music_trim_db: float = 30.0
+    # Dialogue leveling: phrase rider (slow) then compressor (fast).
+    level_window_s: float = 1.0
+    level_max_ride_db: float = 9.0
+    level_smooth_s: float = 0.4
+    comp_threshold_over_speech_db: float = 3.0   # vs median active-frame RMS
+    comp_ratio: float = 3.0
+    comp_knee_db: float = 6.0
+    comp_attack_s: float = 0.005
+    comp_release_s: float = 0.12
+    voice_peak_over_rms_db: float = 11.0          # dialogue peak limiter ceiling (crest)
     # Limiter.
     limiter_window_s: float = 0.015    # +-15 ms lookahead, ~30 ms ramps
+    limiter_release_s: float = 0.08    # recovery after the ramp (no 30 Hz flutter)
 
 
 # QC thresholds. Each one is a widely used engineering rule of thumb,
@@ -371,17 +395,146 @@ def dialogue_duck_curve(voice_mono, music, sr, settings=MixSettings()):
 
 
 # ============================================================
+# STEM GAIN STAGING + DIALOGUE LEVELING
+# ============================================================
+
+def speech_gated_lufs(voice_mono, sr):
+    """Narration loudness as it sits in a stereo mix (dual mono), gated."""
+    weighted = k_weight(as_stereo(voice_mono), sr)
+    power, _ = _block_power(weighted, sr, 0.4, 0.1)
+    return _gated_integrated(power)
+
+
+def _compress(voice, sr, settings, active, times):
+    """Feed-forward soft-knee compressor on 5 ms RMS. The threshold sits
+    comp_threshold_over_speech_db above the narration's own RMS over speech
+    (power average, so pauses inside words don't drag it down), which makes
+    it work on the loud syllables only, the way a dialogue compressor is set.
+    Control signal runs at 1 ms."""
+    hop = max(1, int(round(0.001 * sr)))
+    env = np.sqrt(np.maximum(uniform_filter1d(voice * voice, size=max(1, int(0.005 * sr)), mode="nearest")[::hop], 0.0))
+    level = 20.0 * np.log10(np.maximum(env, 1e-9))
+    ctl_t = np.arange(len(level)) * hop / sr
+    speech = np.interp(ctl_t, times, active.astype(np.float64)) > 0.5
+    if not speech.any():
+        return voice, 0.0
+    speech_rms_db = 10.0 * np.log10(np.mean(env[speech] ** 2) + 1e-18)
+    threshold = speech_rms_db + settings.comp_threshold_over_speech_db
+    over = level - threshold
+    knee = settings.comp_knee_db
+    slope = 1.0 - 1.0 / settings.comp_ratio
+    gr = np.where(over <= -knee / 2, 0.0,
+                  np.where(over >= knee / 2, slope * over,
+                           slope * (over + knee / 2) ** 2 / (2 * knee)))
+    smooth = -_smooth_asymmetric(-gr, hop / sr, settings.comp_attack_s, settings.comp_release_s)
+    gain_db = np.interp(np.arange(len(voice)) / sr, ctl_t, -smooth)
+    return voice * 10.0 ** (gain_db / 20.0), float(np.max(smooth))
+
+
+def _voice_peak_limit(voice, sr, settings, active, times):
+    """Dialogue peak limiter: true peaks held to speech RMS + crest ceiling,
+    so plosives and shouts are caught on the voice stem instead of making
+    the master limiter pump the whole mix."""
+    frame = int(round((times[1] - times[0]) * sr)) if len(times) > 1 else len(voice)
+    n = min(len(active), len(voice) // max(frame, 1))
+    if n == 0 or not active[:n].any():
+        return voice, 0.0
+    power = np.mean(voice[: n * frame].reshape(n, frame) ** 2, axis=1)
+    rms_db = 10.0 * np.log10(np.mean(power[active[:n]]) + 1e-18)
+    ceiling = rms_db + settings.voice_peak_over_rms_db
+    out, gr = true_peak_limit(voice[:, None], sr, ceiling, 0.003, 0.05)
+    return out[:, 0], gr
+
+
+def level_dialogue(voice_mono, sr, settings=MixSettings()):
+    """Ride each phrase toward the anchor (like a vocal rider), compress the
+    peaks, then normalise the narration to settings.dialogue_anchor_lufs."""
+    voice = np.asarray(voice_mono, dtype=np.float64)
+    frame_s = 0.02
+    active, times, _ = speech_activity(voice, sr, frame_s)
+    stats = {"rider_range_db": [0.0, 0.0], "compressor_max_gr_db": 0.0}
+    if not active.any():
+        return voice, stats
+
+    # Phrase rider: speech-only K-weighted level over ~1 s, gaps don't count.
+    weighted = k_weight(voice, sr)[:, 0]
+    frame = int(round(frame_s * sr))
+    nf = len(active)
+    power = np.mean(weighted[: nf * frame].reshape(nf, frame) ** 2, axis=1) * active
+    win = max(1, int(round(settings.level_window_s / frame_s)))
+    num = uniform_filter1d(power, win, mode="nearest")
+    den = uniform_filter1d(active.astype(np.float64), win, mode="nearest")
+    local = _db(num / np.maximum(den, 1e-6))
+    target = float(np.median(local[active]))
+    ride = np.clip(target - local, -settings.level_max_ride_db, settings.level_max_ride_db)
+    # Hold the ride through pauses (no gain moves on breaths / room tone).
+    idx = np.where(active, np.arange(nf), 0)
+    np.maximum.accumulate(idx, out=idx)
+    ride = ride[idx]
+    first = int(np.argmax(active))
+    ride[:first] = ride[first]
+    alpha = math.exp(-frame_s / settings.level_smooth_s)
+    ride = lfilter([1 - alpha], [1, -alpha], ride, zi=[ride[0] * alpha])[0]
+    voice = voice * 10.0 ** (np.interp(np.arange(len(voice)) / sr, times, ride) / 20.0)
+    stats["rider_range_db"] = [float(ride.min()), float(ride.max())]
+
+    voice, comp_gr = _compress(voice, sr, settings, active, times)
+    stats["compressor_max_gr_db"] = comp_gr
+    voice, peak_gr = _voice_peak_limit(voice, sr, settings, active, times)
+    stats["voice_peak_limiter_max_gr_db"] = peak_gr
+    lufs = speech_gated_lufs(voice, sr)
+    if lufs > SILENCE_LUFS:
+        voice = voice * 10.0 ** ((settings.dialogue_anchor_lufs - lufs) / 20.0)
+    return voice, stats
+
+
+def gain_stage_music(music, sr, settings=MixSettings()):
+    """Static trim so the score's integrated loudness sits
+    music_open_lu_below_dialogue under the dialogue anchor. Static, so the
+    score's own arc (the optimizer's section energy) is preserved exactly."""
+    current = integrated_loudness(music, sr)
+    if current <= SILENCE_LUFS:
+        return music, 0.0
+    trim = settings.dialogue_anchor_lufs - settings.music_open_lu_below_dialogue - current
+    trim = float(np.clip(trim, -settings.max_music_trim_db, settings.max_music_trim_db))
+    return music * 10.0 ** (trim / 20.0), trim
+
+
+# ============================================================
 # LIMITER (true-peak aware, lookahead, zero overshoot by construction)
 # ============================================================
 
-def true_peak_limit(audio, sr, ceiling_dbtp, window_s=0.015):
+def _release_hold(gain, sr, release_s, block=64):
+    """Slow the limiter's recovery without ever raising the gain above its
+    input: per block, r = min(block_min(gain), r_prev recovering toward 1).
+    Expanded back as a step per block, so r <= gain at every sample."""
+    if release_s <= 0:
+        return gain
+    n = len(gain)
+    nb = -(-n // block)
+    padded = np.concatenate([gain, np.full(nb * block - n, gain[-1])])
+    blocks = padded.reshape(nb, block).min(axis=1)
+    if blocks.min() >= 1.0:
+        return gain
+    coeff = math.exp(-block / (release_s * sr))
+    out = np.empty(nb)
+    current = 1.0
+    for i, value in enumerate(blocks):
+        current = 1.0 - (1.0 - current) * coeff     # recover toward unity
+        if value < current:
+            current = value
+        out[i] = current
+    return np.repeat(out, block)[:n]
+
+
+def true_peak_limit(audio, sr, ceiling_dbtp, window_s=0.015, release_s=0.08):
     """Lookahead brick-wall limiter driven by the true-peak envelope.
 
-    gain = moving_average_{+-w}( min_{+-w}(required) ). Every value in the
-    average window around a peak is a minimum over a window that contains
-    that peak, so gain <= required there: the ceiling holds by construction,
-    with smooth ~2w ramps in and out (no per-sample gain ripple, which is
-    what makes cheap limiters distort bass)."""
+    gain = moving_average_{+-w}( release( min_{+-w}(required) ) ). Every value
+    in the average window around a peak is <= a minimum over a window that
+    contains that peak, so gain <= required there: the ceiling holds by
+    construction, with smooth ~2w attack ramps and an exponential release
+    (no per-sample gain ripple, no fast flutter on sustained material)."""
     audio = _f64(audio)
     ceiling = 10.0 ** (ceiling_dbtp / 20.0)
     required = np.minimum(1.0, ceiling / np.maximum(true_peak_envelope(audio, sr), 1e-12))
@@ -389,6 +542,7 @@ def true_peak_limit(audio, sr, ceiling_dbtp, window_s=0.015):
         return audio.copy(), 0.0
     size = 2 * max(1, int(round(window_s * sr))) + 1
     gain = minimum_filter1d(required, size=size, mode="nearest")
+    gain = _release_hold(gain, sr, release_s)
     gain = uniform_filter1d(gain, size=size, mode="nearest")
     out = audio * gain[:, None]
     # Resampler ringing can leave a few hundredths of a dB; trim it.
@@ -398,23 +552,37 @@ def true_peak_limit(audio, sr, ceiling_dbtp, window_s=0.015):
     return out, float(-20.0 * np.log10(max(gain.min(), 1e-12)))
 
 
-def master_to_spec(audio, sr, spec, settings=MixSettings()):
-    """Loudness-normalise to spec.integrated_lufs, then true-peak limit.
-    Two passes because limiting lowers integrated loudness slightly."""
+def master_to_spec(audio, sr, spec, settings=MixSettings(), max_iter=8, tol_lu=0.05):
+    """Find the ONE input gain g such that integrated(limit(g * x)) hits the
+    spec, with the limiter always run on the original mix (re-limiting an
+    already limited file stacks distortion and undershoots on peaky
+    narration). Loudness after limiting is monotonic in g, so a secant search
+    on dB converges in a few passes."""
     audio = _f64(audio)
-    max_gr = 0.0
-    out = audio
-    for _ in range(3):
-        current = integrated_loudness(out, sr)
-        if current <= SILENCE_LUFS:
+    start = integrated_loudness(audio, sr)
+    if start <= SILENCE_LUFS:
+        return audio.copy(), 0.0
+
+    def run(gain_db):
+        out, gr = true_peak_limit(audio * 10.0 ** (gain_db / 20.0), sr, spec.true_peak_dbtp,
+                                  settings.limiter_window_s, settings.limiter_release_s)
+        return out, gr, integrated_loudness(out, sr) - spec.integrated_lufs
+
+    g0 = spec.integrated_lufs - start
+    out, gr, err0 = run(g0)
+    best = (abs(err0), out, gr)
+    g1 = g0 - err0
+    for _ in range(max_iter - 1):
+        if best[0] < tol_lu:
             break
-        gain_db = spec.integrated_lufs - current
-        out = out * 10.0 ** (gain_db / 20.0)
-        out, gr = true_peak_limit(out, sr, spec.true_peak_dbtp, settings.limiter_window_s)
-        max_gr = max(max_gr, gr)
-        if abs(integrated_loudness(out, sr) - spec.integrated_lufs) < 0.1:
-            break
-    return out, max_gr
+        out, gr, err1 = run(g1)
+        if abs(err1) < best[0]:
+            best = (abs(err1), out, gr)
+        slope = (err1 - err0) / (g1 - g0) if abs(g1 - g0) > 1e-9 else 1.0
+        slope = min(max(slope, 0.05), 1.0)          # limiter only ever eats gain
+        g0, err0 = g1, err1
+        g1 = g1 - err1 / slope
+    return best[1], best[2]
 
 
 # ============================================================
@@ -567,13 +735,17 @@ def mix_and_master(voice_mono, music, sr, delivery=DEFAULT_DELIVERY, settings=Mi
 
     Returns (master float32 (n, 2), report dict)."""
     spec = DELIVERY_SPECS[delivery] if isinstance(delivery, str) else delivery
-    n = len(voice_mono)
-    music = as_stereo(music)[:n]
-    if len(music) < n:
-        music = np.pad(music, ((0, n - len(music)), (0, 0)))
+    # The score may run past the narration (an outro); never cut it off.
+    music = as_stereo(music)
+    n = max(len(voice_mono), len(music))
+    voice_mono = np.pad(np.asarray(voice_mono, dtype=np.float64), (0, n - len(voice_mono)))
+    music = np.pad(music, ((0, n - len(music)), (0, 0)))
 
     voice = highpass(np.asarray(voice_mono, dtype=np.float64), sr, settings.voice_highpass_hz)[:, 0]
     music = highpass(music, sr, settings.music_highpass_hz)
+    raw_voice_lufs = speech_gated_lufs(voice, sr)
+    voice, level_stats = level_dialogue(voice, sr, settings)
+    music, music_trim_db = gain_stage_music(music, sr, settings)
 
     duck_db, speech_weight, duck_stats = dialogue_duck_curve(voice, music, sr, settings)
     carve_db = -settings.carve_depth_db * speech_weight
@@ -591,6 +763,8 @@ def mix_and_master(voice_mono, music, sr, delivery=DEFAULT_DELIVERY, settings=Mi
     bed_under_speech = np.interp(times[active], bed_times, bed_st) if active.any() else np.array([np.nan])
     duck_stats["achieved_dmr_lu_median"] = float(duck_stats["voice_speech_lufs"] - np.nanmedian(bed_under_speech))
     duck_stats["target_dmr_lu"] = settings.target_dmr_lu
+    duck_stats["gain_staging"] = {"raw_voice_speech_lufs": float(raw_voice_lufs),
+                                  "music_trim_db": music_trim_db, **level_stats}
     duck_stats["carve"] = {"center_hz": settings.carve_center_hz, "q": settings.carve_q,
                            "depth_db": settings.carve_depth_db}
     duck_stats["limiter_max_gain_reduction_db"] = limiter_gr

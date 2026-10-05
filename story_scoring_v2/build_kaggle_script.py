@@ -4,12 +4,13 @@ file for a Kaggle cell — by concatenating the modules in dependency order and
 removing their local-import blocks. The Kaggle file therefore runs exactly the
 same render/measure/optimizer code that the offline replay and tests verify."""
 
+import ast
 import hashlib
 import re
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-MODULES = ["audio_io.py", "run_seed.py", "scoring_engine.py", "story_analysis.py", "music_generation.py", "mix_engineering.py", "pipeline.py"]
+MODULES = ["audio_io.py", "run_seed.py", "scoring_engine.py", "story_analysis.py", "cue_sheet.py", "music_analysis.py", "arrangement.py", "music_generation.py", "mix_engineering.py", "pipeline.py"]
 OUT = HERE / "dist" / "story_generalization_v2_exact_waveform.py"
 
 LOCAL_BLOCK = re.compile(r"# <local-imports>.*?# </local-imports>\n", re.S)
@@ -29,13 +30,23 @@ HEADER = '''# ============================================================
 '''
 
 
+def _aliases(block):
+    """`from m import a as b` inside a local-imports block becomes `b = a`
+    in the single file (the names themselves are already defined there)."""
+    lines = []
+    for node in ast.walk(ast.parse(block)):
+        if isinstance(node, ast.ImportFrom):
+            lines += [f"{a.asname} = {a.name}" for a in node.names if a.asname and a.asname != a.name]
+    return "".join(line + "\n" for line in lines)
+
+
 def build():
     parts = []
     digest = hashlib.sha256()
     for name in MODULES:
         text = (HERE / name).read_text(encoding="utf-8")
         digest.update(text.encode("utf-8"))
-        stripped, count = LOCAL_BLOCK.subn("", text)
+        stripped, count = LOCAL_BLOCK.subn(lambda m: _aliases(m.group(0)), text)
         if name in ("music_generation.py", "pipeline.py") and count != 1:
             raise SystemExit(f"{name}: expected exactly one local-imports block, found {count}")
         if name != "pipeline.py":
