@@ -34,7 +34,8 @@ from music_generation import (
     generate_motif, choose_references, chroma_profile, generate_layer_phrases, OVERHANG_SECONDS,
 )
 from run_seed import generate_run_seed
-from cue_sheet import build_cue_sheet, describe as describe_cue
+from cue_sheet import adopt_motif_tempo_key, build_cue_sheet, describe as describe_cue
+from music_analysis import estimate_key as music_key, estimate_tempo as music_tempo
 from arrangement import arrange_story, plan_grid
 from mix_engineering import mix_and_master, qc_report, format_qc, DEFAULT_DELIVERY, DELIVERY_SPECS
 # </local-imports>
@@ -291,6 +292,15 @@ def process_story(story_index, story_path, out_root, run_seed, log=print, story_
 
     motif, motif_path, prompt, motif_seed, motif_takes = generate_motif(
         story_index, mood, story_dir, run_seed, cue=cue, return_report=True, log=log)
+    if cue is not None:
+        # Every layer is conditioned on the motif, so the grid and layer
+        # prompts follow the motif's measured pulse and key.
+        bpm, conf = music_tempo(motif, SR)
+        tonic, family, _ = music_key(motif, SR)
+        cue = adopt_motif_tempo_key(cue, bpm, conf, tonic, family)
+        log(f"Motif reads {bpm:.1f} BPM (confidence {conf:.2f}), {tonic} {family}: "
+            f"grid {cue.tempo_bpm:g} BPM, {cue.key_label} (story asked {cue.story_tempo_bpm:g} BPM, "
+            f"{cue.story_key_label})")
     references, reference_starts = choose_references(
         motif, None if cue is None else plan_grid(cue).generate_seconds + OVERHANG_SECONDS)
     for i, reference in enumerate(references, start=1):

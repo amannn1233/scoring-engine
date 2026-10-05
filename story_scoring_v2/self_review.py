@@ -227,7 +227,7 @@ def item5_hits(manifest, music, cue, voice_seconds):
     it.partial(1.0 - max(0.0, a["search_objective"] - 3.0) / 12.0, 2,
                f"arc objective (no hits) {a['search_objective']:.2f} (<= 3 full marks)")
     end = len(music) / SR
-    it.check(end >= voice_seconds + g["bar"] - 1e-6 and abs(end / g["bar"] - round(end / g["bar"])) < 1e-6, 1,
+    it.check(end >= voice_seconds + g["bar"] - 1e-6 and abs(end - g["bar"] * round(end / g["bar"])) <= 1.0 / SR, 1,
              f"music runs {end - voice_seconds:.1f}s past the last word and ends on a bar line")
     tail = rms(end - 0.25, end - 0.02)
     it.check(tail < rms(end - 3 * g["bar"], end - 2 * g["bar"]) - 20, 1, f"outro fades to {tail:.0f} dB")
@@ -379,11 +379,18 @@ def main(argv=None):
             segs, dur = stories[name]
             m, music, dur = offline_e2e(name, segs, dur, work)
             runs.append((m, music, dur, cues[name]))
-        m, music, dur, cue = runs[0]
         items.append(item2_prompts(cues, renders))
-        items.append(item3_takes(m, renders))
-        items.append(item4_continuity(m, music, cue))
-        items.append(item5_hits(m, music, cue, dur))
+        # Items 3-5 are scored on every rendered story; the worst one counts.
+        for build in (lambda m, music, dur, cue: item3_takes(m, renders),
+                      lambda m, music, dur, cue: item4_continuity(m, music, cue),
+                      lambda m, music, dur, cue: item5_hits(m, music, cue, dur)):
+            per = []
+            for run in runs:
+                it = build(*run)
+                story = Path(run[0].get("story_file", "story")).stem
+                it.checks = [(ok, w, f"{story}: {text}") for ok, w, text in it.checks]
+                per.append(it)
+            items.append(min(per, key=lambda it: it.score()))
         items.extend(item6_7_8_9_mix())
         items.append(item10_engineering())
     finally:

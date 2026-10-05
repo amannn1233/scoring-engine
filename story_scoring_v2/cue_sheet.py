@@ -384,6 +384,10 @@ class CueSheet:
     section_moods: list           # per-section descriptor words
     hit_points: dict              # name -> seconds
     segment_intensity: list = field(default_factory=list)
+    # What the text asked for, kept when the grid adopts the motif's own
+    # tempo/key (adopt_motif_tempo_key); None until then.
+    story_tempo_bpm: float = None
+    story_key_label: str = None
 
     @property
     def key_label(self):
@@ -393,6 +397,36 @@ class CueSheet:
         d = asdict(self)
         d["key_label"] = self.key_label
         return d
+
+
+def fold_tempo(bpm, hint, lo=60.0, hi=130.0):
+    """The octave (x0.5, x1, x2, x4) of bpm nearest the hint, inside lo..hi."""
+    cands = [bpm * k for k in (0.25, 0.5, 1.0, 2.0, 4.0) if lo <= bpm * k <= hi]
+    if not cands:
+        return float(hint)
+    return float(min(cands, key=lambda b: abs(np.log(b / hint))))
+
+
+def adopt_motif_tempo_key(cue, tempo_bpm, confidence, tonic, family, min_confidence=0.08):
+    """The composer keeps the theme's key and pulse. The model follows the
+    BPM/key words loosely, but every layer is conditioned on the motif, so
+    the bar grid and the layer prompts take the motif's measured tempo and
+    key; the story still decides the mode colour (dorian stays dorian when
+    the motif reads minor-family) and everything else. Returns a new cue."""
+    from dataclasses import replace
+    # Bundled Kaggle file: music_analysis is inlined after this module.
+    mode_family = globals().get("MODE_FAMILY") or __import__("music_analysis").MODE_FAMILY
+    new = replace(cue, story_tempo_bpm=cue.tempo_bpm, story_key_label=cue.key_label)
+    if tempo_bpm > 0 and confidence >= min_confidence:
+        folded = fold_tempo(tempo_bpm, cue.tempo_bpm)
+        # Within 1 % is estimator noise: the motif already sits on the grid.
+        if abs(np.log(folded / cue.tempo_bpm)) > np.log(1.01):
+            new.tempo_bpm = round(folded, 1)
+    fam, _ = mode_family.get(cue.mode, ("minor", 0))
+    new.key = tonic
+    if family != fam:
+        new.mode = "major" if family == "major" else "aeolian"
+    return new
 
 
 def _smooth(values, width):
@@ -591,13 +625,13 @@ BED = "legato, continuous sustained bed, no gaps, no silence"
 def motif_prompt_from_cue(cue):
     p = cue.palette
     return (f"{cue.style}, memorable three-note motif on {p['lead']} over sustained {p['harmony']}, "
-            f"{p['bass']}, {BED}, {cue.tempo_bpm} BPM, {cue.key_label}, no fade out, {NEGATIVE_TAIL}")
+            f"{p['bass']}, {BED}, {cue.tempo_bpm:g} BPM, {cue.key_label}, no fade out, {NEGATIVE_TAIL}")
 
 
 def layer_prompts_from_cue(cue):
     p = cue.palette
     d = cue.descriptors
-    tail = f"{BED}, {cue.tempo_bpm} BPM, {cue.key_label}, steady loop, no fade out, {NEGATIVE_TAIL}"
+    tail = f"{BED}, {cue.tempo_bpm:g} BPM, {cue.key_label}, steady loop, no fade out, {NEGATIVE_TAIL}"
     return {
         "core": (f"{d[0]} {d[-1]} cinematic underscore, same motif on {p['lead']}, sustained "
                  f"{p['harmony']}, {p['bass']}, understated, room for narration, {tail}"),
@@ -612,7 +646,7 @@ def describe(cue):
     """Short human-readable lines for logs/manifests."""
     return [
         f"Style: {cue.style}",
-        f"Tempo/key: {cue.tempo_bpm} BPM, {cue.key_label}",
+        f"Tempo/key: {cue.tempo_bpm:g} BPM, {cue.key_label}",
         "Palette: " + "; ".join(f"{r}={cue.palette[r]}" for r in ROLES),
         f"Motif: {cue.motif}",
         "Arc: " + " ".join(f"{x:.2f}" for x in cue.arc),

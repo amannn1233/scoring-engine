@@ -8,7 +8,7 @@
 #   input  /kaggle/input   (stories 71, 72, 86; WAV preferred; 85 excluded)
 #   output /kaggle/working/story_generalization_v2_exact_waveform/
 #   zip    /kaggle/working/story_generalization_v2_exact_waveform.zip
-# Source digest: fb0ba20f2b9a36cb
+# Source digest: 02188fbea6fa85fb
 # ============================================================
 
 # ##########  audio_io.py  ##########
@@ -1384,6 +1384,10 @@ class CueSheet:
     section_moods: list           # per-section descriptor words
     hit_points: dict              # name -> seconds
     segment_intensity: list = field(default_factory=list)
+    # What the text asked for, kept when the grid adopts the motif's own
+    # tempo/key (adopt_motif_tempo_key); None until then.
+    story_tempo_bpm: float = None
+    story_key_label: str = None
 
     @property
     def key_label(self):
@@ -1393,6 +1397,36 @@ class CueSheet:
         d = asdict(self)
         d["key_label"] = self.key_label
         return d
+
+
+def fold_tempo(bpm, hint, lo=60.0, hi=130.0):
+    """The octave (x0.5, x1, x2, x4) of bpm nearest the hint, inside lo..hi."""
+    cands = [bpm * k for k in (0.25, 0.5, 1.0, 2.0, 4.0) if lo <= bpm * k <= hi]
+    if not cands:
+        return float(hint)
+    return float(min(cands, key=lambda b: abs(np.log(b / hint))))
+
+
+def adopt_motif_tempo_key(cue, tempo_bpm, confidence, tonic, family, min_confidence=0.08):
+    """The composer keeps the theme's key and pulse. The model follows the
+    BPM/key words loosely, but every layer is conditioned on the motif, so
+    the bar grid and the layer prompts take the motif's measured tempo and
+    key; the story still decides the mode colour (dorian stays dorian when
+    the motif reads minor-family) and everything else. Returns a new cue."""
+    from dataclasses import replace
+    # Bundled Kaggle file: music_analysis is inlined after this module.
+    mode_family = globals().get("MODE_FAMILY") or __import__("music_analysis").MODE_FAMILY
+    new = replace(cue, story_tempo_bpm=cue.tempo_bpm, story_key_label=cue.key_label)
+    if tempo_bpm > 0 and confidence >= min_confidence:
+        folded = fold_tempo(tempo_bpm, cue.tempo_bpm)
+        # Within 1 % is estimator noise: the motif already sits on the grid.
+        if abs(np.log(folded / cue.tempo_bpm)) > np.log(1.01):
+            new.tempo_bpm = round(folded, 1)
+    fam, _ = mode_family.get(cue.mode, ("minor", 0))
+    new.key = tonic
+    if family != fam:
+        new.mode = "major" if family == "major" else "aeolian"
+    return new
 
 
 def _smooth(values, width):
@@ -1591,13 +1625,13 @@ BED = "legato, continuous sustained bed, no gaps, no silence"
 def motif_prompt_from_cue(cue):
     p = cue.palette
     return (f"{cue.style}, memorable three-note motif on {p['lead']} over sustained {p['harmony']}, "
-            f"{p['bass']}, {BED}, {cue.tempo_bpm} BPM, {cue.key_label}, no fade out, {NEGATIVE_TAIL}")
+            f"{p['bass']}, {BED}, {cue.tempo_bpm:g} BPM, {cue.key_label}, no fade out, {NEGATIVE_TAIL}")
 
 
 def layer_prompts_from_cue(cue):
     p = cue.palette
     d = cue.descriptors
-    tail = f"{BED}, {cue.tempo_bpm} BPM, {cue.key_label}, steady loop, no fade out, {NEGATIVE_TAIL}"
+    tail = f"{BED}, {cue.tempo_bpm:g} BPM, {cue.key_label}, steady loop, no fade out, {NEGATIVE_TAIL}"
     return {
         "core": (f"{d[0]} {d[-1]} cinematic underscore, same motif on {p['lead']}, sustained "
                  f"{p['harmony']}, {p['bass']}, understated, room for narration, {tail}"),
@@ -1612,7 +1646,7 @@ def describe(cue):
     """Short human-readable lines for logs/manifests."""
     return [
         f"Style: {cue.style}",
-        f"Tempo/key: {cue.tempo_bpm} BPM, {cue.key_label}",
+        f"Tempo/key: {cue.tempo_bpm:g} BPM, {cue.key_label}",
         "Palette: " + "; ".join(f"{r}={cue.palette[r]}" for r in ROLES),
         f"Motif: {cue.motif}",
         "Arc: " + " ".join(f"{x:.2f}" for x in cue.arc),
@@ -2597,6 +2631,11 @@ import sys
 
 import numpy as np
 
+analyse_music = analyse
+music_chroma = chroma
+music_key = estimate_key
+music_tempo = estimate_tempo
+music_grid_lock = grid_lock
 
 
 MAX_ATTEMPTS = 2
@@ -2808,7 +2847,13 @@ def rank_motif(motif, cue):
     # typical level (stabs separated by silence are useless as a bed).
     dead = float(np.mean(lv < np.median(lv) - 20.0)) if len(lv) else 1.0
     info["dead_air_fraction"] = dead
-    info["rank"] = (30.0 * info["tempo_match"] + 20.0 * info["key_match"]
+    # The grid adopts the motif's own tempo/key afterwards, so what matters
+    # is a clear pulse and the story's mode family (minor vs major), not
+    # whether the model obeyed the BPM/key words.
+    fam, _ = MODE_FAMILY.get(cue.mode, ("minor", 0))
+    info["mode_family_match"] = float(info["key"].split()[-1] == fam)
+    info["pulse_clarity"] = float(min(1.0, info["tempo_confidence"] / 0.5))
+    info["rank"] = (30.0 * info["pulse_clarity"] + 20.0 * info["mode_family_match"]
                     + 20.0 * stability + 10.0 * info["fullness"] + 20.0 * usable - 60.0 * dead)
     return info
 
@@ -3978,6 +4023,9 @@ from pathlib import Path
 
 import numpy as np
 
+describe_cue = describe
+music_key = estimate_key
+music_tempo = estimate_tempo
 
 
 PIPELINE_VERSION = "GENERALIZATION_V2_EXACT_WAVEFORM"
@@ -4231,6 +4279,15 @@ def process_story(story_index, story_path, out_root, run_seed, log=print, story_
 
     motif, motif_path, prompt, motif_seed, motif_takes = generate_motif(
         story_index, mood, story_dir, run_seed, cue=cue, return_report=True, log=log)
+    if cue is not None:
+        # Every layer is conditioned on the motif, so the grid and layer
+        # prompts follow the motif's measured pulse and key.
+        bpm, conf = music_tempo(motif, SR)
+        tonic, family, _ = music_key(motif, SR)
+        cue = adopt_motif_tempo_key(cue, bpm, conf, tonic, family)
+        log(f"Motif reads {bpm:.1f} BPM (confidence {conf:.2f}), {tonic} {family}: "
+            f"grid {cue.tempo_bpm:g} BPM, {cue.key_label} (story asked {cue.story_tempo_bpm:g} BPM, "
+            f"{cue.story_key_label})")
     references, reference_starts = choose_references(
         motif, None if cue is None else plan_grid(cue).generate_seconds + OVERHANG_SECONDS)
     for i, reference in enumerate(references, start=1):

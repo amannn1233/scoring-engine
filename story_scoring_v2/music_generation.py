@@ -32,7 +32,9 @@ from scoring_engine import (
 from audio_io import write_audio
 from run_seed import derive_seed
 from cue_sheet import motif_prompt_from_cue, layer_prompts_from_cue
-from music_analysis import analyse as analyse_music, chroma as music_chroma, grid_lock as music_grid_lock
+from music_analysis import (MODE_FAMILY, analyse as analyse_music, chroma as music_chroma,
+                            estimate_key as music_key, estimate_tempo as music_tempo,
+                            grid_lock as music_grid_lock)
 from arrangement import plan_grid
 # </local-imports>
 
@@ -246,7 +248,13 @@ def rank_motif(motif, cue):
     # typical level (stabs separated by silence are useless as a bed).
     dead = float(np.mean(lv < np.median(lv) - 20.0)) if len(lv) else 1.0
     info["dead_air_fraction"] = dead
-    info["rank"] = (30.0 * info["tempo_match"] + 20.0 * info["key_match"]
+    # The grid adopts the motif's own tempo/key afterwards, so what matters
+    # is a clear pulse and the story's mode family (minor vs major), not
+    # whether the model obeyed the BPM/key words.
+    fam, _ = MODE_FAMILY.get(cue.mode, ("minor", 0))
+    info["mode_family_match"] = float(info["key"].split()[-1] == fam)
+    info["pulse_clarity"] = float(min(1.0, info["tempo_confidence"] / 0.5))
+    info["rank"] = (30.0 * info["pulse_clarity"] + 20.0 * info["mode_family_match"]
                     + 20.0 * stability + 10.0 * info["fullness"] + 20.0 * usable - 60.0 * dead)
     return info
 

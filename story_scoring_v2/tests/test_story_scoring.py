@@ -1,3 +1,4 @@
+import pytest
 """Story-aware scoring tests: cue sheet, music analysis, take ranking,
 bar-grid arrangement, story hits and the engineered mix.
 
@@ -227,7 +228,7 @@ def test_story_aware_process_story_end_to_end():
         assert all(max(g, key=lambda r: r["musical_fit"]["rank"])["selected"] for g in groups.values())
         assert len(m["motif"]["takes"]) == MG.MOTIF_TAKES
         # Prompts were the story's own.
-        assert f"{cue['tempo_bpm']} BPM" in m["motif"]["prompt"]
+        assert f"{cue['story_tempo_bpm']:g} BPM" in m["motif"]["prompt"]
         # Arrangement: deterministic, on the grid, runs past the last word.
         assert m["arrangement_deterministic"] and a["search_vs_final_aligned"]
         assert a["music_seconds"] >= dur + a["grid"]["bar"] - 1e-6
@@ -287,3 +288,39 @@ if __name__ == "__main__":
         fn()
         print("PASS", name)
     print(f"{len(tests)} tests passed")
+
+
+def test_grid_adopts_motif_tempo_and_key():
+    from cue_sheet import adopt_motif_tempo_key, build_cue_sheet, fold_tempo
+    assert fold_tempo(176.8, 92) == 88.4
+    assert fold_tempo(107.7, 86) == 107.7
+    segs = [{"text": "She lied to me at the workshop and I found out.", "start": 0.0, "end": 4.0}]
+    cue = build_cue_sheet(segs, 60.0, None)
+    new = adopt_motif_tempo_key(cue, 176.8, 0.3, "F#", "minor")
+    assert new.tempo_bpm == fold_tempo(176.8, cue.tempo_bpm)
+    assert new.key == "F#" and new.story_tempo_bpm == cue.tempo_bpm
+    assert new.story_key_label == cue.key_label
+    assert f"{new.tempo_bpm:g} BPM, F# " in C_layer_prompt(new)
+    weak = adopt_motif_tempo_key(cue, 176.8, 0.01, "F#", "minor")
+    assert weak.tempo_bpm == cue.tempo_bpm            # no clear pulse: keep the story's tempo
+
+
+def C_layer_prompt(cue):
+    from cue_sheet import layer_prompts_from_cue
+    return list(layer_prompts_from_cue(cue).values())[0]
+
+
+def test_kaggle_build_defines_every_name():
+    import subprocess
+    import sys
+    from pathlib import Path
+    here = Path(__file__).resolve().parents[1]
+    subprocess.run([sys.executable, str(here / "build_kaggle_script.py")], check=True, capture_output=True)
+    pyflakes = pytest.importorskip("pyflakes.api")
+    from pyflakes.reporter import Reporter
+    import io
+    out = io.StringIO()
+    pyflakes.check((here / "dist" / "story_generalization_v2_exact_waveform.py").read_text(), "dist",
+                   Reporter(out, out))
+    undefined = [line for line in out.getvalue().splitlines() if "undefined name" in line]
+    assert not undefined, undefined
