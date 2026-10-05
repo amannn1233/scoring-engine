@@ -8,7 +8,7 @@
 #   input  /kaggle/input   (stories 71, 72, 86; WAV preferred; 85 excluded)
 #   output /kaggle/working/story_generalization_v2_exact_waveform/
 #   zip    /kaggle/working/story_generalization_v2_exact_waveform.zip
-# Source digest: 2598bbf38535dd34
+# Source digest: 1c40755eac75e659
 # ============================================================
 
 # ##########  audio_io.py  ##########
@@ -3209,6 +3209,23 @@ def rank_phrase(audio, report, cue):
     return info
 
 
+MAX_EXTRA_PHRASE_TAKES = 2   # extra takes when no valid take is in key yet
+
+
+def _phrase_attempts(attempts, cand, cue):
+    """0..attempts-1, then (story-aware) up to MAX_EXTRA_PHRASE_TAKES more
+    while no valid take matches the key at least as well as the relative
+    major/minor (cand is filled by the caller as takes arrive)."""
+    for attempt in range(attempts):
+        yield attempt
+    if cue is None:
+        return
+    for extra in range(MAX_EXTRA_PHRASE_TAKES):
+        if any(report["valid"] and row["musical_fit"]["key_match"] >= 0.8 for _, report, row in cand):
+            return
+        yield attempts + extra
+
+
 def consensus_key(takes, cue):
     """The key the takes actually share. The model drifts from the motif's
     key, but it drifts together (e.g. F minor / Ab major takes for a motif
@@ -3251,7 +3268,7 @@ def generate_layer_phrases(story_index, mood, references, motif_profile, story_d
             ref_index = (phrase_index + LAYER_REFERENCE_OFFSET[layer]) % len(references)
             reference = references[ref_index]
 
-            for attempt in range(attempts):
+            for attempt in _phrase_attempts(attempts, cand, cue):
                 seed = derive_seed(run_seed, "layer", layer, story_index, phrase_index, attempt)
                 log(f"  phrase {phrase_index + 1}/{PHRASES_PER_LAYER} "
                     f"attempt {attempt + 1}/{attempts} ref={ref_index + 1}")

@@ -224,7 +224,7 @@ def test_story_aware_process_story_end_to_end():
         groups = {}
         for r in m["quality_report"]:
             groups.setdefault((r["layer"], r["phrase"]), []).append(r)
-        assert all(len(g) == MG.PHRASE_TAKES for g in groups.values())
+        assert all(MG.PHRASE_TAKES <= len(g) <= MG.PHRASE_TAKES + MG.MAX_EXTRA_PHRASE_TAKES for g in groups.values())
         assert all(max(g, key=lambda r: r["musical_fit"]["rank"])["selected"] for g in groups.values())
         assert len(m["motif"]["takes"]) == MG.MOTIF_TAKES
         # Prompts were the story's own.

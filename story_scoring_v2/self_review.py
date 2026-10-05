@@ -153,10 +153,15 @@ def item2_prompts(cues, renders=None):
         # no tempo to match (its autocorrelation peak is noise).
         pulsed = [r for r in renders["takes"] if r["tempo_confidence"] >= 0.2]
         tm = [r["tempo_match"] for r in pulsed] or [1.0]
-        km = [r["key_match"] for r in renders["takes"]]
+        # Key: the worse story counts, not the average of both.
+        per_story = {}
+        for r in renders["takes"]:
+            per_story.setdefault(r.get("story", "story"), []).append(r["key_match"])
+        story, km = min(per_story.items(), key=lambda kv: np.mean(kv[1]))
         it.partial(np.mean(tm) / 0.85, 3, f"real renders: tempo match {np.mean(tm):.2f} over the {len(pulsed)} "
                                           f"selected takes with a pulse ({len(renders['takes']) - len(pulsed)} beatless)")
-        it.partial(np.mean(km) / 0.8, 2, f"real renders: selected takes key match {np.mean(km):.2f}")
+        it.partial(np.mean(km) / 0.8, 2, f"real renders: selected takes key match {np.mean(km):.2f} "
+                                         f"(worst story: {story})")
         sus = [r.get("sustain", 0.0) for r in renders["selected"]]
         it.partial(np.mean(sus) / 0.75, 2, f"real renders: selected takes sustain (no model fade-out) {np.mean(sus):.2f}")
     return it
@@ -431,8 +436,8 @@ def main(argv=None):
                 runs.append((m, music, m["duration_seconds"], cue))
             renders = {"selected": [r["musical_fit"] for m, *_ in runs for r in m["quality_report"]
                                     if r.get("selected")],
-                       "takes": [_measure_take(m, r, cue) for m, _, _, cue in runs for r in m["quality_report"]
-                                 if r.get("selected")]}
+                       "takes": [dict(_measure_take(m, r, cue), story=Path(m.get("story_file", "story")).stem)
+                                 for m, _, _, cue in runs for r in m["quality_report"] if r.get("selected")]}
             caps = {}
         else:
             name = list(stories)[0]
