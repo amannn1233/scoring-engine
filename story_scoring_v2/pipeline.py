@@ -28,13 +28,13 @@ from scoring_engine import (
 from audio_io import read_audio, write_audio, resample_mono
 from story_analysis import (
     discover_stories, find_matching_json, load_transcript_json, transcribe_with_whisper,
-    normalize_text, build_story_mood, infer_story_boundaries,
+    normalize_text, build_story_mood, infer_story_boundaries, structural_turn_estimate,
 )
 from music_generation import (
     generate_motif, choose_references, chroma_profile, generate_layer_phrases, OVERHANG_SECONDS,
 )
 from run_seed import generate_run_seed
-from cue_sheet import adopt_motif_tempo_key, build_cue_sheet, describe as describe_cue
+from cue_sheet import adopt_motif_tempo_key, build_cue_sheet, check_turn, describe as describe_cue
 from music_analysis import estimate_key as music_key, estimate_tempo as music_tempo
 from arrangement import arrange_story, plan_grid
 from mix_engineering import mix_and_master, qc_report, format_qc, DEFAULT_DELIVERY, DELIVERY_SPECS
@@ -285,10 +285,13 @@ def process_story(story_index, story_path, out_root, run_seed, log=print, story_
         log(f"  {label:<28}{boundaries[i]:7.2f}s -> {boundaries[i + 1]:7.2f}s")
 
     cue = build_cue_sheet(segments, duration, list(boundaries)) if story_aware else None
+    turn_check = None
     if cue is not None:
         log("Story cue sheet:")
         for line in describe_cue(cue):
             log(f"  {line}")
+        turn_check = check_turn(cue.hit_points["twist"], structural_turn_estimate(segments, duration), duration)
+        log(f"  Turn check: {turn_check['note']}")
 
     motif, motif_path, prompt, motif_seed, motif_takes = generate_motif(
         story_index, mood, story_dir, run_seed, cue=cue, return_report=True, log=log)
@@ -320,6 +323,9 @@ def process_story(story_index, story_path, out_root, run_seed, log=print, story_
         "run_seed": run_seed,
         "transcript_file": transcript_path,
         "transcript_segments": len(segments),
+        # The words the cue sheet read, so the self-review can re-read them.
+        "transcript": [{"start": s["start"], "end": s["end"], "text": s["text"]} for s in segments],
+        "turn_check": turn_check,
         "detected_mood": mood,
         "story_aware": story_aware,
         "cue_sheet": cue.to_dict() if cue is not None else None,
