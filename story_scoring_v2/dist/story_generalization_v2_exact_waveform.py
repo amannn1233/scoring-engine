@@ -8,7 +8,7 @@
 #   input  /kaggle/input   (stories 71, 72, 86; WAV preferred; 85 excluded)
 #   output /kaggle/working/story_generalization_v2_exact_waveform/
 #   zip    /kaggle/working/story_generalization_v2_exact_waveform.zip
-# Source digest: 06db7c75878bf774
+# Source digest: 4f3b785962b94cdf
 # ============================================================
 
 # ##########  audio_io.py  ##########
@@ -1635,10 +1635,10 @@ def layer_prompts_from_cue(cue):
     return {
         "core": (f"{d[0]} {d[-1]} cinematic underscore, same motif on {p['lead']}, sustained "
                  f"{p['harmony']}, {p['bass']}, understated, room for narration, {tail}"),
-        "pressure": (f"{d[min(1, len(d) - 1)]} rising tension, same motif, {p['pulse']} on a tight steady beat, sustained "
+        "pressure": (f"{d[min(1, len(d) - 1)]} rising tension, same motif, {p['pulse']}, sustained "
                      f"{p['harmony']}, {p['bass']}, {p['texture']}, {tail}"),
         "climax": (f"{d[0]} cinematic climax, same motif on {p['lead']}, {p['hits']}, "
-                   f"{p['pulse']} on a tight steady beat, full sustained {p['harmony']}, powerful but controlled, {tail}"),
+                   f"{p['pulse']}, full sustained {p['harmony']}, powerful but controlled, {tail}"),
     }
 
 
@@ -2657,7 +2657,7 @@ music_grid_lock = grid_lock
 
 MAX_ATTEMPTS = 2
 MOTIF_TAKES = 3      # story-aware path: motif candidates ranked, best kept
-PHRASE_TAKES = 3     # story-aware path: takes per phrase, all ranked
+PHRASE_TAKES = 5     # story-aware path: takes per phrase, all ranked (more choice of key and pulse)
 # Real Stable Audio 3 Small renders (CPU test, 2026-10-04) treat the
 # requested duration as a whole piece: they open strong and decay or fade
 # to silence by the end (a 12 s "climax" fell from -20 to -74 dB). So the
@@ -3145,7 +3145,7 @@ def rank_phrase(audio, report, cue):
     from_grid = music_grid_lock(audio, SR, own) if own > 0 else 0.0
     info["grid_lock"] = from_grid
     rank = (report["quality"] + 15.0 * info["seam"] + 15.0 * info["tempo_match"]
-            + 10.0 * info["key_match"] + 5.0 * info["fullness"] + 20.0 * sustain + 20.0 * from_grid)
+            + 25.0 * info["key_match"] + 5.0 * info["fullness"] + 20.0 * sustain + 20.0 * from_grid)
     info["rank"] = float(rank if report["valid"] else rank - 1000.0)
     return info
 

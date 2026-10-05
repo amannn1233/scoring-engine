@@ -53,7 +53,7 @@ def main(argv=None):
     ap.add_argument("--out", required=True)
     ap.add_argument("--stories", default="workshop,undercover",
                     help="comma list from: workshop, undercover")
-    ap.add_argument("--takes", type=int, default=None, help="takes per phrase/motif (default 3)")
+    ap.add_argument("--takes", type=int, default=None, help="takes per phrase/motif (default: 3 motif, 5 phrase)")
     ap.add_argument("--run-seed", type=int, default=2026)
     args = ap.parse_args(argv)
     if args.takes:
@@ -63,6 +63,11 @@ def main(argv=None):
     out.mkdir(parents=True, exist_ok=True)
     all_stories = SR_.load_stories()
     pick = {"workshop": "workshop (85)", "undercover": "undercover (confession)"}
+    import subprocess
+    rev = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=HERE, capture_output=True, text=True).stdout.strip()
+    dirty = subprocess.run(["git", "status", "--porcelain", "--", "."], cwd=HERE, capture_output=True, text=True).stdout.strip()
+    (out / "provenance.json").write_text(json.dumps({"commit": rev, "local_changes": dirty.splitlines()}, indent=1))
+    print(f"code: {rev}{' (LOCAL CHANGES: ' + dirty.replace(chr(10), ', ') + ')' if dirty else ''}")
     t0 = time.time()
     MG.get_music_model()
     print(f"model ready in {time.time() - t0:.0f}s")

@@ -635,10 +635,10 @@ def layer_prompts_from_cue(cue):
     return {
         "core": (f"{d[0]} {d[-1]} cinematic underscore, same motif on {p['lead']}, sustained "
                  f"{p['harmony']}, {p['bass']}, understated, room for narration, {tail}"),
-        "pressure": (f"{d[min(1, len(d) - 1)]} rising tension, same motif, {p['pulse']} on a tight steady beat, sustained "
+        "pressure": (f"{d[min(1, len(d) - 1)]} rising tension, same motif, {p['pulse']}, sustained "
                      f"{p['harmony']}, {p['bass']}, {p['texture']}, {tail}"),
         "climax": (f"{d[0]} cinematic climax, same motif on {p['lead']}, {p['hits']}, "
-                   f"{p['pulse']} on a tight steady beat, full sustained {p['harmony']}, powerful but controlled, {tail}"),
+                   f"{p['pulse']}, full sustained {p['harmony']}, powerful but controlled, {tail}"),
     }
 
 

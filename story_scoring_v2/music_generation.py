@@ -41,7 +41,7 @@ from arrangement import plan_grid
 
 MAX_ATTEMPTS = 2
 MOTIF_TAKES = 3      # story-aware path: motif candidates ranked, best kept
-PHRASE_TAKES = 3     # story-aware path: takes per phrase, all ranked
+PHRASE_TAKES = 5     # story-aware path: takes per phrase, all ranked (more choice of key and pulse)
 # Real Stable Audio 3 Small renders (CPU test, 2026-10-04) treat the
 # requested duration as a whole piece: they open strong and decay or fade
 # to silence by the end (a 12 s "climax" fell from -20 to -74 dB). So the
@@ -529,7 +529,7 @@ def rank_phrase(audio, report, cue):
     from_grid = music_grid_lock(audio, SR, own) if own > 0 else 0.0
     info["grid_lock"] = from_grid
     rank = (report["quality"] + 15.0 * info["seam"] + 15.0 * info["tempo_match"]
-            + 10.0 * info["key_match"] + 5.0 * info["fullness"] + 20.0 * sustain + 20.0 * from_grid)
+            + 25.0 * info["key_match"] + 5.0 * info["fullness"] + 20.0 * sustain + 20.0 * from_grid)
     info["rank"] = float(rank if report["valid"] else rank - 1000.0)
     return info
 
