@@ -32,7 +32,8 @@ from scoring_engine import (
 from audio_io import write_audio
 from run_seed import derive_seed
 from cue_sheet import motif_prompt_from_cue, layer_prompts_from_cue
-from music_analysis import (MODE_FAMILY, analyse as analyse_music, chroma as music_chroma,
+from music_analysis import (MODE_FAMILY, _KEYS as MUSIC_KEYS, key_match as music_key_match,
+                            analyse as analyse_music, chroma as music_chroma,
                             estimate_key as music_key, estimate_tempo as music_tempo,
                             grid_lock as music_grid_lock)
 from arrangement import plan_grid
@@ -536,8 +537,28 @@ def rank_phrase(audio, report, cue):
     return info
 
 
+def consensus_key(takes, cue):
+    """The key the takes actually share. The model drifts from the motif's
+    key, but it drifts together (e.g. F minor / Ab major takes for a motif
+    that read a weak D minor), so pick the key that the most takes agree
+    with (weighted by how clearly each reads), within the story's major or
+    minor colour, the cue's key winning ties.
+    takes: list of (tonic, family, correlation). Returns (tonic, family)."""
+    fam_now, _ = MODE_FAMILY.get(cue.mode, ("minor", 0))
+    best = None
+    for tonic in MUSIC_KEYS:
+        for fam in (fam_now,):            # the story's major/minor colour is kept
+            mode = "major" if fam == "major" else "aeolian"
+            score = sum(max(0.0, r) * music_key_match(t, f, tonic, mode) for t, f, r in takes)
+            if tonic == cue.key and fam == fam_now:
+                score += 0.25
+            if best is None or score > best[0]:
+                best = (score, tonic, fam)
+    return best[1], best[2]
+
+
 def generate_layer_phrases(story_index, mood, references, motif_profile, story_dir, run_seed, log=print,
-                           cue=None, takes=None):
+                           cue=None, takes=None, return_cue=False):
     prompts = layer_prompts(mood) if cue is None else layer_prompts_from_cue(cue)
     attempts = MAX_ATTEMPTS if cue is None else (PHRASE_TAKES if takes is None else int(takes))
     # Story-aware phrases are a whole number of bars (+ crossfade beat and
@@ -548,11 +569,13 @@ def generate_layer_phrases(story_index, mood, references, motif_profile, story_d
     layer_phrases = {name: [] for name in LAYER_NAMES}
     quality_rows = []
     provider = get_provider()
+    candidates = {}
 
     for layer in LAYER_NAMES:
         log(f"\nGenerating {layer}...")
         for phrase_index in range(PHRASES_PER_LAYER):
             best_audio, best_score, best_row, accepted = None, None, None, False
+            cand = []
             ref_index = (phrase_index + LAYER_REFERENCE_OFFSET[layer]) % len(references)
             reference = references[ref_index]
 
@@ -580,6 +603,8 @@ def generate_layer_phrases(story_index, mood, references, motif_profile, story_d
                         row["musical_fit"] = fit
                         score = fit["rank"]
                     quality_rows.append(row)
+                    if cue is not None:
+                        cand.append((generated, report, row))
                     log(f"    quality={report['quality']:.1f} "
                         f"valley={report.get('local_valley_db', float('nan')):.1f}dB "
                         f"motif={_fmt_similarity(report.get('motif_similarity'))}"
@@ -599,9 +624,48 @@ def generate_layer_phrases(story_index, mood, references, motif_profile, story_d
                 raise RuntimeError(f"No candidate for {layer} phrase {phrase_index + 1}")
             if not accepted:
                 log("    fallback to best candidate")
+            if cue is not None:
+                candidates[(layer, phrase_index)] = cand
+                continue
             best_row["selected"] = True
 
             write_audio(story_dir / f"{layer}_phrase_{phrase_index + 1:02d}.wav", best_audio, SR)
             layer_phrases[layer].append(best_audio)
 
+    if cue is not None:
+        cue = _select_on_consensus_key(candidates, cue, story_dir, layer_phrases, log)
+    if return_cue:
+        return layer_phrases, quality_rows, cue
     return layer_phrases, quality_rows
+
+
+def _select_on_consensus_key(candidates, cue, story_dir, layer_phrases, log):
+    """Re-rank every take against the key the takes share, then keep the
+    best per phrase (story-aware path)."""
+    from dataclasses import replace
+    reads = []
+    for cand in candidates.values():
+        pool = [c for c in cand if c[1]["valid"]] or cand
+        for _, _, row in pool:
+            t, f = row["musical_fit"]["key"].split()
+            reads.append((t, f, row["musical_fit"]["key_correlation"]))
+    tonic, fam = consensus_key(reads, cue)
+    fam_now, _ = MODE_FAMILY.get(cue.mode, ("minor", 0))
+    mode = cue.mode if fam == fam_now else ("major" if fam == "major" else "aeolian")
+    if (tonic, mode) != (cue.key, cue.mode):
+        log(f"Takes share {tonic} {fam}: key {cue.key_label} -> {tonic} {mode}")
+        cue = replace(cue, key=tonic, mode=mode,
+                      story_key_label=cue.story_key_label or cue.key_label)
+    for layer in LAYER_NAMES:
+        for phrase_index in range(PHRASES_PER_LAYER):
+            best = None
+            for audio, report, row in candidates[(layer, phrase_index)]:
+                window = row["musical_fit"].get("window_start_s", 0.0)
+                row["musical_fit"] = rank_phrase(audio, report, cue)
+                row["musical_fit"]["window_start_s"] = window
+                if best is None or row["musical_fit"]["rank"] > best[2]["musical_fit"]["rank"]:
+                    best = (audio, report, row)
+            best[2]["selected"] = True
+            write_audio(story_dir / f"{layer}_phrase_{phrase_index + 1:02d}.wav", best[0], SR)
+            layer_phrases[layer].append(best[0])
+    return cue

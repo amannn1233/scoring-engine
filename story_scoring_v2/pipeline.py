@@ -307,9 +307,13 @@ def process_story(story_index, story_path, out_root, run_seed, log=print, story_
         write_audio(story_dir / f"reference_{i:02d}.wav", reference, SR)
     motif_profile = chroma_profile(motif, numpy_fallback=cue is not None)
 
-    layer_phrases, quality_rows = generate_layer_phrases(
-        story_index, mood, references, motif_profile, story_dir, run_seed, log=log, cue=cue
-    )
+    if cue is None:
+        layer_phrases, quality_rows = generate_layer_phrases(
+            story_index, mood, references, motif_profile, story_dir, run_seed, log=log)
+    else:
+        layer_phrases, quality_rows, cue = generate_layer_phrases(
+            story_index, mood, references, motif_profile, story_dir, run_seed, log=log, cue=cue,
+            return_cue=True)
 
     manifest_base = {
         "story_file": str(story_path),

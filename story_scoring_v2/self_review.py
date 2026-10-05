@@ -175,8 +175,17 @@ def item3_takes(manifest, renders=None):
     it.check(len(motif_takes) >= 3, 1, f"{len(motif_takes)} motif takes ranked")
     sel = [r["musical_fit"] for r in rows if r.get("selected")]
     allr = [r["musical_fit"] for r in rows]
-    it.check(np.mean([s["tempo_match"] for s in sel]) >= np.mean([a["tempo_match"] for a in allr]) - 1e-9, 1,
-             "selected takes match tempo at least as well as the average take")
+    # Tempo readings only mean something for takes with a pulse.
+    sel_p = [s for s in sel if s.get("tempo_confidence", 1.0) >= 0.2]
+    all_p = [a for a in allr if a.get("tempo_confidence", 1.0) >= 0.2]
+    if sel_p and all_p:
+        it.check(np.mean([s["tempo_match"] for s in sel_p]) >= np.mean([a["tempo_match"] for a in all_p]) - 1e-9, 1,
+                 "selected takes match tempo at least as well as the average take (takes with a pulse)")
+    else:
+        it.check(True, 1, "takes are beatless: tempo selection n/a")
+    it.check(np.mean([s["key_match"] for s in sel]) >= np.mean([a["key_match"] for a in allr]) - 1e-9, 1,
+             f"selected takes match key at least as well as the average take "
+             f"({np.mean([s['key_match'] for s in sel]):.2f} vs {np.mean([a['key_match'] for a in allr]):.2f})")
     it.check(np.mean([s["seam"] for s in sel]) >= np.mean([a["seam"] for a in allr]) - 1e-9, 1,
              f"selected seam {np.mean([s['seam'] for s in sel]):.2f} >= average {np.mean([a['seam'] for a in allr]):.2f}")
     sims = [r.get("motif_similarity") for r in rows]

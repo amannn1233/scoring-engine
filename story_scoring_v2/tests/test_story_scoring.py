@@ -324,3 +324,24 @@ def test_kaggle_build_defines_every_name():
                    Reporter(out, out))
     undefined = [line for line in out.getvalue().splitlines() if "undefined name" in line]
     assert not undefined, undefined
+
+
+def test_consensus_key_follows_the_takes_within_the_story_colour():
+    from cue_sheet import build_cue_sheet
+    from dataclasses import replace
+    from music_generation import consensus_key
+    segs = [{"text": "She lied to me at the workshop and I found out.", "start": 0.0, "end": 4.0}]
+    cue = replace(build_cue_sheet(segs, 60.0, None), key="D", mode="aeolian")
+    reads = [("F", "minor", 0.7)] * 5 + [("Ab", "major", 0.6)] * 3 + [("D", "minor", 0.4)]
+    assert consensus_key(reads, cue) == ("F", "minor")
+    assert consensus_key([("D", "minor", 0.5), ("F", "major", 0.5)], cue) == ("D", "minor")
+
+
+def test_kaggle_build_has_no_function_level_imports_of_bundled_modules():
+    import re
+    from pathlib import Path
+    here = Path(__file__).resolve().parents[1]
+    text = (here / "dist" / "story_generalization_v2_exact_waveform.py").read_text()
+    mods = "audio_io|run_seed|scoring_engine|story_analysis|cue_sheet|music_analysis|arrangement|music_generation|mix_engineering|pipeline"
+    bad = re.findall(rf"^\s+(?:from ({mods}) import|import ({mods})\b)", text, re.M)
+    assert not bad, bad

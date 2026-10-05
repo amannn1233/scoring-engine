@@ -637,7 +637,7 @@ def layer_prompts_from_cue(cue):
                  f"{p['harmony']}, {p['bass']}, understated, room for narration, {tail}"),
         "pressure": (f"{d[min(1, len(d) - 1)]} rising tension, same motif, {p['pulse']}, sustained "
                      f"{p['harmony']}, {p['bass']}, {p['texture']}, {tail}"),
-        "climax": (f"{d[0]} cinematic climax, same motif on {p['lead']}, {p['hits']}, "
+        "climax": (f"{d[0]} cinematic climax, same motif on {p['lead']}, "
                    f"{p['pulse']}, full sustained {p['harmony']}, powerful but controlled, {tail}"),
     }
 
