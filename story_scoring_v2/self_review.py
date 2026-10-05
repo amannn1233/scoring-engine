@@ -37,6 +37,9 @@ from arrangement import plan_grid, snap  # noqa: E402
 
 REPO = HERE.parent
 OFFLINE_CAPS = {2: 8, 3: 9, 4: 8, 5: 8}
+# A score built to the wrong moment is not a good score however clean the
+# mix is: when a story's twist fails both turn checks, the total is capped.
+TURN_GATE_CAP = 70.0
 SR = 44100
 
 
@@ -74,6 +77,8 @@ def load_stories():
         segs.append({"text": sent, "start": t, "end": t + dur})
         t += dur
     stories["undercover (confession)"] = (segs, t)
+    d = json.load(open(REPO / "292_transcript_whisper.json"))
+    stories["title office (292)"] = (SA.normalize_text(d["segments"]), float(d["duration_sec"]))
     return stories
 
 
@@ -126,7 +131,9 @@ def item1_vibe(stories, cues):
     for name, cue in cues.items():
         segs, dur = stories[name]
         hp = cue.hit_points
-        it.check(0.35 * dur <= hp["twist"] < hp["climax"], 1, f"{name}: twist {hp['twist']:.0f}s before climax")
+        it.check(0.35 * dur <= hp["twist"] <= hp["climax"], 1, f"{name}: twist {hp['twist']:.0f}s at or before climax")
+        tc = C.check_turn(hp["twist"], SA.structural_turn_estimate(segs, dur), dur)
+        it.partial(tc["credit"], 1, f"{name}: {tc['note']}")
         it.check(0.45 * dur <= hp["climax"] <= 0.93 * dur, 1, f"{name}: climax at {100 * hp['climax'] / dur:.0f}%")
         it.check(60 <= cue.tempo_bpm <= 118 and cue.mode in A.MODE_FAMILY, 1,
                  f"{name}: {cue.tempo_bpm} BPM {cue.key_label}")
@@ -268,7 +275,45 @@ def item4_continuity(manifest, music, cue):
     return it
 
 
-def item5_hits(manifest, music, cue, voice_seconds):
+def story_transcript(manifest, transcripts_dir=None):
+    """The segments the run read: stored in the manifest by current runs,
+    else <story stem>.json (or _transcript/_clean) in transcripts_dir."""
+    if manifest.get("transcript"):
+        return SA.normalize_text(manifest["transcript"])
+    stem = Path(manifest.get("story_file", "")).stem
+    for folder in [transcripts_dir, Path(manifest.get("story_file", "")).parent]:
+        if not folder:
+            continue
+        for suffix in (".json", "_transcript.json", "_clean.json", "_transcript_whisper.json"):
+            path = Path(folder) / f"{stem}{suffix}"
+            if path.exists():
+                return SA.normalize_text(SA.load_transcript_json(str(path)))
+    return []
+
+
+def turn_checks(it, cue, segments, duration, bar):
+    """The music's twist must be where the story turns. A run whose cue
+    sheet was hand-set, stale, or misread must not pass on its own say-so:
+    the transcript is re-read with the current reader, and the twist is
+    cross-checked against story_analysis's independent estimate. Without a
+    transcript neither can be verified, and both fail."""
+    twist = cue.hit_points["twist"]
+    if not segments:
+        it.check(False, 2, "twist can't be verified: no transcript in the manifest or --transcripts")
+        it.check(False, 2, "no independent turn estimate without a transcript")
+        it.gate = f"twist {twist:.1f}s could not be verified (no transcript)"
+        return
+    reread = C.build_cue_sheet(segments, duration,
+                               list(SA.infer_story_boundaries(segments, duration))).hit_points["twist"]
+    it.check(abs(reread - twist) <= bar + 1e-6, 2,
+             f"twist {twist:.1f}s = the transcript's own twist on a fresh read {reread:.1f}s (within a bar)")
+    tc = C.check_turn(twist, SA.structural_turn_estimate(segments, duration), duration)
+    it.partial(tc["credit"], 2, tc["note"])
+    if abs(reread - twist) > bar + 1e-6 and tc["credit"] < 0.5:
+        it.gate = f"twist {twist:.1f}s, but the story turns at {reread:.1f}s"
+
+
+def item5_hits(manifest, music, cue, voice_seconds, segments=None):
     it = Item(5, "Story hits land (build, breath, turn, aftermath, outro)")
     a = manifest["arrangement"]
     g, b = a["grid"], a["boundaries"]
@@ -276,6 +321,7 @@ def item5_hits(manifest, music, cue, voice_seconds):
     it.check(on_bar, 1, "all section boundaries on bar lines")
     it.check(abs(b[5] - cue.hit_points["twist"]) <= g["bar"] * 0.51 + 1e-6, 2,
              f"turn at {b[5]:.1f}s = story twist {cue.hit_points['twist']:.1f}s (within half a bar)")
+    turn_checks(it, cue, segments, voice_seconds, g["bar"])
     mono = music.mean(axis=1)
 
     def rms(t0, t1):
@@ -412,6 +458,8 @@ def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--renders", help="folder with real story_*/manifest.json output")
     ap.add_argument("--json", help="write the scores here")
+    ap.add_argument("--transcripts", help="folder with <story>.json transcripts, for manifests that "
+                                          "predate the stored transcript")
     args = ap.parse_args(argv)
 
     stories = load_stories()
@@ -424,7 +472,7 @@ def main(argv=None):
     renders = None
     work = Path(tempfile.mkdtemp(prefix="self_review_"))
     try:
-        runs = []
+        runs, gates = [], []
         if args.renders:
             from audio_io import read_audio
             for mpath in sorted(Path(args.renders).rglob("manifest.json")):
@@ -433,27 +481,29 @@ def main(argv=None):
                     continue
                 music, _ = read_audio(m["files"]["raw"])
                 cue = C.CueSheet(**{k: v for k, v in m["cue_sheet"].items() if k != "key_label"})
-                runs.append((m, music, m["duration_seconds"], cue))
+                runs.append((m, music, m["duration_seconds"], cue, story_transcript(m, args.transcripts)))
             renders = {"selected": [r["musical_fit"] for m, *_ in runs for r in m["quality_report"]
                                     if r.get("selected")],
                        "takes": [dict(_measure_take(m, r, cue), story=Path(m.get("story_file", "story")).stem)
-                                 for m, _, _, cue in runs for r in m["quality_report"] if r.get("selected")]}
+                                 for m, _, _, cue, _ in runs for r in m["quality_report"] if r.get("selected")]}
             caps = {}
         else:
             name = list(stories)[0]
             segs, dur = stories[name]
             m, music, dur = offline_e2e(name, segs, dur, work)
-            runs.append((m, music, dur, cues[name]))
+            runs.append((m, music, dur, cues[name], segs))
         items.append(item2_prompts(cues, renders))
         # Items 3-5 are scored on every rendered story; the worst one counts.
-        for build in (lambda m, music, dur, cue: item3_takes(m, renders),
-                      lambda m, music, dur, cue: item4_continuity(m, music, cue),
-                      lambda m, music, dur, cue: item5_hits(m, music, cue, dur)):
+        for build in (lambda m, music, dur, cue, segs: item3_takes(m, renders),
+                      lambda m, music, dur, cue, segs: item4_continuity(m, music, cue),
+                      lambda m, music, dur, cue, segs: item5_hits(m, music, cue, dur, segs)):
             per = []
             for run in runs:
                 it = build(*run)
                 story = Path(run[0].get("story_file", "story")).stem
                 it.checks = [(ok, w, f"{story}: {text}") for ok, w, text in it.checks]
+                if getattr(it, "gate", None):
+                    gates.append(f"{story}: {it.gate}")
                 per.append(it)
             items.append(min(per, key=lambda it: it.score()))
         items.extend(item6_7_8_9_mix())
@@ -475,10 +525,13 @@ def main(argv=None):
         out.append({"item": it.number, "title": it.title, "score": sc, "cap": cap,
                     "checks": [{"result": ok if isinstance(ok, bool) else float(ok), "weight": w, "text": t}
                                for ok, w, t in it.checks]})
+    if gates:
+        total = min(total, TURN_GATE_CAP)
+        print(f"\nTURN MISPLACED, total capped at {TURN_GATE_CAP:g}: " + "; ".join(gates))
     print(f"\nTOTAL: {total:.1f}/100" + ("" if args.renders else
           f"   (offline ceiling {100 - sum(10 - c for c in OFFLINE_CAPS.values())})"))
     if args.json:
-        json.dump({"total": total, "items": out}, open(args.json, "w"), indent=2)
+        json.dump({"total": total, "turn_gate": gates, "items": out}, open(args.json, "w"), indent=2)
     return total
 
 

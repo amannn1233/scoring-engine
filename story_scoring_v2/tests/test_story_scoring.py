@@ -41,7 +41,9 @@ def _stories():
         dur = len(sent.split()) / 2.7
         segs.append({"text": sent, "start": t, "end": t + dur})
         t += dur
-    return {"workshop": workshop, "undercover": (segs, t)}
+    d = json.load(open(REPO / "292_transcript_whisper.json"))
+    title_office = (SA.normalize_text(d["segments"]), float(d["duration_sec"]))
+    return {"workshop": workshop, "undercover": (segs, t), "title_office": title_office}
 
 
 STORIES = _stories()
@@ -104,6 +106,83 @@ def test_prompts_carry_tempo_key_and_palette():
 def test_empty_transcript_still_gives_a_cue():
     cue = C.build_cue_sheet([], 40.0)
     assert 60 <= cue.tempo_bpm <= 118 and len(cue.arc) == 7
+
+
+def _line(story, words):
+    return next(s["start"] for s in STORIES[story][0] if words in s["text"])
+
+
+def test_late_reveal_is_the_twist_not_the_midpoint_rise():
+    # 292: a cold open, a flashback, then the reveal at the title office
+    # (89 % in). The old reader found the climax first and forced the twist
+    # before it, landing on the biggest rise at 98 s.
+    hp = CUES["title_office"].hit_points
+    assert abs(hp["twist"] - _line("title_office", "county shows this property")) < 1.0
+    assert hp["twist"] <= hp["climax"] <= hp["resolution"] <= hp["end"]
+
+
+def test_betrayal_story_does_not_read_as_cheeky():
+    # "my father's store" seven times, a husband who "laughed and called it
+    # the best joke of his life", and "Nobody laughed" at the end: a tense
+    # small-town betrayal, not a warm comedy with rock drums.
+    cue = CUES["title_office"]
+    assert cue.descriptors[0] == "tense"
+    assert not set(cue.descriptors) & {"tender", "warm", "heartfelt", "wry", "playful", "cheeky"}
+    assert "dusty americana edge" in cue.style
+    assert cue.palette["hits"] != "driving rock drums" and cue.palette["pulse"] != "light shaker groove"
+    assert "guitar" not in cue.palette["lead"]
+
+
+def test_negated_and_topic_words_colour_less():
+    assert C.segment_features("Nobody laughed.")["colour"]["playfulness"] == 0
+    assert C.segment_features("She laughed.")["colour"]["playfulness"] > 0
+    father = C.segment_features("He sold my father's store.")["colour"]["warmth"]
+    hug = C.segment_features("He hugged me in the store.")["colour"]["warmth"]
+    assert 0 < father < hug
+    assert C.segment_features("$50,000 due in 10 days.")["colour"]["pressure"] > 0
+
+
+def test_twist_survives_resegmentation():
+    # Whisper splits lines differently run to run; merging pairs of lines
+    # must not move the twist more than one merged line.
+    for story, (segs, dur) in STORIES.items():
+        merged = [{"text": " ".join(x["text"] for x in segs[i:i + 2]), "start": segs[i]["start"],
+                   "end": segs[min(i + 1, len(segs) - 1)]["end"]} for i in range(0, len(segs), 2)]
+        cue = C.build_cue_sheet(merged, dur, list(SA.infer_story_boundaries(merged, dur)))
+        assert abs(cue.hit_points["twist"] - CUES[story].hit_points["twist"]) < 4.0, story
+
+
+def test_independent_turn_estimate_agrees_and_flags_a_misplaced_twist():
+    for story, (segs, dur) in STORIES.items():
+        est = SA.structural_turn_estimate(segs, dur)
+        check = C.check_turn(CUES[story].hit_points["twist"], est, dur)
+        assert check["agree"] and check["credit"] == 1.0, (story, check["note"])
+    segs, dur = STORIES["title_office"]
+    wrong = C.check_turn(98.3, SA.structural_turn_estimate(segs, dur), dur)   # the Kaggle run's twist
+    assert wrong["credit"] == 0.0 and not wrong["agree"]
+    assert SA.structural_turn_estimate(segs[:5], dur) is None
+
+
+def test_arc_is_measured_on_the_turn():
+    b = C.turn_aligned_boundaries([0, 10, 20, 30, 40, 50, 60, 100], {"twist": 85.0, "resolution": 92.0},
+                                  100.0, tempo_bpm=120)
+    assert b[5] == 85.0 and b[6] == 92.0 and b[3] < b[4] < b[5] and b[7] == 100.0
+
+
+def test_self_review_caps_a_misplaced_twist():
+    import self_review as R
+    segs, dur = STORIES["title_office"]
+    wrong = R.Item(5, "hits")
+    R.turn_checks(wrong, C.CueSheet(**{**CUES["title_office"].__dict__,
+                                       "hit_points": {**CUES["title_office"].hit_points, "twist": 98.3}}),
+                  segs, dur, bar=2.2)
+    assert getattr(wrong, "gate", None) and wrong.score() < 5
+    right = R.Item(5, "hits")
+    R.turn_checks(right, CUES["title_office"], segs, dur, bar=2.2)
+    assert not getattr(right, "gate", None) and right.score() == 10
+    blind = R.Item(5, "hits")
+    R.turn_checks(blind, CUES["title_office"], [], dur, bar=2.2)
+    assert getattr(blind, "gate", None)
 
 
 # ============================================================

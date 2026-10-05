@@ -1,0 +1,341 @@
+{
+ "source": "292.wav, faster-whisper base.en (int8, CPU), 2026-10-05",
+ "duration_sec": 165.79,
+ "segments": [
+  {
+   "start": 0.0,
+   "end": 3.1,
+   "text": "A man on a ladder was unscrewing my father's name from the hardware store."
+  },
+  {
+   "start": 3.1,
+   "end": 5.54,
+   "text": "That sign had hung over Main Street for 41 years."
+  },
+  {
+   "start": 5.54,
+   "end": 8.94,
+   "text": "I studied the ladder while my husband laughed and called it the best joke of his life."
+  },
+  {
+   "start": 8.94,
+   "end": 11.4,
+   "text": "By his truck, a man in a gray suit checked his watch and muttered,"
+  },
+  {
+   "start": 11.4,
+   "end": 14.86,
+   "text": "Friday, every winter morning, my husband had scraped my windshield before I woke."
+  },
+  {
+   "start": 14.86,
+   "end": 19.62,
+   "text": "Now he stood on the sidewalk in his good shirt, rocking on his heels like a man waiting for a parade through the window."
+  },
+  {
+   "start": 19.62,
+   "end": 22.72,
+   "text": "The old man at the register rang up a can of paint in his church tie."
+  },
+  {
+   "start": 22.72,
+   "end": 24.36,
+   "text": "The brass letters came off one at a time."
+  },
+  {
+   "start": 24.36,
+   "end": 26.82,
+   "text": "The brick behind them was a brighter red than the rest of the wall."
+  },
+  {
+   "start": 26.82,
+   "end": 28.8,
+   "text": "Down the block, the barber stopped sweeping to watch."
+  },
+  {
+   "start": 28.8,
+   "end": 30.86,
+   "text": "The man in the gray suit handed my husband a folder."
+  },
+  {
+   "start": 30.86,
+   "end": 33.18,
+   "text": "10 o'clock tomorrow, Brent, he said, title office."
+  },
+  {
+   "start": 33.18,
+   "end": 35.52,
+   "text": "Bring your wife. Brent kissed the top of my head. I led him."
+  },
+  {
+   "start": 35.52,
+   "end": 38.98,
+   "text": "My father opened that store before I was born and put me on the key machine at 12."
+  },
+  {
+   "start": 38.98,
+   "end": 41.98,
+   "text": "Cut one. Test one, he used to say. He died two winters ago."
+  },
+  {
+   "start": 41.98,
+   "end": 44.02,
+   "text": "And the building came to me. Brent called it dead weight."
+  },
+  {
+   "start": 44.02,
+   "end": 46.26,
+   "text": "Every Sunday over breakfast, he gave the same speech."
+  },
+  {
+   "start": 46.26,
+   "end": 48.3,
+   "text": "Sell it, Dana. Even house has the places dying."
+  },
+  {
+   "start": 48.3,
+   "end": 51.86,
+   "text": "I said no every time. How had worked the floor since before I could reach the counter."
+  },
+  {
+   "start": 51.86,
+   "end": 53.54,
+   "text": "And the others had been there nearly as long."
+  },
+  {
+   "start": 53.54,
+   "end": 55.54,
+   "text": "Then one Sunday in March, Brent sat down as four."
+  },
+  {
+   "start": 55.54,
+   "end": 58.06,
+   "text": "You're right, he said. I'm sorry. He never raised the store again."
+  },
+  {
+   "start": 58.06,
+   "end": 59.94,
+   "text": "That same Thursday before the ladder came."
+  },
+  {
+   "start": 59.94,
+   "end": 63.58,
+   "text": "Hell found me in the stockroom with one hand resting on the folded dollar in his shirt pocket."
+  },
+  {
+   "start": 63.58,
+   "end": 65.86,
+   "text": "He told the staff, the signs going to the painter, he said."
+  },
+  {
+   "start": 65.86,
+   "end": 67.74,
+   "text": "He told the sign men, it's going to the dumpster."
+  },
+  {
+   "start": 67.74,
+   "end": 69.64,
+   "text": "I went back out front and waited for the ladder."
+  },
+  {
+   "start": 69.64,
+   "end": 72.82,
+   "text": "12 days earlier, on a morning Brent had already scraped my windshield clear."
+  },
+  {
+   "start": 72.82,
+   "end": 74.64,
+   "text": "I opened his glove box for a tire gauge."
+  },
+  {
+   "start": 74.64,
+   "end": 79.72,
+   "text": "Under it sat a purchase agreement from my father's building, $640,000 closing Friday at 10."
+  },
+  {
+   "start": 79.72,
+   "end": 82.68,
+   "text": "My name was signed across the bottom. In handwriting, that was almost mine."
+  },
+  {
+   "start": 82.68,
+   "end": 86.92,
+   "text": "Behind it was a receipt for $50,000 of earnest money signed for by Brent as my agent."
+  },
+  {
+   "start": 86.92,
+   "end": 88.12,
+   "text": "Non-refundable, it said."
+  },
+  {
+   "start": 88.12,
+   "end": 89.92,
+   "text": "And the buyer's remedy ran against the seller."
+  },
+  {
+   "start": 89.92,
+   "end": 92.32,
+   "text": "That was me. The money had already gone to a marina in Florida."
+  },
+  {
+   "start": 92.32,
+   "end": 96.38,
+   "text": "Staple to the back, a site plan showed a drive through pharmacy where my father's key machines did."
+  },
+  {
+   "start": 96.38,
+   "end": 98.12,
+   "text": "I read every page standing in the driveway."
+  },
+  {
+   "start": 98.12,
+   "end": 99.92,
+   "text": "Then I put them back exactly as I'd found them."
+  },
+  {
+   "start": 99.92,
+   "end": 101.72,
+   "text": "My lawyer laid it out at her kitchen table."
+  },
+  {
+   "start": 101.72,
+   "end": 104.72,
+   "text": "If I refused Friday, the buyer would sue the only maim on the contract."
+  },
+  {
+   "start": 104.72,
+   "end": 107.12,
+   "text": "If I signed, the pharmacy would rise on my father's floor."
+  },
+  {
+   "start": 107.12,
+   "end": 110.02,
+   "text": "She slid a third option across the table and told me what it would cost."
+  },
+  {
+   "start": 110.02,
+   "end": 112.02,
+   "text": "I asked the person I trusted most for a favor."
+  },
+  {
+   "start": 112.02,
+   "end": 113.82,
+   "text": "He said, yes, before I finished asking."
+  },
+  {
+   "start": 113.82,
+   "end": 115.82,
+   "text": "That was why I studied the ladder on Thursday."
+  },
+  {
+   "start": 115.82,
+   "end": 118.12,
+   "text": "A man who believes he has won stops checking the paperwork."
+  },
+  {
+   "start": 118.12,
+   "end": 119.52,
+   "text": "The county office closed at five."
+  },
+  {
+   "start": 119.52,
+   "end": 122.12,
+   "text": "The clerk had stamped my father's permits for most of my life."
+  },
+  {
+   "start": 122.12,
+   "end": 124.62,
+   "text": "I held the pen over the last line until she cleared her throat."
+  },
+  {
+   "start": 124.62,
+   "end": 128.02,
+   "text": "After this line, no one who shared my father's name would ever own that wall again."
+  },
+  {
+   "start": 128.02,
+   "end": 130.22,
+   "text": "Then I signed. The stamp came down at $4.58."
+  },
+  {
+   "start": 130.22,
+   "end": 131.62,
+   "text": "Nobody on earth could take it back."
+  },
+  {
+   "start": 131.62,
+   "end": 135.22,
+   "text": "Friday at 10, the title office had a bowl of mints and a long oak table."
+  },
+  {
+   "start": 135.22,
+   "end": 138.02,
+   "text": "Brent sat in the middle chair pen on cap grinning at the papers."
+  },
+  {
+   "start": 138.02,
+   "end": 139.82,
+   "text": "The man in the gray suit set across from him."
+  },
+  {
+   "start": 139.82,
+   "end": 142.22,
+   "text": "Yellow tabs marked every line Brent expected me to sign."
+  },
+  {
+   "start": 142.22,
+   "end": 143.22,
+   "text": "I took the chair at the end."
+  },
+  {
+   "start": 143.22,
+   "end": 146.42,
+   "text": "The title agent opened her laptop to confirm the parcel before anyone signed."
+  },
+  {
+   "start": 146.42,
+   "end": 147.22,
+   "text": "She stopped typing."
+  },
+  {
+   "start": 147.22,
+   "end": 151.32,
+   "text": "Mr. Brent, she said, the county shows this property transferred yesterday at $4.58."
+  },
+  {
+   "start": 151.32,
+   "end": 153.12,
+   "text": "$1 to the people who work at 4."
+  },
+  {
+   "start": 153.12,
+   "end": 156.92,
+   "text": "In the doorway, house stood in his church tie with one hand flat over an empty shirt pocket."
+  },
+  {
+   "start": 156.92,
+   "end": 158.32,
+   "text": "Tell me this is a joke, Brent said."
+  },
+  {
+   "start": 158.32,
+   "end": 158.92,
+   "text": "Nobody laughed."
+  },
+  {
+   "start": 158.92,
+   "end": 161.42,
+   "text": "His grin held one breath after the rest of his face let go."
+  },
+  {
+   "start": 161.42,
+   "end": 163.82,
+   "text": "The man in the gray suit slid a demand across the table."
+  },
+  {
+   "start": 163.82,
+   "end": 165.72,
+   "text": "$50,000 due in 10 days."
+  }
+ ]
+}

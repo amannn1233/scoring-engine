@@ -1,11 +1,14 @@
 # ============================================================
 # STORY ANALYSIS — discovery, transcripts, mood, 7 story boundaries
-# (logic unchanged from Generalization V1/V2)
+# (logic unchanged from Generalization V1/V2), plus an independent turn
+# estimate used to cross-check the cue sheet's twist
 # ============================================================
 
 import glob
 import json
+import math
 import os
+import re
 from pathlib import Path
 
 import numpy as np
@@ -244,3 +247,83 @@ def build_story_mood(segments):
     if not mood:
         mood.append("psychological suspense")
     return ", ".join(list(dict.fromkeys(mood))[:3])
+
+
+# ============================================================
+# INDEPENDENT TURN ESTIMATE (for cross-checking the cue sheet)
+#
+# A second, coarse reading of where the story turns that shares nothing
+# with cue_sheet's affect lexicon or intensity curve. It reads how the story
+# is BUILT around the turn:
+#   payoff     the line pays off details planted well before it (rare words
+#              or numbers that appeared once, earlier: "the whole thing was a
+#              test" after "what kind of loyalty test was that?")
+#   aftermath  the next lines react or explain ("Nobody laughed", "Graham
+#              stared", "Why would he forge it", "They wanted to see if")
+#   place      narrated twists sit in the last third, before the aftermath
+# It is deliberately a REGION, not a line: the score-weighted centre of the
+# best candidates. On the three reference stories it lands within 13 % of
+# the story length of the real twist; a turn placed a third of the story
+# early (the 292 Kaggle run: 98 s for a 147 s reveal) falls outside it.
+# ============================================================
+
+_STRUCT_STOP = set("""a an the and or but so to of in on at for with from by as is was were be been being it its
+this that these those i me my mine we our us you your he him his she her they them their there here then than
+when what who whom which why how if not no yes do did does done have has had would could should will can just
+like up down out over into about after before again all any each few more most other some such only own same too
+very now one two said says say told tell asked ask went go goes got get gets came come back off still even ever
+never time day days thing things man woman men women people way while where because i'd i'm i'll he's she's
+it's that's didn't don't wasn't couldn't wouldn't know knew think thought every really right made make let look
+looked first last next around through across away put took take give gave left long little much many good great
+""".split())
+_STRUCT_TOKEN = re.compile(r"[a-z0-9][a-z0-9']*(?:[.:][0-9]+)?")
+_AFTERMATH_CUES = ("nobody", "no one", "silence", "silent", "froze", "pale", "stared", "staring", "speechless",
+                   "lost it", "scream", "gasp", "couldn't believe", "tell me", "shaking", "went white",
+                   "blinked", "his face", "her face", "laughing", "let go",
+                   "because", "why ", "wanted to see", "the reason", "that's why", "which meant", "it meant",
+                   "the whole", "all along", "way of")
+
+
+def _struct_words(text):
+    out = set()
+    for tok in _STRUCT_TOKEN.findall(text.lower()):
+        if tok in _STRUCT_STOP or not (tok[0].isdigit() or len(tok) >= 4):
+            continue
+        tok = tok.strip("'")
+        if tok.endswith("'s"):
+            tok = tok[:-2]
+        out.add(tok if tok[0].isdigit() else tok[:6])
+    return out
+
+
+def structural_turn_estimate(segments, duration):
+    """{"time": centre of the turn region (s), "candidates": best lines (s)},
+    or None when the transcript is too short to read."""
+    segs = normalize_text(segments)
+    n = len(segs)
+    if n < 7 or duration <= 0:
+        return None
+    words = [_struct_words(s["text"]) for s in segs]
+    df = {}
+    for ws in words:
+        for w in ws:
+            df[w] = df.get(w, 0) + 1
+    pos = (np.arange(n) + 0.5) / n
+    score = np.full(n, -np.inf)
+    for i in range(n):
+        if not 0.4 <= pos[i] <= 0.93:
+            continue
+        planted = [w for w in words[i] if df[w] <= 3 and any(
+            w in words[j] and segs[j]["start"] <= segs[i]["start"] - 0.1 * duration for j in range(i))]
+        after = " ".join(s["text"].lower() for s in segs[i + 1:i + 4])
+        reacts = sum(after.count(c) for c in _AFTERMATH_CUES)
+        place = math.exp(-0.5 * ((pos[i] - 0.78) / 0.12) ** 2)
+        score[i] = 0.3 * min(3, len(planted)) + 0.3 * min(3, reacts) + place
+    ok = np.isfinite(score)
+    if not ok.any():
+        return None
+    weight = np.where(ok, np.exp((np.where(ok, score, 0.0) - score[ok].max()) / 0.15), 0.0)
+    starts = np.array([s["start"] for s in segs])
+    order = [int(i) for i in np.argsort(-np.where(ok, score, -1e9))[:3]]
+    return {"time": float(np.sum(weight * starts) / weight.sum()),
+            "candidates": [float(starts[i]) for i in order]}

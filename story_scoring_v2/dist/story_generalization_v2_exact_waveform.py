@@ -8,7 +8,7 @@
 #   input  /kaggle/input   (stories 71, 72, 86; WAV preferred; 85 excluded)
 #   output /kaggle/working/story_generalization_v2_exact_waveform/
 #   zip    /kaggle/working/story_generalization_v2_exact_waveform.zip
-# Source digest: 1c40755eac75e659
+# Source digest: cb6825fd5c3a62b6
 # ============================================================
 
 # ##########  audio_io.py  ##########
@@ -754,12 +754,15 @@ def make_preview(voice_mono, ducked):
 
 # ============================================================
 # STORY ANALYSIS — discovery, transcripts, mood, 7 story boundaries
-# (logic unchanged from Generalization V1/V2)
+# (logic unchanged from Generalization V1/V2), plus an independent turn
+# estimate used to cross-check the cue sheet's twist
 # ============================================================
 
 import glob
 import json
+import math
 import os
+import re
 from pathlib import Path
 
 import numpy as np
@@ -999,6 +1002,86 @@ def build_story_mood(segments):
         mood.append("psychological suspense")
     return ", ".join(list(dict.fromkeys(mood))[:3])
 
+
+# ============================================================
+# INDEPENDENT TURN ESTIMATE (for cross-checking the cue sheet)
+#
+# A second, coarse reading of where the story turns that shares nothing
+# with cue_sheet's affect lexicon or intensity curve. It reads how the story
+# is BUILT around the turn:
+#   payoff     the line pays off details planted well before it (rare words
+#              or numbers that appeared once, earlier: "the whole thing was a
+#              test" after "what kind of loyalty test was that?")
+#   aftermath  the next lines react or explain ("Nobody laughed", "Graham
+#              stared", "Why would he forge it", "They wanted to see if")
+#   place      narrated twists sit in the last third, before the aftermath
+# It is deliberately a REGION, not a line: the score-weighted centre of the
+# best candidates. On the three reference stories it lands within 13 % of
+# the story length of the real twist; a turn placed a third of the story
+# early (the 292 Kaggle run: 98 s for a 147 s reveal) falls outside it.
+# ============================================================
+
+_STRUCT_STOP = set("""a an the and or but so to of in on at for with from by as is was were be been being it its
+this that these those i me my mine we our us you your he him his she her they them their there here then than
+when what who whom which why how if not no yes do did does done have has had would could should will can just
+like up down out over into about after before again all any each few more most other some such only own same too
+very now one two said says say told tell asked ask went go goes got get gets came come back off still even ever
+never time day days thing things man woman men women people way while where because i'd i'm i'll he's she's
+it's that's didn't don't wasn't couldn't wouldn't know knew think thought every really right made make let look
+looked first last next around through across away put took take give gave left long little much many good great
+""".split())
+_STRUCT_TOKEN = re.compile(r"[a-z0-9][a-z0-9']*(?:[.:][0-9]+)?")
+_AFTERMATH_CUES = ("nobody", "no one", "silence", "silent", "froze", "pale", "stared", "staring", "speechless",
+                   "lost it", "scream", "gasp", "couldn't believe", "tell me", "shaking", "went white",
+                   "blinked", "his face", "her face", "laughing", "let go",
+                   "because", "why ", "wanted to see", "the reason", "that's why", "which meant", "it meant",
+                   "the whole", "all along", "way of")
+
+
+def _struct_words(text):
+    out = set()
+    for tok in _STRUCT_TOKEN.findall(text.lower()):
+        if tok in _STRUCT_STOP or not (tok[0].isdigit() or len(tok) >= 4):
+            continue
+        tok = tok.strip("'")
+        if tok.endswith("'s"):
+            tok = tok[:-2]
+        out.add(tok if tok[0].isdigit() else tok[:6])
+    return out
+
+
+def structural_turn_estimate(segments, duration):
+    """{"time": centre of the turn region (s), "candidates": best lines (s)},
+    or None when the transcript is too short to read."""
+    segs = normalize_text(segments)
+    n = len(segs)
+    if n < 7 or duration <= 0:
+        return None
+    words = [_struct_words(s["text"]) for s in segs]
+    df = {}
+    for ws in words:
+        for w in ws:
+            df[w] = df.get(w, 0) + 1
+    pos = (np.arange(n) + 0.5) / n
+    score = np.full(n, -np.inf)
+    for i in range(n):
+        if not 0.4 <= pos[i] <= 0.93:
+            continue
+        planted = [w for w in words[i] if df[w] <= 3 and any(
+            w in words[j] and segs[j]["start"] <= segs[i]["start"] - 0.1 * duration for j in range(i))]
+        after = " ".join(s["text"].lower() for s in segs[i + 1:i + 4])
+        reacts = sum(after.count(c) for c in _AFTERMATH_CUES)
+        place = math.exp(-0.5 * ((pos[i] - 0.78) / 0.12) ** 2)
+        score[i] = 0.3 * min(3, len(planted)) + 0.3 * min(3, reacts) + place
+    ok = np.isfinite(score)
+    if not ok.any():
+        return None
+    weight = np.where(ok, np.exp((np.where(ok, score, 0.0) - score[ok].max()) / 0.15), 0.0)
+    starts = np.array([s["start"] for s in segs])
+    order = [int(i) for i in np.argsort(-np.where(ok, score, -1e9))[:3]]
+    return {"time": float(np.sum(weight * starts) / weight.sum()),
+            "candidates": [float(starts[i]) for i in order]}
+
 # ##########  cue_sheet.py  ##########
 
 # ============================================================
@@ -1018,8 +1101,11 @@ def build_story_mood(segments):
 #   palette <- instruments scored against the story's colour vector, one per
 #              orchestral role (lead / harmony / bass / pulse / texture / hits)
 #   style   <- the strongest colour + setting descriptors, worded freshly
-#   arc     <- smoothed per-segment intensity; climax, twist and resolution
-#              located from the curve itself, not from fixed fractions
+#   arc     <- smoothed per-segment intensity, measured on sections aligned
+#              to the turn
+#   hits    <- twist first (reveal language, stillness before the line,
+#              new deceit/darkness, late placement), then the climax at or
+#              after it and the resolution after that (locate_turn)
 #
 # Two stories with different words get different briefs; the same story
 # always gets the same brief (deterministic, so runs are reproducible).
@@ -1141,7 +1227,8 @@ _COLOUR = {
     "urgency": ["suddenly", "run", "ran", "chase", "seconds", "minutes", "deadline", "rush",
                 "now", "immediately", "hurry", "pounding", "racing", "three seconds"],
     "melancholy": ["miss", "lost", "loss", "regret", "funeral", "grief", "lonely", "used to",
-                   "years ago", "anymore", "goodbye", "cried", "tears", "empty"],
+                   "years ago", "anymore", "goodbye", "cried", "tears", "empty", "died", "passed away",
+                   "winters ago", "dying"],
     "triumph": ["win", "won", "victory", "justice", "karma", "finally", "promot", "proved",
                 "fired him", "fired her", "got what", "applause", "cheer"],
     "eeriness": ["strange", "weird", "creepy", "noise", "footstep", "ghost", "haunt",
@@ -1149,16 +1236,36 @@ _COLOUR = {
     "playfulness": ["funny", "laugh", "joke", "silly", "prank", "ridiculous", "classy",
                     "lol", "petty", "karen", "entitled"],
     "deceit": ["undercover", "fake", "lie", "lied", "forg", "fraud", "pretend", "cover",
-               "disguise", "secret", "double", "spy", "scam", "forged", "signature that"],
+               "disguise", "secret", "double", "spy", "scam", "forged", "signature that",
+               # signing for someone else / acting behind their back
+               "handwriting", "almost mine", "not mine", "in my name", "as my agent", "signed for",
+               "behind my back", "without telling", "without my", "secretly", "scheme", "con man",
+               "set me up", "impersonat", "swindl", "embezzl", "tricked", "betray"],
     "pressure": ["deadline", "inspector", "marshal", "court", "loan", "debt", "boss",
-                 "recertif", "audit", "pending", "shut down", "evict", "fired"],
+                 "recertif", "audit", "pending", "shut down", "evict", "fired",
+                 # contracts, money owed, the paperwork closing in
+                 "lawyer", "attorney", "sue", "lawsuit", "contract", "agreement", "closing", "due",
+                 "demand", "deed", "title office", "clerk", "notar", "paperwork", "refundable",
+                 "earnest money", "penalt", "foreclos", "mortgage", "owe", "lien"],
 }
+
+# Characters and places a story is ABOUT (father, husband, home) say little
+# about how it FEELS: a betrayal story mentions "my father's store" seven
+# times without being tender. These count at this weight in their colour.
+_TOPIC_STEMS = {"mother", "mom", "dad", "father", "grandm", "grandp", "child", "kid", "baby",
+                "family", "home", "wedding"}
+_TOPIC_WEIGHT = 0.35
+# Positive colours a negator cancels ("Nobody laughed" is not comedy).
+_NEGATABLE = {"warmth", "playfulness", "triumph", "wonder"}
+# Dollar amounts are stakes: "$640,000 closing Friday", "$50,000 due".
+_MONEY = re.compile(r"\$\s?\d")
 
 # Setting cues add style words (not instruments forced on the story).
 _SETTING = {
     "urban night": ["city", "street", "night", "club", "bar", "alley", "apartment", "subway"],
     "small-town americana": ["town", "truck", "diner", "farm", "county", "highway", "phoenix",
-                             "texas", "biker", "motorcycle", "rusty"],
+                             "texas", "biker", "motorcycle", "rusty", "main street", "hardware",
+                             "barber", "sheriff", "porch", "church"],
     "corporate": ["office", "boss", "meeting", "company", "corporate", "hr ", "manager", "email"],
     "domestic": ["house", "kitchen", "bedroom", "home", "husband", "wife", "married", "mom",
                  "dad", "brother", "sister"],
@@ -1177,7 +1284,14 @@ _INTENSIFIERS = {"very": 1.3, "really": 1.25, "so": 1.2, "extremely": 1.5, "tota
 _REVEAL_CUES = ("never knew", "turns out", "truth", "actually", "realized", "found out",
                 "the reason", "secret", "had been", "all along", "that's when", "was not mine",
                 "wasn't mine", "the whole thing was", "it was him", "it was her", "already filed",
-                "what i didn't know", "little did")
+                "what i didn't know", "little did",
+                # the record / the room shows it already happened
+                "already", "transferred", "belonged to", "the whole time", "was never", "records show",
+                "shows this", "it was a test", "was a setup", "had signed", "it was me")
+# A beat of stillness right before a line is how narration sets up a reveal
+# ("She stopped typing." / "This was it.").
+_HUSH_CUES = ("stopped", "paused", "froze", "went quiet", "went silent", "silence", "looked up",
+              "held my breath", "this was it", "for a moment", "nobody moved")
 _RESOLUTION_CUES = ("now", "since then", "finally", "these days", "to this day", "ever since",
                     "in the end", "ended up", "lesson", "today", "anymore", "moved on")
 
@@ -1255,11 +1369,22 @@ def segment_features(text):
     terse = 0.15 if words <= 7 else 0.0               # short, punchy lines read as tension
     colour = {}
     for name, stems in _COLOUR.items():
-        c = sum(1 for tok in toks if _match_stem(tok, stems)) + _phrase_hits(low, stems)
+        c = 0.0
+        for i, tok in enumerate(toks):
+            hit = _match_stem(tok, stems)
+            if not hit:
+                continue
+            if name in _NEGATABLE and any(w in _NEGATORS for w in toks[max(0, i - 2):i]):
+                continue
+            c += _TOPIC_WEIGHT if name == "warmth" and set(hit) <= _TOPIC_STEMS else 1.0
+        c += _phrase_hits(low, stems)
+        if name == "pressure":
+            c += 0.5 * min(1, len(_MONEY.findall(low)))
         colour[name] = c / math.sqrt(words)
     setting = {}
     for name, stems in _SETTING.items():
-        setting[name] = sum(1 for tok in toks if _match_stem(tok, [s.strip() for s in stems]))
+        setting[name] = (sum(1 for tok in toks if _match_stem(tok, [s.strip() for s in stems]))
+                         + _phrase_hits(low, [s for s in stems if " " in s.strip()]))
     return {
         "valence": float(np.tanh(v / norm)),
         "arousal": float(np.tanh(a / norm + punct)),
@@ -1268,6 +1393,7 @@ def segment_features(text):
         "colour": colour,
         "setting": setting,
         "reveal_cue": sum(1 for c in _REVEAL_CUES if c in low),
+        "hush_cue": sum(1 for c in _HUSH_CUES if c in low),
         "resolution_cue": sum(1 for c in _RESOLUTION_CUES if c in low),
         "words": words,
     }
@@ -1488,6 +1614,70 @@ def _section_ranges(boundaries, segments):
     return out
 
 
+def locate_turn(feats, curve):
+    """(twist, climax, resolution-or-None, twist scores) as segment indices.
+
+    The twist is found first, on what the line SAYS and how it is set up:
+      reveal language ("turns out", "already", "a signature that was not
+      mine"), deceit/darkness arriving where the story had little of it, a
+      rise in intensity, a beat of stillness on the line before ("She
+      stopped typing."), and where narrated twists sit: the last third,
+      before the few lines of aftermath. The climax is the most intense
+      moment at or after the twist (never before it: a story pays off after
+      it turns), and the resolution the first resolution cue after that.
+    Earlier versions found the climax first and forced the twist before it,
+    which pulled a late reveal (292's title office at 89 %) back to the
+    biggest rise in the middle of the story."""
+    n = len(feats)
+    if n <= 2:
+        last = max(0, n - 1)
+        return last, last, None, np.zeros(n)
+    pos = (np.arange(n) + 0.5) / n
+    rise = np.maximum(np.diff(curve, prepend=curve[0]), 0.0)
+    # Novelty: deceit/darkness colour appearing where the story had little
+    # of it so far is what a turn usually sounds like ("a signature that
+    # was not mine", "it was a test").
+    turn_col = np.array([f["colour"]["deceit"] + f["colour"]["darkness"] + f["colour"]["eeriness"]
+                         for f in feats])
+    seen = np.concatenate([[0.0], np.cumsum(turn_col)[:-1]]) / np.maximum(np.arange(n), 1)
+    novelty = np.maximum(turn_col - seen, 0.0)
+    hush = np.array([0.0] + [min(1.0, f["hush_cue"]) for f in feats[:-1]])
+    reveal = np.array([min(3, f["reveal_cue"]) for f in feats], dtype=np.float64)
+    tension = np.array([f["tension"] for f in feats])
+    prior = np.exp(-0.5 * ((pos - 0.78) / 0.12) ** 2)
+    score = 0.35 * reveal + 0.8 * rise + 0.2 * tension + 0.8 * novelty + 0.35 * hush + 0.6 * prior
+    ok = (pos >= 0.4) & (pos <= 0.93)
+    score = np.where(ok, score, -np.inf)
+    twist_i = int(np.argmax(score))
+    # Climax: intensity weighted toward where stories usually pay off, at or
+    # after the twist and before the last 8 %.
+    payoff = np.exp(-0.5 * ((pos - 0.75) / 0.15) ** 2)
+    after = (np.arange(n) >= twist_i) & (pos <= 0.92)
+    after[twist_i] = True
+    climax_i = int(np.argmax(np.where(after, curve + 0.35 * payoff, -np.inf)))
+    res = [i for i in range(climax_i + 1, n) if feats[i]["resolution_cue"] > 0]
+    return twist_i, climax_i, (res[0] if res else None), score
+
+
+def turn_aligned_boundaries(boundaries, hit_points, duration, tempo_bpm=90.0):
+    """The keyword sections with the back half moved onto the turn, the way
+    arrangement.story_boundaries lays the music out (b4 build, b5 twist,
+    b6 resolution), so the arc's 'revelation' value is measured on the lines
+    after the twist, not on a keyword window that may sit a minute early."""
+    b = [float(x) for x in boundaries]
+    if len(b) != 8 or duration <= 0:
+        return b
+    gap = 0.02 * duration
+    b5 = min(max(hit_points["twist"], b[3] + 2 * gap), duration - 2 * gap)
+    b6 = min(max(hit_points["resolution"], b5 + gap), duration - gap)
+    bar = 240.0 / max(1.0, float(tempo_bpm))
+    b4 = max(b[3] + gap, b5 - min(8 * bar, max(2 * bar, 0.5 * (b5 - b[3]))))
+    out = b[:4] + [b4, b5, b6, float(duration)]
+    for i in range(1, 8):
+        out[i] = max(out[i], out[i - 1] + 1e-3)
+    return out
+
+
 def build_cue_sheet(segments, duration, boundaries=None):
     """segments: [{"text","start","end"}...] (story_analysis.normalize_text).
     boundaries: the 8 story-section boundaries (seconds), optional."""
@@ -1515,33 +1705,12 @@ def build_cue_sheet(segments, duration, boundaries=None):
     curve = (curve - lo) / (hi - lo) if hi - lo > 1e-6 else np.full(n, 0.5)
 
     starts = [s["start"] for s in segments] or [0.0]
-    pos = (np.arange(n) + 0.5) / max(n, 1)
-    # Climax: intensity weighted by where stories usually pay off (a soft
-    # prior peaking around 75 %, never the first 45 % or last 8 %).
-    prior = np.exp(-0.5 * ((pos - 0.75) / 0.15) ** 2)
-    allowed = (pos >= 0.45) & (pos <= 0.92)
-    climax_score = np.where(allowed, curve + 0.35 * prior, -np.inf)
-    climax_i = int(np.argmax(climax_score)) if n > 2 else n - 1
-    # Twist: where the story turns: strongest reveal cue or the steepest rise
-    # in intensity, before the climax and after 35 %.
-    rise = np.diff(curve, prepend=curve[0])
-    # Novelty: deceit/darkness colour appearing where the story had little
-    # of it so far is what a turn usually sounds like ("a signature that
-    # was not mine", "it was a test").
-    turn_col = np.array([f["colour"]["deceit"] + f["colour"]["darkness"] + f["colour"]["eeriness"]
-                         for f in feats])
-    seen = np.concatenate([[0.0], np.cumsum(turn_col)[:-1]]) / np.maximum(np.arange(n), 1)
-    novelty = np.maximum(turn_col - seen, 0.0)
-    twist_score = np.array([feats[i]["reveal_cue"] * 0.3 + rise[i] * 2.0 + feats[i]["tension"] * 0.2
-                            + novelty[i] * 0.8 for i in range(n)])
-    twist_ok = (pos >= 0.35) & (np.arange(n) < climax_i)
-    twist_i = int(np.argmax(np.where(twist_ok, twist_score, -np.inf))) if twist_ok.any() else max(0, climax_i - 1)
-    # Resolution: first resolution cue after the climax, else halfway from
-    # the climax to the end.
-    res_cues = [i for i in range(climax_i + 1, n) if feats[i]["resolution_cue"] > 0]
+    twist_i, climax_i, resolution_i, _ = locate_turn(feats, curve)
     end_t = float(duration)
     climax_t = float(starts[climax_i])
-    resolution_t = float(starts[res_cues[0]]) if res_cues else climax_t + 0.5 * (end_t - climax_t)
+    # Resolution: first resolution cue after the climax, else halfway from
+    # the climax to the end.
+    resolution_t = float(starts[resolution_i]) if resolution_i is not None else climax_t + 0.5 * (end_t - climax_t)
     hit_points = {
         "twist": float(starts[twist_i]),
         "climax": climax_t,
@@ -1581,6 +1750,7 @@ def build_cue_sheet(segments, duration, boundaries=None):
     # Per-section arc and moods.
     if boundaries is None:
         boundaries = list(GENERIC_BOUNDARY_FRACTIONS * duration)
+    boundaries = turn_aligned_boundaries(boundaries, hit_points, duration, tempo)
     seg_for = _section_ranges(boundaries, segments)
     arc, section_moods = [], []
     for idx in seg_for:
@@ -1602,6 +1772,27 @@ def build_cue_sheet(segments, duration, boundaries=None):
         arc=arc, section_moods=section_moods, hit_points=hit_points,
         segment_intensity=[float(x) for x in curve],
     )
+
+
+# Agreement with story_analysis.structural_turn_estimate, as a fraction of
+# the story: full credit inside TURN_AGREE, none past TURN_DISAGREE. The
+# estimate is a region (it lands within 13 % on the reference stories), so
+# this catches a turn placed in the wrong part of the story, not a line off.
+TURN_AGREE, TURN_DISAGREE = 0.15, 0.25
+
+
+def check_turn(twist, estimate, duration):
+    """Cross-check the cue sheet's twist against the independent estimate."""
+    if not estimate or duration <= 0:
+        return {"twist": float(twist), "estimate": None, "credit": 0.0, "agree": False,
+                "note": "no independent turn estimate (transcript too short or missing)"}
+    off = (float(twist) - estimate["time"]) / float(duration)
+    credit = float(np.clip((TURN_DISAGREE - abs(off)) / (TURN_DISAGREE - TURN_AGREE), 0.0, 1.0))
+    agree = abs(off) <= TURN_AGREE
+    note = (f"twist {twist:.1f}s vs independent estimate {estimate['time']:.1f}s "
+            f"({100 * off:+.0f}% of the story){'' if agree else ' -- CHECK THE TWIST'}")
+    return {"twist": float(twist), "estimate": estimate, "offset_fraction": off, "credit": credit,
+            "agree": agree, "note": note}
 
 
 # ============================================================
@@ -4428,10 +4619,13 @@ def process_story(story_index, story_path, out_root, run_seed, log=print, story_
         log(f"  {label:<28}{boundaries[i]:7.2f}s -> {boundaries[i + 1]:7.2f}s")
 
     cue = build_cue_sheet(segments, duration, list(boundaries)) if story_aware else None
+    turn_check = None
     if cue is not None:
         log("Story cue sheet:")
         for line in describe_cue(cue):
             log(f"  {line}")
+        turn_check = check_turn(cue.hit_points["twist"], structural_turn_estimate(segments, duration), duration)
+        log(f"  Turn check: {turn_check['note']}")
 
     motif, motif_path, prompt, motif_seed, motif_takes = generate_motif(
         story_index, mood, story_dir, run_seed, cue=cue, return_report=True, log=log)
@@ -4463,6 +4657,9 @@ def process_story(story_index, story_path, out_root, run_seed, log=print, story_
         "run_seed": run_seed,
         "transcript_file": transcript_path,
         "transcript_segments": len(segments),
+        # The words the cue sheet read, so the self-review can re-read them.
+        "transcript": [{"start": s["start"], "end": s["end"], "text": s["text"]} for s in segments],
+        "turn_check": turn_check,
         "detected_mood": mood,
         "story_aware": story_aware,
         "cue_sheet": cue.to_dict() if cue is not None else None,
